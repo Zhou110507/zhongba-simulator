@@ -12,11 +12,13 @@ from billiards.scenarios import acceptance_scenes
 def build():
     root = Path(__file__).resolve().parents[1]
     scene = next(s for s in acceptance_scenes() if s["id"]=="rail")
-    variants = {"legacy":replace(scene["physics"],cushion_model="frictionless",
+    variants = {"legacy_e080":replace(scene["physics"],cushion_model="frictionless",cushion_restitution=.80,
                                 version="phase-a-frictionless-contacts-v1"),
-                "coupled_512":scene["physics"],
-                "coupled_1024":replace(scene["physics"],cushion_steps=1024),
-                "coupled_2048":replace(scene["physics"],cushion_steps=2048)}
+                "coupled_e080":replace(scene["physics"],cushion_restitution=.80,
+                                       version="phase-a-coupled-cushion-v2"),
+                "current_512":scene["physics"],
+                "current_1024":replace(scene["physics"],cushion_steps=1024),
+                "current_2048":replace(scene["physics"],cushion_steps=2048)}
     records = {}
     for name,physics in variants.items():
         result = simulate(scene["balls"],scene["table"],physics)

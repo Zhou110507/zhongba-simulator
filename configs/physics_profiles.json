@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "default_profile": "uncalibrated_coupled_v2",
+  "default_profile": "uncalibrated_coupled_v3",
   "calibration_target": {
     "table_brand": "JOY / 乔氏",
     "cloth_brand": "Liber Win / 利百文",
@@ -11,6 +11,32 @@
     "note": "Retain the previous test-bed geometry while comparing the 06 physics correction."
   },
   "profiles": {
+    "uncalibrated_coupled_v3": {
+      "label": "文献能量参数研究基准 · 未实桌标定",
+      "calibration_status": "uncalibrated",
+      "parameters": {
+        "sliding_friction": 0.20,
+        "rolling_friction": 0.01,
+        "spin_deceleration": 10.0,
+        "ball_restitution": 0.95,
+        "cushion_restitution": 0.98,
+        "cushion_model": "coupled_impulse",
+        "cushion_friction": 0.14,
+        "cushion_contact_height_ratio": 1.4,
+        "cushion_steps": 512,
+        "version": "phase-a-energetic-baseline-v3"
+      },
+      "provenance": {
+        "sliding_friction": "Generic pool starting value, not a JOY/Liber Win measurement",
+        "rolling_friction": "Engineering placeholder, effective deceleration / g",
+        "spin_deceleration": "Engineering placeholder, rad/s^2",
+        "ball_restitution": "Engineering placeholder",
+        "cushion_restitution": "Mathavan 2010 energetic restitution 0.98, measured on other equipment; not a normal speed ratio and not a JOY calibration",
+        "cushion_friction": "Mathavan 2010 snooker experiment/model reference; not Chinese pool calibration",
+        "cushion_contact_height_ratio": "Mathavan 2010 h=7R/5 reference; not a verified JOY nose measurement"
+      },
+      "model_source": "https://doi.org/10.1243/09544062JMES1964"
+    },
     "uncalibrated_coupled_v2": {
       "label": "双接触研究模型 · 未实桌标定",
       "calibration_status": "uncalibrated",
@@ -23,7 +49,8 @@
         "cushion_model": "coupled_impulse",
         "cushion_friction": 0.14,
         "cushion_contact_height_ratio": 1.4,
-        "cushion_steps": 512
+        "cushion_steps": 512,
+        "version": "phase-a-coupled-cushion-v2"
       },
       "provenance": {
         "sliding_friction": "Generic pool starting value, not a JOY/Liber Win measurement",

@@ -5,7 +5,7 @@ from pathlib import Path
 import json
 
 from billiards import simulate
-from billiards.diagnostics import cushion_observations
+from billiards.diagnostics import cushion_observations, first_cushion_explanation
 from billiards.scenarios import acceptance_scenes
 
 
@@ -20,7 +20,8 @@ def build():
         result = simulate(scene["balls"],scene["table"],physics,
                           max_time=scene.get("max_time",60))
         records[name] = {"physics":asdict(physics),"status":result.status,
-                         "duration":result.duration,"cushions":cushion_observations(result)}
+                         "duration":result.duration,"cushions":cushion_observations(result),
+                         "first_cushion_explanation":first_cushion_explanation(result)}
     payload = {"initial":[asdict(b) for b in actual["balls"]],
                "same_physics_as_06":actual["physics"]==scenes["rail"]["physics"],
                "calibration_status":"not_calibrated_to_JOY_Liber_Win",

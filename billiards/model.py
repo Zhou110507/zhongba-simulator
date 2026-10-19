@@ -83,12 +83,12 @@ class Physics:
     rolling_friction: float = 0.01  # effective translational deceleration / g
     spin_deceleration: float = 10.0  # phenomenological rad/s^2
     ball_restitution: float = 0.95
-    cushion_restitution: float = 0.80
+    cushion_restitution: float = 0.98
     cushion_model: str = "coupled_impulse"
     cushion_friction: float = 0.14
     cushion_contact_height_ratio: float = 1.4  # h/R, research reference, not a verified CBSA dimension
     cushion_steps: int = 512
-    version: str = "phase-a-coupled-cushion-v2"
+    version: str = "phase-a-energetic-baseline-v3"
 
 
 def validate_scene(balls, table, physics):

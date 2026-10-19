@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from billiards import BallSpec, Table
+from billiards import BallSpec, Physics, Table
 from billiards.equipment import load_equipment
 from billiards.equipment import load_physics_profile
 
@@ -39,6 +39,7 @@ def test_physics_profile_records_target_and_uncalibrated_provenance():
     path = CONFIG.with_name("physics_profiles.json")
     data = json.loads(path.read_text(encoding="utf-8"))
     p = load_physics_profile(path)
+    assert p == Physics()
     assert p.cushion_model == "coupled_impulse"
     assert p.cushion_friction == .14
     assert "乔氏" in data["calibration_target"]["table_brand"]

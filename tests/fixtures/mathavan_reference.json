@@ -1,0 +1,144 @@
+{
+  "source_url": "https://github.com/ekiefl/pooltool/blob/3d5fe16a4f4ea6fdb86ab45bd5522440bab87b55/pooltool/physics/resolve/ball_cushion/mathavan_2010/model.py",
+  "source_sha256": "bf5d44f005f0c5883262cfff2ea777a95cc5989e6f645659b4f1e473d40cf643",
+  "method": "Pure numerical functions of the independent Mathavan implementation; JIT decorators removed, no equations modified",
+  "reference_steps": 32768,
+  "cloth_friction": 0.2,
+  "wall_friction": 0.14,
+  "contact_height_ratio": 1.4,
+  "purpose": "Implementation comparison only; not JOY/Liber Win physical validation",
+  "cases": [
+    {
+      "id": "cut_rolling_e080",
+      "incoming": {
+        "id": "cue",
+        "position": {
+          "x": 2.083197179243545,
+          "y": 0.02857500000000017
+        },
+        "velocity": {
+          "x": 0.3909690404867744,
+          "y": -0.2111144331604508
+        },
+        "omega": {
+          "x": 7.388081650409478,
+          "y": 13.682206141269445,
+          "z": 0.0
+        },
+        "spec": {
+          "radius": 0.028575,
+          "mass": 0.163
+        }
+      },
+      "energetic_restitution": 0.8,
+      "expected_velocity": {
+        "x": 0.3328768775667142,
+        "y": 0.16666779544172486
+      },
+      "expected_omega": {
+        "x": 3.000739147861795,
+        "y": 11.64923456051507,
+        "z": -4.658123077250693
+      }
+    },
+    {
+      "id": "cut_rolling_e098",
+      "incoming": {
+        "id": "cue",
+        "position": {
+          "x": 2.083197179243545,
+          "y": 0.02857500000000017
+        },
+        "velocity": {
+          "x": 0.3909690404867744,
+          "y": -0.2111144331604508
+        },
+        "omega": {
+          "x": 7.388081650409478,
+          "y": 13.682206141269445,
+          "z": 0.0
+        },
+        "spec": {
+          "radius": 0.028575,
+          "mass": 0.163
+        }
+      },
+      "energetic_restitution": 0.98,
+      "expected_velocity": {
+        "x": 0.3266845060874814,
+        "y": 0.2037582008519455
+      },
+      "expected_omega": {
+        "x": 2.6818745094678373,
+        "y": 11.432528646981094,
+        "z": -5.154658703407585
+      }
+    },
+    {
+      "id": "cut_unspun_e098",
+      "incoming": {
+        "id": "cue",
+        "position": {
+          "x": 2.083197179243545,
+          "y": 0.02857500000000017
+        },
+        "velocity": {
+          "x": 0.3909690404867744,
+          "y": -0.2111144331604508
+        },
+        "omega": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "spec": {
+          "radius": 0.028575,
+          "mass": 0.163
+        }
+      },
+      "energetic_restitution": 0.98,
+      "expected_velocity": {
+        "x": 0.29509042705686805,
+        "y": 0.19751452984431347
+      },
+      "expected_omega": {
+        "x": 0.026238900980715667,
+        "y": 0.8266378662503948,
+        "z": -4.950289599748355
+      }
+    },
+    {
+      "id": "normal_rolling_e098",
+      "incoming": {
+        "id": "cue",
+        "position": {
+          "x": 1,
+          "y": 0.028575
+        },
+        "velocity": {
+          "x": 0,
+          "y": -1
+        },
+        "omega": {
+          "x": 34.99562554680665,
+          "y": 0,
+          "z": 0
+        },
+        "spec": {
+          "radius": 0.028575,
+          "mass": 0.163
+        }
+      },
+      "energetic_restitution": 0.98,
+      "expected_velocity": {
+        "x": 1.0077547070905544e-08,
+        "y": 0.9138942525028008
+      },
+      "expected_omega": {
+        "x": 8.714153456482357,
+        "y": -8.816751591062718e-07,
+        "z": 1.3292505862260725e-16
+      }
+    }
+  ]
+}

@@ -13,7 +13,7 @@ import numpy as np
 
 from billiards import Ball, Physics, Table, Vec2, Vec3, simulate
 from billiards.scenarios import acceptance_scenes
-from billiards.diagnostics import cushion_observations
+from billiards.diagnostics import cushion_observations, first_cushion_explanation
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -56,6 +56,7 @@ def build():
             raise RuntimeError(f"{scenario['id']}: {result.status}")
         payload = result.to_dict(60)
         payload["cushion_audit"] = cushion_observations(result)
+        payload["cushion_explanation"] = first_cushion_explanation(result) if scenario["id"]=="cut" else None
         payload["calibration_status"] = "uncalibrated"
         payload.update({k: scenario[k] for k in ("id","name","description","observe")})
         (output/f"{scenario['id']}.json").write_text(
