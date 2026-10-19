@@ -37,6 +37,7 @@ class Pocket:
     tangent: Vec2
     half_width: float
     depth: float
+    entry_depth: float = 0.0
 
     @property
     def gate(self):
@@ -51,7 +52,8 @@ class Outline:
 
 def validate_geometry(table):
     spec = table.pockets
-    values = (spec.corner_mouth,spec.side_mouth,spec.jaw_radius,spec.shelf_depth,spec.jaw_extension)
+    side_radius = spec.side_jaw_radius if spec.side_jaw_radius is not None else spec.jaw_radius
+    values = (spec.corner_mouth,spec.side_mouth,spec.jaw_radius,side_radius,spec.shelf_depth,spec.jaw_extension)
     if not all(isfinite(value) and value > 0 for value in values):
         raise ValueError("Pocket dimensions must be finite and positive")
     if spec.shelf_depth >= spec.jaw_extension:
@@ -59,11 +61,17 @@ def validate_geometry(table):
     corner = spec.corner_mouth/sqrt(2)
     if 2*corner >= table.width or corner+spec.side_mouth/2+2*spec.jaw_radius >= table.length/2:
         raise ValueError("Pocket openings overlap")
+    if spec.version == 'tangent-jaws-v2':
+        end = (spec.corner_mouth+2*spec.jaw_radius)/sqrt(2)-spec.jaw_radius
+        if 2*end >= table.width or end+spec.side_mouth/2+side_radius >= table.length/2:
+            raise ValueError('Rounded pocket transitions overlap')
 
 
 @lru_cache(maxsize=32)
 def outline(table):
     validate_geometry(table)
+    if table.pockets.version == 'tangent-jaws-v2':
+        return tangent_outline(table)
     length,width,spec = table.length,table.width,table.pockets
     radius,corner,half = spec.jaw_radius,spec.corner_mouth/sqrt(2),spec.side_mouth/2
     surfaces = [
@@ -95,6 +103,47 @@ def outline(table):
     return Outline(tuple(surfaces),tuple(pockets))
 
 
+def tangent_outline(table):
+    """Exact C1 union of flat noses and rounded capsule jaws.
+
+    A flat nose ends at the top tangent of its jaw circle. The channel
+    continues along the circle's other tangent. Radius does not change the
+    minimum throat opening. No guessed near-touching capsule junctions.
+    """
+    length,width,spec = table.length,table.width,table.pockets
+    corner_radius = spec.jaw_radius
+    side_radius = spec.side_jaw_radius if spec.side_jaw_radius is not None else corner_radius
+    end = (spec.corner_mouth+2*corner_radius)/sqrt(2)-corner_radius
+    left = length/2-spec.side_mouth/2-side_radius
+    right = length/2+spec.side_mouth/2+side_radius
+    surfaces = [
+        Surface('bottom-left',Vec2(end,0),Vec2(left,0),0),
+        Surface('bottom-right',Vec2(right,0),Vec2(length-end,0),0),
+        Surface('top-left',Vec2(end,width),Vec2(left,width),0),
+        Surface('top-right',Vec2(right,width),Vec2(length-end,width),0),
+        Surface('left',Vec2(0,end),Vec2(0,width-end),0),
+        Surface('right',Vec2(length,end),Vec2(length,width-end),0),
+    ]
+    diagonal,centre = 1/sqrt(2),(end-corner_radius)/2
+    descriptions = (
+        ('bottom-left',Vec2(centre,centre),Vec2(-diagonal,-diagonal),spec.corner_mouth,corner_radius),
+        ('bottom-middle',Vec2(length/2,-side_radius),Vec2(0,-1),spec.side_mouth,side_radius),
+        ('bottom-right',Vec2(length-centre,centre),Vec2(diagonal,-diagonal),spec.corner_mouth,corner_radius),
+        ('top-left',Vec2(centre,width-centre),Vec2(-diagonal,diagonal),spec.corner_mouth,corner_radius),
+        ('top-middle',Vec2(length/2,width+side_radius),Vec2(0,1),spec.side_mouth,side_radius),
+        ('top-right',Vec2(length-centre,width-centre),Vec2(diagonal,diagonal),spec.corner_mouth,corner_radius),
+    )
+    pockets = []
+    for name,mouth,outward,opening,radius in descriptions:
+        tangent = Vec2(-outward.y,outward.x)
+        pockets.append(Pocket(name,mouth,outward,tangent,opening/2,spec.shelf_depth,-radius))
+        for sign in (-1,1):
+            start = mouth+tangent*(sign*(opening/2+radius))
+            surfaces.append(Surface(f'jaw:{name}:{sign}',start,
+                                    start+outward*spec.jaw_extension,radius,'jaw'))
+    return Outline(tuple(surfaces),tuple(pockets))
+
+
 def validate_position(ball, table):
     geometry = outline(table)
     position = ball.position
@@ -105,8 +154,10 @@ def validate_position(ball, table):
         return
     for pocket in geometry.pockets:
         displacement = position-pocket.mouth
-        if (-SPACE_EPS <= displacement.dot(pocket.outward) <= pocket.depth+SPACE_EPS
-                and abs(displacement.dot(pocket.tangent)) <= pocket.half_width-ball.spec.radius+SPACE_EPS):
+        across_limit = (pocket.half_width-pocket.entry_depth if pocket.entry_depth < 0
+                        else pocket.half_width-ball.spec.radius)
+        if (pocket.entry_depth-SPACE_EPS <= displacement.dot(pocket.outward) <= pocket.depth+SPACE_EPS
+                and abs(displacement.dot(pocket.tangent)) <= across_limit+SPACE_EPS):
             return
     raise ValueError(f"球 {ball.id} 在可玩区域之外")
 

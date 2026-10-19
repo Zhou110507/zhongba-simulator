@@ -13,9 +13,10 @@ from .engine import simulate
 from .equipment import load_equipment, load_physics_profile
 from .model import Ball, PocketSpec, Vec2, Vec3, validate_scene
 from .pockets import geometry_dict, outline
+from .shot_analysis import first_contact_analysis
 
 ROOT = Path(__file__).resolve().parents[1]
-APP_VERSION = 'phase-b-playable-v2'
+APP_VERSION = 'phase-b-playable-v3'
 
 
 def _number(value, name):
@@ -97,6 +98,7 @@ class PlayService:
         complete = result.status=='stopped'
         final = tuple(replace(ball,velocity=Vec2(),omega=Vec3()) for ball in result.final)
         return {'result':result.to_dict(None),'compute_ms':elapsed,'complete':complete,
+                'contact_analysis':first_contact_analysis(result),
                 'next_scene':self.snapshot(final,shot) if complete else None,
                 'snapshot':self.snapshot(balls,shot),
                 'summary':{'potted':[ball.id for ball in result.final if ball.pocket is not None and
@@ -115,6 +117,8 @@ class PlayService:
                               Ball('1',Vec2(self.table.length/2,.45),spec=self.ball_spec)],ShotInput(270,.9)),
             ('draw','低杆练习 · 中距离',[Ball('cue',Vec2(.45,.6),spec=self.ball_spec),
                               Ball('1',Vec2(1.2,.6),spec=self.ball_spec)],ShotInput(0,2.8,0,-.5)),
+            ('draw-angle','低杆分离角 · 偏瞄 0.5°',[Ball('cue',Vec2(.45,.6),spec=self.ball_spec),
+                              Ball('1',Vec2(1.2,.6),spec=self.ball_spec)],ShotInput(.5,2.8,0,-.5)),
             ('follow','高杆练习 · 中距离',[Ball('cue',Vec2(.45,.6),spec=self.ball_spec),
                                 Ball('1',Vec2(1.2,.6),spec=self.ball_spec)],ShotInput(0,1.8,0,.5)),
             ('cushion','碰库与左右击点',[Ball('cue',Vec2(1.6,.4),spec=self.ball_spec)],ShotInput(10,1.8,.35,.25)),

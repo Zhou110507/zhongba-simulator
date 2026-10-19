@@ -18,7 +18,9 @@ jobs:
       - run: python -m tools.build_acceptance
       - run: python -m tools.verify_phase_b
       - run: python -m tools.audit_cloth
+      - run: python -m tools.audit_draw_angles
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: node --check web/app.js
+      - run: node --test tests/shot-guide.test.cjs

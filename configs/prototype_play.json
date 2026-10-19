@@ -2,21 +2,25 @@
   "schema_version": 1,
   "table_profile": "joy_q8_manufacturer",
   "pockets": {
-    "corner_mouth": 0.085,
-    "side_mouth": 0.085,
-    "jaw_radius": 0.008,
+    "corner_mouth": 0.084,
+    "side_mouth": 0.086,
+    "jaw_radius": 0.03,
     "shelf_depth": 0.045,
     "jaw_extension": 0.09,
-    "version": "experimental-rounded-jaws-v1",
-    "calibration_status": "experimental_pending_verified_drawing"
+    "version": "tangent-jaws-v2",
+    "calibration_status": "GB2008_mouth_reference_engineering_tangent_curves",
+    "side_jaw_radius": 0.04
   },
   "pocket_provenance": {
-    "source": "https://www.joybilliard.com/billiards-table/",
-    "corner_mouth": "85 mm borrowed as a prototype opening from the manufacturer single-value listing; measurement line and corner/side distinction unverified",
-    "side_mouth": "Engineering reuse of the same 85 mm value; NOT a verified JOY side-pocket width",
-    "jaw_radius": "8 mm experimental rounded capsule ends; NOT a standard or a JOY measurement",
-    "shelf_depth": "45 mm experimental capture-plane depth; NOT a JOY measurement",
-    "jaw_extension": "90 mm experimental channel; NOT a JOY measurement"
+    "source": "GB/T 22751-2008, table 1, Chinese table row (original scanned page checked)",
+    "scan_url": "https://i7.antpedia.com/standard/files/pdfs_ora/CN-GB/9c3/GB_T%2022751-2008_488.pdf",
+    "corner_mouth": "84 +/- 1 mm historical national-standard reference; current prototype uses 84 mm minimum throat width",
+    "side_mouth": "86 +/- 1 mm historical national-standard reference; current prototype uses 86 mm minimum throat width",
+    "jaw_radius": "Corner R30 mm engineering approximation, not a measured standard radius. C1 tangent to flat rail and channel.",
+    "side_jaw_radius": "Side R40 mm engineering approximation, not a measured standard radius. Distinct from corner jaws.",
+    "shelf_depth": "45 mm experimental capture-plane depth measured outward from throat plane; not a standard slate-cut depth",
+    "jaw_extension": "90 mm experimental channel; unchanged. Slate cut, metal pocket body and rubber nose radii are not interchangeable.",
+    "geometry": "Four identical mirrored corner pockets and two identical mirrored side pockets. Circles meet flat noses and channels tangentially; rendering and collision use the same surfaces."
   },
   "cue": {
     "effective_mass": 0.5,

@@ -14,7 +14,7 @@ def service():
     return PlayService()
 
 
-@pytest.mark.parametrize('preset_id',['corner','side','draw','follow','cushion','speed','free'])
+@pytest.mark.parametrize('preset_id',['corner','side','draw','draw-angle','follow','cushion','speed','free'])
 def test_each_playable_preset_finishes_using_the_shared_engine(service,preset_id):
     scene = next(preset['scene'] for preset in service.presets() if preset['id']==preset_id)
     original = deepcopy(scene)
