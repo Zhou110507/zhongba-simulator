@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "table_profile": "joy_q8_manufacturer",
+  "pockets": {
+    "corner_mouth": 0.085,
+    "side_mouth": 0.085,
+    "jaw_radius": 0.008,
+    "shelf_depth": 0.045,
+    "jaw_extension": 0.09,
+    "version": "experimental-rounded-jaws-v1",
+    "calibration_status": "experimental_pending_verified_drawing"
+  },
+  "pocket_provenance": {
+    "source": "https://www.joybilliard.com/billiards-table/",
+    "corner_mouth": "85 mm borrowed as a prototype opening from the manufacturer single-value listing; measurement line and corner/side distinction unverified",
+    "side_mouth": "Engineering reuse of the same 85 mm value; NOT a verified JOY side-pocket width",
+    "jaw_radius": "8 mm experimental rounded capsule ends; NOT a standard or a JOY measurement",
+    "shelf_depth": "45 mm experimental capture-plane depth; NOT a JOY measurement",
+    "jaw_extension": "90 mm experimental channel; NOT a JOY measurement"
+  },
+  "cue": {
+    "effective_mass": 0.5,
+    "restitution": 0.75,
+    "max_speed": 1.8,
+    "max_tip_offset": 0.55,
+    "version": "horizontal-impulse-v1-uncalibrated"
+  },
+  "cue_provenance": "Engineering defaults for a horizontal point impulse; effective cue mass, tip restitution and legal disk are uncalibrated. Positive tip_x is the shooter's right; positive tip_y is up. No cue squirt, elevation, jumping or masse model."
+}

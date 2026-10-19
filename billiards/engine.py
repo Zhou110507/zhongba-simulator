@@ -12,7 +12,7 @@ from math import isfinite
 
 import numpy as np
 
-from .model import Ball, Physics, Table, Vec2, validate_scene
+from .model import Ball, Physics, Table, Vec2, Vec3, validate_scene
 from .motion import Motion, SPEED_EPS, advance, describe
 from .cushion import CushionFailure, resolve_cushion
 
@@ -63,10 +63,10 @@ class Result:
         return tuple(advance(b, m, time-segment.start)
                      for b, m in zip(segment.balls, segment.motions))
 
-    def to_dict(self, sample_hz: float = 60) -> dict:
-        if not isfinite(sample_hz) or sample_hz <= 0:
+    def to_dict(self, sample_hz: float | None = 60) -> dict:
+        if sample_hz is not None and (not isfinite(sample_hz) or sample_hz <= 0):
             raise ValueError("Sampling frequency must be finite and positive")
-        times = list(np.arange(0, self.duration, 1/sample_hz)) + [self.duration]
+        times = list(np.arange(0, self.duration, 1/sample_hz)) + [self.duration] if sample_hz is not None else []
         return {"schema_version": 1, "engine_version": self.physics.version,
                 "status": self.status, "duration": self.duration,
                 "table": asdict(self.table), "physics": asdict(self.physics),
@@ -115,8 +115,14 @@ def real_roots(coefficients, horizon):
 def contact_candidates(balls, motions, table, horizon):
     candidates = []
     for i, b in enumerate(balls):
+        if b.pocket is not None:
+            continue
         a, r = motions[i].acceleration, b.spec.radius
-        walls = (
+        if table.pockets is not None:
+            from .pockets import boundary_candidates
+            candidates.extend(Candidate(time,kind,(i,),detail) for time,kind,detail in
+                              boundary_candidates(b,motions[i],table,horizon,real_roots))
+        walls = () if table.pockets is not None else (
             ("left", b.position.x-r, b.velocity.x, a.x),
             ("right", table.length-r-b.position.x, -b.velocity.x, -a.x),
             ("bottom", b.position.y-r, b.velocity.y, a.y),
@@ -132,6 +138,8 @@ def contact_candidates(balls, motions, table, horizon):
                     break
         for j in range(i+1, len(balls)):
             other = balls[j]
+            if other.pocket is not None:
+                continue
             dp = other.position-b.position
             dv = other.velocity-b.velocity
             da = motions[j].acceleration-a
@@ -179,11 +187,15 @@ def coupled_contacts(contacts, balls, table, physics):
         for i in c.indices:
             b = balls[i]
             for j, other in enumerate(balls):
-                if j not in c.indices and ((other.position-b.position).norm()
+                if other.pocket is None and j not in c.indices and ((other.position-b.position).norm()
                                           <= other.spec.radius+b.spec.radius+SPACE_EPS):
                     return True
             r, p = b.spec.radius, b.position
-            if min(p.x-r, p.y-r, table.length-r-p.x, table.width-r-p.y) <= SPACE_EPS:
+            if table.pockets is not None:
+                from .pockets import touches_surface
+                if touches_surface(b,table):
+                    return True
+            elif min(p.x-r, p.y-r, table.length-r-p.x, table.width-r-p.y) <= SPACE_EPS:
                 return True
     # Orthogonal frictionless rails at a rectangular corner commute; all other
     # shared-body contacts require a coupled solver and are explicitly rejected.
@@ -242,12 +254,22 @@ def simulate(balls, table=Table(), physics=Physics(), *, max_time=60.0, max_even
         for c in contacts:
             before = balls
             changed = list(balls)
-            if c.kind == "ball_ball":
+            if c.kind == "ball_pocket":
+                i = c.indices[0]
+                changed[i] = replace(balls[i],velocity=Vec2(),omega=Vec3(),pocket=c.detail)
+            elif c.kind == "ball_ball":
                 i, j = c.indices
                 changed[i], changed[j] = resolve_pair(balls[i], balls[j], physics.ball_restitution)
             else:
                 i = c.indices[0]
-                if physics.cushion_model == "frictionless":
+                if table.pockets is not None:
+                    from .pockets import resolve_surface
+                    try:
+                        changed[i] = resolve_surface(balls[i],c.detail,table,physics)
+                    except CushionFailure:
+                        return Result(initial,balls,table,physics,time,"cushion_model_failure",
+                                      tuple(events),tuple(segments))
+                elif physics.cushion_model == "frictionless":
                     changed[i] = resolve_wall(balls[i], c.detail, table, physics.cushion_restitution)
                 else:
                     try:

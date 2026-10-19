@@ -107,7 +107,16 @@ def solve_contact(state, restitution, mu_wall, mu_cloth, height_ratio, steps):
 def resolve_cushion(ball, name, table, physics):
     normals = {"left":Vec2(-1,0),"right":Vec2(1,0),
                "bottom":Vec2(0,-1),"top":Vec2(0,1)}
-    n = normals[name]
+    position = {"left":Vec2(ball.spec.radius,ball.position.y),
+                "right":Vec2(table.length-ball.spec.radius,ball.position.y),
+                "bottom":Vec2(ball.position.x,ball.spec.radius),
+                "top":Vec2(ball.position.x,table.width-ball.spec.radius)}[name]
+    return resolve_cushion_normal(ball,normals[name],physics,position)
+
+
+def resolve_cushion_normal(ball, n, physics, position=None):
+    if abs(n.norm()-1) > 1e-8:
+        raise ValueError("Cushion normal must be a unit vector pointing into the cushion")
     tangent = Vec2(n.y,-n.x)
     r = ball.spec.radius
     v,w = ball.velocity,ball.omega
@@ -118,10 +127,7 @@ def resolve_cushion(ball, name, table, physics):
                                   physics.cushion_contact_height_ratio,physics.cushion_steps)
     velocity = tangent*vx+n*vy
     xy_omega = tangent*(qx/r)+n*(qy/r)
-    p = ball.position
-    position = {"left":Vec2(r,p.y),"right":Vec2(table.length-r,p.y),
-                "bottom":Vec2(p.x,r),"top":Vec2(p.x,table.width-r)}[name]
-    result = replace(ball,position=position,velocity=velocity,
+    result = replace(ball,position=position or ball.position,velocity=velocity,
                      omega=Vec3(xy_omega.x,xy_omega.y,qz/r))
     if result.energy > ball.energy+1e-10*max(1,ball.energy):
         raise CushionFailure("Passive cushion created mechanical energy")

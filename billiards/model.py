@@ -55,6 +55,7 @@ class Ball:
     velocity: Vec2 = Vec2()
     omega: Vec3 = Vec3()
     spec: BallSpec = BallSpec()
+    pocket: str | None = None
 
     @property
     def slip(self):
@@ -70,10 +71,22 @@ class Ball:
 
 
 @dataclass(frozen=True)
+class PocketSpec:
+    corner_mouth: float = .085
+    side_mouth: float = .085
+    jaw_radius: float = .008
+    shelf_depth: float = .045
+    jaw_extension: float = .09
+    version: str = "experimental-rounded-jaws-v1"
+    calibration_status: str = "experimental_pending_verified_drawing"
+
+
+@dataclass(frozen=True)
 class Table:
     length: float = 2.540
     width: float = 1.270
     profile: str = "cbsa-2017-rectangular-test-bed"
+    pockets: PocketSpec | None = None
 
 
 @dataclass(frozen=True)
@@ -100,6 +113,9 @@ def validate_scene(balls, table, physics):
         raise ValueError("Ball IDs must be unique")
     if not all(isfinite(x) and x > 0 for x in (table.length, table.width)):
         raise ValueError("Table dimensions must be finite and positive")
+    if table.pockets is not None:
+        from .pockets import validate_geometry
+        validate_geometry(table)
     positive = (physics.gravity,)
     nonnegative = (physics.sliding_friction, physics.rolling_friction,
                    physics.spin_deceleration)
@@ -133,11 +149,18 @@ def validate_scene(balls, table, physics):
         r = b.spec.radius
         if r <= 0 or b.spec.mass <= 0:
             raise ValueError("Mass and radius must be positive")
-        if not (r <= b.position.x <= table.length-r and
-                r <= b.position.y <= table.width-r):
+        if b.pocket is not None:
+            if not isinstance(b.pocket,str) or not b.pocket or b.velocity != Vec2() or b.omega != Vec3():
+                raise ValueError("Pocketed balls must be stationary and identify a pocket")
+            continue
+        if table.pockets is not None:
+            from .pockets import validate_position
+            validate_position(b,table)
+        elif not (r <= b.position.x <= table.length-r and
+                  r <= b.position.y <= table.width-r):
             raise ValueError(f"Ball {b.id} is outside the cushion faces")
     for i, a in enumerate(balls):
         for b in balls[i+1:]:
-            if (a.position-b.position).norm() < a.spec.radius+b.spec.radius-1e-10:
+            if a.pocket is None and b.pocket is None and (a.position-b.position).norm() < a.spec.radius+b.spec.radius-1e-10:
                 raise ValueError(f"Balls {a.id} and {b.id} overlap")
 
