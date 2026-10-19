@@ -7,7 +7,7 @@ import mimetypes
 import threading
 from urllib.parse import unquote, urlsplit
 
-from .play import PlayService, ROOT
+from .play import APP_VERSION, PlayService, ROOT
 
 MAX_BODY = 65536
 
@@ -50,7 +50,7 @@ def make_handler(service):
                 self.send_json(200,service.config())
                 return
             if path=='/api/health':
-                self.send_json(200,{'status':'ok','app_version':'phase-b-playable-v1'})
+                self.send_json(200,{'status':'ok','app_version':APP_VERSION})
                 return
             if path in ('/','/play','/play/'):
                 target = service.root/'web'/'index.html'
@@ -135,7 +135,7 @@ def main():
             connection.request('GET','/api/health')
             response = connection.getresponse()
             data = json.loads(response.read())
-            if response.status==200 and data.get('app_version')=='phase-b-playable-v1':
+            if response.status==200 and data.get('app_version')==APP_VERSION:
                 import webbrowser
                 webbrowser.open(f'http://127.0.0.1:{options.port}/')
                 return

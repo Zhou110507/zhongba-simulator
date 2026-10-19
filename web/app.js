@@ -42,7 +42,9 @@ function syncShotControls() {
 }
 
 function updateShotLabels() {
-  $('power-value').textContent = `${Math.round(scene.shot.cue_speed / config.limits.max_cue_speed * 100)}%`;
+  const cueSpeed = scene.shot.cue_speed;
+  const strokeBand = cueSpeed >= 4.5 ? '冲球级' : cueSpeed >= 3 ? '强杆' : cueSpeed < 1 ? '轻推' : '常用档';
+  $('power-value').textContent = `${Math.round(cueSpeed / config.limits.max_cue_speed * 100)}% · ${strokeBand}`;
   $('cue-speed').textContent = `${scene.shot.cue_speed.toFixed(2)} m/s`;
   $('tip-x-value').textContent = `${scene.shot.tip_x.toFixed(2)} R`;
   $('tip-y-value').textContent = `${scene.shot.tip_y.toFixed(2)} R`;
@@ -331,12 +333,12 @@ function tick(now){
 async function boot(){
   try{
     config=await api('/api/config');const custom=document.createElement('option');custom.value='custom';custom.textContent='自定义场景';$('preset').replaceChildren(custom,...config.presets.map(preset=>{const option=document.createElement('option');option.value=preset.id;option.textContent=preset.name;return option;}));
-    let initial=config.presets[0].scene,presetId=config.presets[0].id,stored=null;try{stored=localStorage.getItem(STORAGE);}catch{}
-    if(stored){try{initial=(await api('/api/validate',JSON.parse(stored))).scene;presetId='custom';}catch{try{localStorage.setItem(STORAGE+'.backup',stored);}catch{}}}
+    let initial=config.presets[0].scene,presetId=config.presets[0].id,stored=null,oldVersion=false;try{stored=localStorage.getItem(STORAGE);}catch{}
+    if(stored){try{initial=(await api('/api/validate',JSON.parse(stored))).scene;presetId='custom';}catch{oldVersion=true;try{localStorage.setItem(STORAGE+'.backup',stored);}catch{}}}
     setScene(initial,presetId,false);$('canvas-empty').hidden=true;
-    $('model-detail').textContent=`研究用能量恢复参数 ${config.model.physics.cushion_restitution}；台呢滑动摩擦 ${config.model.physics.sliding_friction}。`;
+    $('model-detail').textContent=`研究用能量恢复参数 ${config.model.physics.cushion_restitution}；滑动摩擦 ${config.model.physics.sliding_friction}；滚动减速度系数 ${config.model.physics.rolling_friction}。`;
     $('build').textContent=`${config.app_version} · ${config.model_signature.slice(0,8)}`;
-    announce(active(cueBall())?'球桌已就绪。点击确定方向，调整力度和击点，然后出杆。':'已恢复上次场景。白球已落袋，点击台面空位重新摆放白球。');
+    announce(active(cueBall())?(oldVersion?'力度与台呢模型已更新，旧场景已在本机备份。先试“中力走台”或中距离低杆。':'球桌已就绪。50% 为中力，先试“中力走台”或调整击点出杆。'):'已恢复上次场景。白球已落袋，点击台面空位重新摆放白球。');
     requestAnimationFrame(tick);
   }catch(error){announce(`无法连接练习台服务：${error.message}。请运行“启动练习台.cmd”后刷新。`,true);$('canvas-empty').textContent='本地服务尚未就绪';}
 }

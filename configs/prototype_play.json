@@ -21,9 +21,40 @@
   "cue": {
     "effective_mass": 0.5,
     "restitution": 0.75,
-    "max_speed": 1.8,
+    "max_speed": 5.0,
     "max_tip_offset": 0.55,
-    "version": "horizontal-impulse-v1-uncalibrated"
+    "version": "horizontal-impulse-v2-playing-range"
   },
-  "cue_provenance": "Engineering defaults for a horizontal point impulse; effective cue mass, tip restitution and legal disk are uncalibrated. Positive tip_x is the shooter's right; positive tip_y is up. No cue squirt, elevation, jumping or masse model."
+  "cue_provenance": "Engineering defaults for a horizontal point impulse; effective cue mass, tip restitution and legal disk are uncalibrated. Positive tip_x is the shooter's right; positive tip_y is up. No cue squirt, elevation, jumping or masse model. Speed range revised to 0–5 m/s: 50% center hit launches about 3.30 m/s (7.4 mph), near Alciatore TP B.6 medium 7 mph; 75% about 4.95 m/s (11.1 mph), near fast 12 mph. This is a documented UI mapping, not a measured human stroke calibration. Source: https://drdavepoolinfo.com/technical_proofs/new/TP_B-6.pdf Direct cue-speed evidence and sample limits are in stroke_reference; 5 m/s is a conservative app cap near a measured break-shot sample, not the maximum possible human cue speed.",
+  "physics_profile": "general_pool_cloth_v1",
+  "stroke_reference": {
+    "definition": "Cue-tip / cue velocity immediately before ball impact, not cue-ball speed. Software bands are descriptive, not population percentiles.",
+    "max_speed_basis": "5.0 m/s conservative application cap, close to the 4.7 +/- 0.5 m/s break-shot sample; not an absolute human maximum. No increase to manufacture travel distance.",
+    "sources": [
+      {
+        "title": "Kong et al., ISB/JSB 2023, P01-30, printed page 614",
+        "url": "https://media.isbweb.org/images/documents/2025/archive_matterials_challis/fukuoka2023/isb_jsb2023_program_-_abstract_book_compressed_part2.pdf",
+        "page_in_pdf": 114,
+        "sample": "22 male active cue-sports players, mean experience 5.8 years, 8 nine-ball breaks each, 250 Hz motion capture",
+        "cue_tip_mean_m_s": 4.7,
+        "cue_tip_sd_m_s": 0.5
+      },
+      {
+        "title": "Kornfeind et al. 2015, Procedia Engineering 112:540-545",
+        "url": "https://doi.org/10.1016/j.proeng.2015.07.240",
+        "sample": "20 elite pool players, 18 follow/draw/stop/break tasks; discussion gives maximal follow/draw cue velocity about 4.5 m/s",
+        "maximal_follow_draw_approx_m_s": 4.5
+      },
+      {
+        "title": "Song et al., A biomechanical analysis of the upper limb on different snooker batting techniques, Table 2",
+        "url": "https://sprinz.aut.ac.nz/__data/assets/pdf_file/0020/202943/067_1391_Song.pdf",
+        "sample": "8 professional snooker players; prescribed follow/draw placement tasks, not all ordinary shots",
+        "follow_mean_m_s": 2.52,
+        "follow_sd_m_s": 1.21,
+        "draw_mean_m_s": 3.69,
+        "draw_sd_m_s": 0.61
+      }
+    ],
+    "interpretation": "Together these support practising at cue speeds around 1-3 m/s, stronger draw at 3-4.5 m/s, and a capped break-like endpoint near 5 m/s. These are software practice bands, not experimentally established universal limits."
+  }
 }

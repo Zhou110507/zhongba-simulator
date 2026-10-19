@@ -15,6 +15,7 @@ from .model import Ball, PocketSpec, Vec2, Vec3, validate_scene
 from .pockets import geometry_dict, outline
 
 ROOT = Path(__file__).resolve().parents[1]
+APP_VERSION = 'phase-b-playable-v2'
 
 
 def _number(value, name):
@@ -30,7 +31,7 @@ class PlayService:
         equipment = load_equipment(self.root/'configs'/'chinese_eight_ball.json',config['table_profile'])
         self.table = replace(equipment.table,pockets=PocketSpec(**config['pockets']))
         self.ball_spec = equipment.ball
-        self.physics = load_physics_profile(self.root/'configs'/'physics_profiles.json')
+        self.physics = load_physics_profile(self.root/'configs'/'physics_profiles.json',config['physics_profile'])
         self.cue = CueSpec(**config['cue'])
         self.model = {'table':asdict(self.table),'physics':asdict(self.physics),'cue':asdict(self.cue)}
         self.signature = sha256(json.dumps(self.model,sort_keys=True).encode()).hexdigest()[:16]
@@ -112,11 +113,12 @@ class PlayService:
                                 Ball('1',corner.mouth-corner.outward*.55,spec=self.ball_spec)],ShotInput(45,.9)),
             ('side','中袋直球',[Ball('cue',Vec2(self.table.length/2,.88),spec=self.ball_spec),
                               Ball('1',Vec2(self.table.length/2,.45),spec=self.ball_spec)],ShotInput(270,.9)),
-            ('draw','低杆练习',[Ball('cue',Vec2(.6,.63),spec=self.ball_spec),
-                              Ball('1',Vec2(.78,.63),spec=self.ball_spec)],ShotInput(0,1,0,-.5)),
-            ('follow','高杆练习',[Ball('cue',Vec2(.6,.63),spec=self.ball_spec),
-                                Ball('1',Vec2(.78,.63),spec=self.ball_spec)],ShotInput(0,1,0,.5)),
-            ('cushion','碰库与左右击点',[Ball('cue',Vec2(1.6,.4),spec=self.ball_spec)],ShotInput(10,.9,.35,.25)),
+            ('draw','低杆练习 · 中距离',[Ball('cue',Vec2(.45,.6),spec=self.ball_spec),
+                              Ball('1',Vec2(1.2,.6),spec=self.ball_spec)],ShotInput(0,2.8,0,-.5)),
+            ('follow','高杆练习 · 中距离',[Ball('cue',Vec2(.45,.6),spec=self.ball_spec),
+                                Ball('1',Vec2(1.2,.6),spec=self.ball_spec)],ShotInput(0,1.8,0,.5)),
+            ('cushion','碰库与左右击点',[Ball('cue',Vec2(1.6,.4),spec=self.ball_spec)],ShotInput(10,1.8,.35,.25)),
+            ('speed','中力走台 · 单球',[Ball('cue',Vec2(.4,.42),spec=self.ball_spec)],ShotInput(0,2.5,0,.4)),
             ('free','自由摆球',[Ball('cue',Vec2(.5,.55),spec=self.ball_spec),
                               Ball('1',Vec2(.95,.55),spec=self.ball_spec),
                               Ball('2',Vec2(1.5,.75),spec=self.ball_spec),
@@ -125,9 +127,12 @@ class PlayService:
         return [{'id':name,'name':label,'scene':self.snapshot(balls,shot)} for name,label,balls,shot in descriptions]
 
     def config(self):
-        return {'app_version':'phase-b-playable-v1','model_signature':self.signature,
+        return {'app_version':APP_VERSION,'model_signature':self.signature,
                 'model':deepcopy(self.model),'ball_spec':asdict(self.ball_spec),
                 'geometry':geometry_dict(self.table),'presets':self.presets(),
                 'limits':{'max_balls':16,'max_tip_offset':self.cue.max_tip_offset,
                           'max_cue_speed':self.cue.max_speed},
-                'calibration_status':'JOY / Liber Win target; dynamics and prototype pockets uncalibrated'}
+                'calibration_status':'Generic literature-bounded cloth tuning; table-specific dynamics and pocket geometry uncalibrated',
+                'cloth_reference':{'label':'通用台球 · 较快台面参考','sliding':self.physics.sliding_friction,
+                                   'rolling':self.physics.rolling_friction,
+                                   'source':'https://drdavepoolinfo.com/faq/physics/physical-properties/'}}

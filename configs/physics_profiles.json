@@ -15,7 +15,7 @@
       "label": "文献能量参数研究基准 · 未实桌标定",
       "calibration_status": "uncalibrated",
       "parameters": {
-        "sliding_friction": 0.20,
+        "sliding_friction": 0.2,
         "rolling_friction": 0.01,
         "spin_deceleration": 10.0,
         "ball_restitution": 0.95,
@@ -41,11 +41,11 @@
       "label": "双接触研究模型 · 未实桌标定",
       "calibration_status": "uncalibrated",
       "parameters": {
-        "sliding_friction": 0.20,
+        "sliding_friction": 0.2,
         "rolling_friction": 0.01,
         "spin_deceleration": 10.0,
         "ball_restitution": 0.95,
-        "cushion_restitution": 0.80,
+        "cushion_restitution": 0.8,
         "cushion_model": "coupled_impulse",
         "cushion_friction": 0.14,
         "cushion_contact_height_ratio": 1.4,
@@ -74,6 +74,41 @@
         "cushion_model": "coupled_impulse"
       },
       "model_source": "https://doi.org/10.1243/09544062JMES1964"
+    },
+    "general_pool_cloth_v1": {
+      "label": "通用台球 · 较快台面参考",
+      "calibration_status": "literature_bounded_tuning_not_table_specific",
+      "parameters": {
+        "sliding_friction": 0.18,
+        "rolling_friction": 0.007,
+        "spin_deceleration": 10.0,
+        "ball_restitution": 0.95,
+        "cushion_restitution": 0.98,
+        "cushion_model": "coupled_impulse",
+        "cushion_friction": 0.14,
+        "cushion_contact_height_ratio": 1.4,
+        "cushion_steps": 512,
+        "version": "general-pool-cloth-v1"
+      },
+      "provenance": {
+        "sliding_friction": {
+          "value": 0.18,
+          "basis": "Rounded lower end of measured snooker sliding interval 0.178–0.245 in Mathavan et al. 2010 section 3.2, reporting their high-speed-camera experiments. Transfer reference, not a pool-brand measurement.",
+          "source": "https://drdavepoolinfo.com/physics_articles/Mathavan_IMechE_2010.pdf"
+        },
+        "rolling_friction": {
+          "value": 0.007,
+          "basis": "Engineering selection toward faster cloth within Alciatore published pool range 0.005–0.015. Defined here as effective linear deceleration / g, not tangential force / normal force. NOT a directly measured value for this table.",
+          "source": "https://drdavepoolinfo.com/faq/physics/physical-properties/"
+        },
+        "spin_deceleration": {
+          "value": 10,
+          "basis": "Retained within published pool range 5–15 rad/s^2. Acts on vertical side spin only, never on draw/follow rotation.",
+          "source": "https://drdavepoolinfo.com/faq/physics/physical-properties/"
+        },
+        "other_parameters": "Retain v3 cushion and ball research values; no claim of a jointly measured table."
+      },
+      "scope": "Generic cloth reference and documented tuning; not restricted to JOY or Liber Win. Phase A retains its historical v3 baseline."
     }
   }
 }

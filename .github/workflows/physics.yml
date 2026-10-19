@@ -17,6 +17,7 @@ jobs:
       - run: python -m pytest -q
       - run: python -m tools.build_acceptance
       - run: python -m tools.verify_phase_b
+      - run: python -m tools.audit_cloth
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
