@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "checked_on": "2026-10-19",
+  "default_profile": "cbsa_2017",
+  "profiles": {
+    "cbsa_2017": {
+      "source": "https://cbsa.cssf.net.cn/annoucement/2017/0120/142126.html",
+      "source_version": "2017-01 revision, section 3.2",
+      "measurement": "playing area between cushion faces; not external cabinet size",
+      "length_m": 2.54,
+      "width_m": 1.27,
+      "dimension_tolerance_m": 0.009,
+      "ball_diameter_m": 0.05715,
+      "ball_diameter_tolerance_m": 0.00005,
+      "ball_mass_range_kg": [0.156, 0.17],
+      "nominal_mass_kg": 0.163,
+      "nominal_mass_status": "simulation choice within source range; not a prescribed exact mass",
+      "table_height_to_top_of_cushion_m": [0.8, 0.85]
+    },
+    "joy_q8_manufacturer": {
+      "source": "https://www.joybilliard.com/billiards-table/",
+      "length_m": 2.54,
+      "width_m": 1.26,
+      "external_size_m": [2.82, 1.54, 0.85],
+      "pocket_size_reported_m": 0.085,
+      "pocket_size_status": "manufacturer listing; corner/side and measurement line not specified, insufficient to reconstruct pocket geometry"
+    },
+    "wpa_heyball_2025": {
+      "source": "https://wpapool.com/wp-content/uploads/2025/08/250816-Rules-of-Heyball.pdf",
+      "source_version": "effective 2025-08-16, Chapter II, section 3, page 6",
+      "length_m": 2.54,
+      "width_m": 1.26,
+      "dimension_tolerance_m": 0.009,
+      "ball_diameter_m": 0.05715,
+      "ball_diameter_tolerance_m": 0.00005,
+      "ball_mass_range_kg": [0.156, 0.17]
+    }
+  },
+  "pocket_geometry": {
+    "status": "pending_verified_drawing",
+    "enabled_in_phase_a": false,
+    "corner": {
+      "mouth_width_m": null,
+      "throat_width_m": null,
+      "jaw_curve": null,
+      "tangent_points_m": null,
+      "shelf_depth_m": null,
+      "drop_boundary": null
+    },
+    "side": {
+      "mouth_width_m": null,
+      "throat_width_m": null,
+      "jaw_curve": null,
+      "tangent_points_m": null,
+      "shelf_depth_m": null,
+      "drop_boundary": null
+    },
+    "curve_types": ["circular_arcs", "sampled_profile", "parametric_curve"],
+    "note": "Do not infer jaw radius from mouth width. A pocket need not be one circular arc."
+  },
+  "national_standard": {
+    "id": "GB/T 22751-2008",
+    "status_source": "https://std.samr.gov.cn/gb/search/gbDetailed?id=71F772D7C874D3A7E05397BE0A0AB82A",
+    "public_text_portal": "https://openstd.samr.gov.cn/bzgk/std/newGbInfo?hcno=9BCDEEF58326A3AC72379A7113CBC87A",
+    "text_access": "official portal states text unavailable due to copyright; pocket drawing not verified"
+  }
+}

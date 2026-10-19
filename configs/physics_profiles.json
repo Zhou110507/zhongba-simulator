@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "default_profile": "uncalibrated_coupled_v2",
+  "calibration_target": {
+    "table_brand": "JOY / 乔氏",
+    "cloth_brand": "Liber Win / 利百文",
+    "candidate_table_model": "Q8",
+    "candidate_cloth_model": "8848",
+    "candidate_source": "https://www.joybilliard.com/billiards-table/",
+    "status": "target selected by user; model candidates from manufacturer; no measured dynamics yet",
+    "note": "Retain the previous test-bed geometry while comparing the 06 physics correction."
+  },
+  "profiles": {
+    "uncalibrated_coupled_v2": {
+      "label": "双接触研究模型 · 未实桌标定",
+      "calibration_status": "uncalibrated",
+      "parameters": {
+        "sliding_friction": 0.20,
+        "rolling_friction": 0.01,
+        "spin_deceleration": 10.0,
+        "ball_restitution": 0.95,
+        "cushion_restitution": 0.80,
+        "cushion_model": "coupled_impulse",
+        "cushion_friction": 0.14,
+        "cushion_contact_height_ratio": 1.4,
+        "cushion_steps": 512
+      },
+      "provenance": {
+        "sliding_friction": "Generic pool starting value, not a JOY/Liber Win measurement",
+        "rolling_friction": "Engineering placeholder, effective deceleration / g",
+        "spin_deceleration": "Engineering placeholder, rad/s^2",
+        "ball_restitution": "Engineering placeholder",
+        "cushion_restitution": "Engineering placeholder; v2 uses energetic restitution, not a prescribed normal speed ratio",
+        "cushion_friction": "Mathavan 2010 snooker experiment/model reference; not Chinese pool calibration",
+        "cushion_contact_height_ratio": "Mathavan 2010 h=7R/5 reference; not a verified JOY nose measurement"
+      },
+      "model_source": "https://doi.org/10.1243/09544062JMES1964"
+    },
+    "mathavan_snooker_reference": {
+      "label": "Mathavan 2010 文献对照 · 非中八实测",
+      "calibration_status": "literature_reference_other_equipment",
+      "parameters": {
+        "sliding_friction": 0.212,
+        "cushion_friction": 0.14,
+        "cushion_restitution": 0.98,
+        "cushion_contact_height_ratio": 1.4,
+        "cushion_model": "coupled_impulse"
+      },
+      "model_source": "https://doi.org/10.1243/09544062JMES1964"
+    }
+  }
+}
