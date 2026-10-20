@@ -20,9 +20,11 @@ jobs:
       - run: python -m tools.audit_cloth
       - run: python -m tools.audit_draw_angles
       - run: python -m tools.audit_aim
+      - run: python -m tools.verify_phase_c
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: node --check web/app.js
+      - run: node --check web/lab.js
       - run: node --test tests/shot-guide.test.cjs
       - run: node tools/audit_aim.cjs

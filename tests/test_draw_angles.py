@@ -1,4 +1,5 @@
 from math import radians, sin, cos, atan2, degrees, asin
+from dataclasses import replace
 
 import pytest
 
@@ -33,7 +34,9 @@ def test_draw_direction_matches_closed_form_equal_mass_collision_and_slip_recove
 def test_small_aim_error_is_magnified_by_ball_spacing_and_matches_independent_geometry():
     service=PlayService()
     cue=strike(Ball('cue',Vec2(10,10)),ShotInput(.5,2.8,0,-.5),service.cue)
-    result=simulate([cue,Ball('1',Vec2(10.75,10))],Table(100,100),service.physics,max_time=120)
+    # Preserve the accepted phase-B geometric/frictionless reference explicitly.
+    result=simulate([cue,Ball('1',Vec2(10.75,10))],Table(100,100),
+                    replace(service.physics,ball_contact_model='frictionless'),max_time=120)
     data=first_contact_analysis(result)
     assert data['aim_offset_deg']==pytest.approx(.5)
     expected_cut=degrees(asin(.75*sin(radians(.5))/(2*cue.spec.radius)))

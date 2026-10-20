@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>旋转与碰撞实验台 · 中八</title><link rel="stylesheet" href="/assets/style.css"><link rel="stylesheet" href="/assets/lab.css"><script src="/assets/lab.js" defer></script></head>
+<body><main>
+<header class="header"><div class="brand"><span class="brand-ball">ω</span><div><div class="eyebrow">ZHONGBA / PHYSICS LAB</div><h1>旋转与碰撞<span>对照实验台</span></h1></div></div><a href="/" class="back-link">← 返回练习台</a></header>
+<p class="message" id="lab-status" role="status">正在连接实验台…</p>
+<div class="lab-layout"><section>
+<div class="card"><div class="section-title"><h2>接触附近 · 前 0.25 秒</h2><span class="muted">同引擎实际轨迹 · 等比例</span></div><canvas id="close-view" width="1100" height="420" aria-label="接触附近的实际轨迹对照"></canvas><div id="legend" class="legend"></div><p class="hint">实线为白球，虚线为目标球；颜色区分模型。初态设在接触瞬间，速度和旋转比不等于杆头速度与击点。</p></div>
+<div id="results" class="lab-results" aria-live="polite"></div>
+<div class="card"><div class="section-title"><h2>完整单杆轨迹</h2><span id="duration" class="muted"></span></div><canvas id="whole-view" width="1100" height="600" aria-label="完整单杆的物理轨迹对照"></canvas><p class="hint" id="scope">正在载入模型范围。</p></div>
+</section><aside>
+<section class="card"><div class="section-title"><h2>实验初态</h2><span class="pill">接触瞬间</span></div>
+<label class="lab-field" for="experiment">参考实验<select id="experiment"><option value="throw">半球 · 碰薄带偏</option><option value="side">正碰 · 侧旋传递</option><option value="gear">半球 · 齿合抵消</option><option value="follow">半球 · 高杆对照</option><option value="draw">小角度 · 低杆对照</option><option value="rail">直库 · 左右旋对照</option></select></label>
+<label class="lab-field" for="speed">碰前球速 / m/s<input id="speed" type="number" min=".1" max="3.5" step=".05" value="1.341"></label>
+<label class="lab-field" for="cut">切角（碰库时为入射角）/ °<input id="cut" type="number" min="0" max="70" step="1" value="30"></label>
+<label class="lab-field" for="follow">高低旋比 Rω / v<input id="follow" type="number" min="-1.5" max="1.5" step=".05" value="0"></label>
+<label class="lab-field" for="side">侧旋比 Rωz / v<input id="side" type="number" min="-1.5" max="1.5" step=".05" value="0"></label>
+<p class="hint">高低旋比 +1 为自然滚动，0 为碰撞瞬间无高低旋，负值为倒旋。侧旋正负沿台面 z 轴定义。这里允许设定碰撞初态，不表示任意静止出杆都能产生该组合。</p>
+<button id="run" class="primary">运行对照实验</button><p id="model-id" class="hint"></p>
+</section>
+<section class="card calibration"><div class="section-title"><h2>测量数据标定</h2></div><p class="hint">导入本机 JSON 测量，估计滑动摩擦、滚动阻力、自旋衰减或球球法向恢复系数。结果仅供核查和导出，不会自动覆盖当前模型。</p><label class="lab-field">测量文件<input id="measurement-file" type="file" accept="application/json,.json"></label><button id="fit" disabled>拟合测量数据</button><p id="fit-status" class="hint" role="status">尚未载入数据。</p><div id="fit-results"></div><button id="export-fit" disabled>导出拟合结果</button><a href="/assets/calibration-example.json" download="calibration-example.json" class="back-link">下载合成示例（非实测）↗</a></section>
+</aside></div><footer><span>第三阶段 · 旋转与桌面精度</span><span>文献参考模型；尚未联合实桌标定</span><span id="build"></span></footer></main></body></html>

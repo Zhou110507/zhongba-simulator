@@ -107,6 +107,12 @@ class Physics:
     cushion_contact_height_ratio: float = 1.4  # h/R, research reference, not a verified CBSA dimension
     cushion_steps: int = 512
     version: str = "phase-a-energetic-baseline-v3"
+    ball_contact_model: str = "frictionless"
+    ball_friction_model: str = "alciatore"
+    ball_friction: float = .06
+    ball_friction_a: float = .009951
+    ball_friction_b: float = .108
+    ball_friction_c: float = 1.088
 
 
 def validate_scene(balls, table, physics):
@@ -133,6 +139,15 @@ def validate_scene(balls, table, physics):
         raise ValueError("Restitution must be between zero and one")
     if physics.cushion_model not in ("frictionless", "coupled_impulse"):
         raise ValueError("Unknown cushion model")
+    if physics.ball_contact_model not in ('frictionless','projected_throw'):
+        raise ValueError('Unknown ball contact model')
+    if physics.ball_friction_model not in ('constant','alciatore'):
+        raise ValueError('Unknown ball friction model')
+    if not all(isfinite(x) and x>=0 for x in (physics.ball_friction,physics.ball_friction_a,
+                                             physics.ball_friction_b,physics.ball_friction_c)):
+        raise ValueError('Ball friction parameters must be finite and nonnegative')
+    if max(physics.ball_friction,physics.ball_friction_a+physics.ball_friction_b)>1:
+        raise ValueError('Ball friction coefficient must not exceed one')
     if not isfinite(physics.cushion_friction) or physics.cushion_friction < 0:
         raise ValueError("Cushion friction must be finite and nonnegative")
     if physics.cushion_model == "coupled_impulse":

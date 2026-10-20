@@ -109,6 +109,51 @@
         "other_parameters": "Retain v3 cushion and ball research values; no claim of a jointly measured table."
       },
       "scope": "Generic cloth reference and documented tuning; not restricted to JOY or Liber Win. Phase A retains its historical v3 baseline."
+    },
+    "general_pool_spin_v1": {
+      "label": "通用台面与球球旋转摩擦参考",
+      "calibration_status": "literature_bounded_tuning_not_table_specific",
+      "parameters": {
+        "sliding_friction": 0.18,
+        "rolling_friction": 0.007,
+        "spin_deceleration": 10.0,
+        "ball_restitution": 0.95,
+        "cushion_restitution": 0.98,
+        "cushion_model": "coupled_impulse",
+        "cushion_friction": 0.14,
+        "cushion_contact_height_ratio": 1.4,
+        "cushion_steps": 512,
+        "version": "general-pool-spin-v1",
+        "ball_contact_model": "projected_throw",
+        "ball_friction_model": "alciatore",
+        "ball_friction": 0.06,
+        "ball_friction_a": 0.009951,
+        "ball_friction_b": 0.108,
+        "ball_friction_c": 1.088
+      },
+      "provenance": {
+        "sliding_friction": {
+          "value": 0.18,
+          "basis": "Rounded lower end of measured snooker sliding interval 0.178–0.245 in Mathavan et al. 2010 section 3.2, reporting their high-speed-camera experiments. Transfer reference, not a pool-brand measurement.",
+          "source": "https://drdavepoolinfo.com/physics_articles/Mathavan_IMechE_2010.pdf"
+        },
+        "rolling_friction": {
+          "value": 0.007,
+          "basis": "Engineering selection toward faster cloth within Alciatore published pool range 0.005–0.015. Defined here as effective linear deceleration / g, not tangential force / normal force. NOT a directly measured value for this table.",
+          "source": "https://drdavepoolinfo.com/faq/physics/physical-properties/"
+        },
+        "spin_deceleration": {
+          "value": 10,
+          "basis": "Retained within published pool range 5–15 rad/s^2. Acts on vertical side spin only, never on draw/follow rotation.",
+          "source": "https://drdavepoolinfo.com/faq/physics/physical-properties/"
+        },
+        "other_parameters": "Retain v3 cushion and ball research values; no claim of a jointly measured table.",
+        "ball_friction": {
+          "source": "https://drdavepoolinfo.com/technical_proofs/new/TP_A-14.pdf",
+          "basis": "Equations 5-17, p4 speed fit: mu=a+b*exp(-c*surface_slip), a=.009951, b=.108, c=1.088. Marlow data as reproduced and fitted by Alciatore; not new original measurements. Horizontal projection only; vertical ball contact impulse and draw/follow spin transfer omitted."
+        }
+      },
+      "scope": "Projected horizontal throw and z spin transfer, including 3D surface-slip speed. Historical cloth/cushion settings retained. Not a full 3D collision or jointly calibrated real table."
     }
   }
 }

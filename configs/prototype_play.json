@@ -36,7 +36,7 @@
     "version": "horizontal-impulse-v2-playing-range"
   },
   "cue_provenance": "Engineering defaults for a horizontal point impulse; effective cue mass, tip restitution and legal disk are uncalibrated. Positive tip_x is the shooter's right; positive tip_y is up. No cue squirt, elevation, jumping or masse model. Speed range revised to 0–5 m/s: 50% center hit launches about 3.30 m/s (7.4 mph), near Alciatore TP B.6 medium 7 mph; 75% about 4.95 m/s (11.1 mph), near fast 12 mph. This is a documented UI mapping, not a measured human stroke calibration. Source: https://drdavepoolinfo.com/technical_proofs/new/TP_B-6.pdf Direct cue-speed evidence and sample limits are in stroke_reference; 5 m/s is a conservative app cap near a measured break-shot sample, not the maximum possible human cue speed.",
-  "physics_profile": "general_pool_cloth_v1",
+  "physics_profile": "general_pool_spin_v1",
   "stroke_reference": {
     "definition": "Cue-tip / cue velocity immediately before ball impact, not cue-ball speed. Software bands are descriptive, not population percentiles.",
     "max_speed_basis": "5.0 m/s conservative application cap, close to the 4.7 +/- 0.5 m/s break-shot sample; not an absolute human maximum. No increase to manufacture travel distance.",

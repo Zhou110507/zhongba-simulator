@@ -361,6 +361,7 @@ function updateContactReadout() {
   const recovery=data.observed_return_angle_deg;
   const spin=data.backspin_speed_ratio>0 ? `碰前倒旋比 ${data.backspin_speed_ratio.toFixed(2)}` : data.backspin_speed_ratio<0 ? '碰前已为前旋' : '碰前无高低旋转';
   $('contact-analysis').textContent=`第一碰：触球切角 ${data.cut_angle_deg.toFixed(2)}° · ${spin}${recovery!==null ? ` · ${data.backspin_speed_ratio>0 ? '回拉偏角' : '恢复滚动方向距回头线'} ${recovery.toFixed(2)}°（相对入射反向）` : ' · 下一次接触发生前未记录到滑动结束，不能直接拿停点估算分离角'}。`;
+  if(data.impact)$('contact-analysis').textContent+=` 目标球带偏 ${data.impact.throw_angle_deg.toFixed(2)}° · 碰后侧旋 ${data.impact.target_spin_after_rad_s.toFixed(1)} rad/s。`;
 }
 
 function drawTip() {
@@ -433,9 +434,9 @@ async function boot(){
     let initial=config.presets[0].scene,presetId=config.presets[0].id,stored=null,oldVersion=false;try{stored=localStorage.getItem(STORAGE);}catch{}
     if(stored){try{initial=(await api('/api/validate',JSON.parse(stored))).scene;presetId='custom';}catch{oldVersion=true;try{localStorage.setItem(STORAGE+'.backup',stored);}catch{}}}
     setScene(initial,presetId,false);$('canvas-empty').hidden=true;
-    $('model-detail').textContent=`研究用能量恢复参数 ${config.model.physics.cushion_restitution}；滑动摩擦 ${config.model.physics.sliding_friction}；滚动减速度系数 ${config.model.physics.rolling_friction}。`;
+    $('model-detail').textContent=`研究用能量恢复参数 ${config.model.physics.cushion_restitution}；滑动摩擦 ${config.model.physics.sliding_friction}；滚动减速度系数 ${config.model.physics.rolling_friction}。球球摩擦随表面滑速变化，含水平带偏和侧旋传递；暂不含碰撞竖直冲量或高低旋转移。`;
     $('build').textContent=`${config.app_version} · ${config.model_signature.slice(0,8)}`;
-    announce(active(cueBall())?(oldVersion?'两个中袋已向内调整，旧参数场景已在本机备份。':'球桌已就绪。虚线白球随瞄准即时更新，可直接调整方向试打。'):'已恢复上次场景。白球已落袋，点击台面空位重新摆放白球。');
+    announce(active(cueBall())?(oldVersion?'旋转碰撞模型已更新，旧参数场景已在本机备份。':'球桌已就绪，可试打侧旋传递与碰薄带偏，或进入旋转实验台对照。'):'已恢复上次场景。白球已落袋，点击台面空位重新摆放白球。');
     requestAnimationFrame(tick);
   }catch(error){announce(`无法连接练习台服务：${error.message}。请运行“启动练习台.cmd”后刷新。`,true);$('canvas-empty').textContent='本地服务尚未就绪';}
 }

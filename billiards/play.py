@@ -16,7 +16,7 @@ from .pockets import geometry_dict, outline
 from .shot_analysis import first_contact_analysis
 
 ROOT = Path(__file__).resolve().parents[1]
-APP_VERSION = 'phase-b-playable-v6'
+APP_VERSION = 'phase-c-spin-v1'
 
 
 def _number(value, name):
@@ -123,6 +123,10 @@ class PlayService:
                                 Ball('1',Vec2(1.2,.6),spec=self.ball_spec)],ShotInput(0,1.8,0,.5)),
             ('cushion','碰库与左右击点',[Ball('cue',Vec2(1.6,.4),spec=self.ball_spec)],ShotInput(10,1.8,.35,.25)),
             ('speed','中力走台 · 单球',[Ball('cue',Vec2(.4,.42),spec=self.ball_spec)],ShotInput(0,2.5,0,.4)),
+            ('side-transfer','侧旋传递 · 正碰',[Ball('cue',Vec2(.65,.6),spec=self.ball_spec),
+                              Ball('1',Vec2(1.2,.6),spec=self.ball_spec)],ShotInput(0,1.8,.45,0)),
+            ('throw','碰薄带偏 · 近半球',[Ball('cue',Vec2(.65,.6),spec=self.ball_spec),
+                              Ball('1',Vec2(1.2,.628575),spec=self.ball_spec)],ShotInput(0,1.8,0,0)),
             ('free','自由摆球',[Ball('cue',Vec2(.5,.55),spec=self.ball_spec),
                               Ball('1',Vec2(.95,.55),spec=self.ball_spec),
                               Ball('2',Vec2(1.5,.75),spec=self.ball_spec),

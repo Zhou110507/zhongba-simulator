@@ -1,6 +1,6 @@
 """Continuous collision detection for isolated sphere contacts and flat rails.
 
-Sphere contacts are frictionless; cushions optionally couple spin and friction.
+Sphere contacts optionally include projected throw and vertical-axis spin transfer.
 Coupled multi-contact
 and zero-speed persistent contacts return explicit unsupported statuses. They
 are not silently resolved in arbitrary object order.
@@ -15,6 +15,7 @@ import numpy as np
 from .model import Ball, Physics, Table, Vec2, Vec3, validate_scene
 from .motion import Motion, SPEED_EPS, advance, describe
 from .cushion import CushionFailure, resolve_cushion
+from .ball_contact import resolve_ball_contact
 
 SPACE_EPS = 1e-9
 TIME_EPS = 1e-10
@@ -268,7 +269,7 @@ def simulate(balls, table=Table(), physics=Physics(), *, max_time=60.0, max_even
                 changed[i] = replace(balls[i],velocity=Vec2(),omega=Vec3(),pocket=c.detail)
             elif c.kind == "ball_ball":
                 i, j = c.indices
-                changed[i], changed[j] = resolve_pair(balls[i], balls[j], physics.ball_restitution)
+                changed[i], changed[j] = resolve_ball_contact(balls[i], balls[j], physics)
             else:
                 i = c.indices[0]
                 if table.pockets is not None:

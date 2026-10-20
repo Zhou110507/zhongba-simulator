@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "source": "test-generated synthetic values, never real table measurements",
+  "data_origin": "synthetic",
+  "records": [
+    {
+      "kind": "rolling_stop",
+      "speed_m_s": 0.5,
+      "distance_m": 1.8202999854375999
+    },
+    {
+      "kind": "rolling_stop",
+      "speed_m_s": 1,
+      "distance_m": 7.281199941750399
+    },
+    {
+      "kind": "rolling_stop",
+      "speed_m_s": 1.5,
+      "distance_m": 16.3826998689384
+    },
+    {
+      "kind": "slide_to_roll",
+      "speed_m_s": 0.6,
+      "radius_m": 0.028575,
+      "forward_omega_rad_s": -20.99737532808399,
+      "time_s": 0.19416533178001066
+    },
+    {
+      "kind": "slide_to_roll",
+      "speed_m_s": 1,
+      "radius_m": 0.028575,
+      "forward_omega_rad_s": -34.99562554680665,
+      "time_s": 0.32360888630001783
+    },
+    {
+      "kind": "slide_to_roll",
+      "speed_m_s": 1.5,
+      "radius_m": 0.028575,
+      "forward_omega_rad_s": -52.493438320209975,
+      "time_s": 0.4854133294500267
+    },
+    {
+      "kind": "spin_decay",
+      "initial_abs_omega_rad_s": 50,
+      "final_abs_omega_rad_s": 40,
+      "time_s": 1
+    },
+    {
+      "kind": "spin_decay",
+      "initial_abs_omega_rad_s": 50,
+      "final_abs_omega_rad_s": 30,
+      "time_s": 2
+    },
+    {
+      "kind": "spin_decay",
+      "initial_abs_omega_rad_s": 50,
+      "final_abs_omega_rad_s": 20,
+      "time_s": 3
+    },
+    {
+      "kind": "normal_ball_collision",
+      "approach_speed_m_s": 0.5,
+      "separation_speed_m_s": 0.475
+    },
+    {
+      "kind": "normal_ball_collision",
+      "approach_speed_m_s": 1,
+      "separation_speed_m_s": 0.95
+    },
+    {
+      "kind": "normal_ball_collision",
+      "approach_speed_m_s": 2,
+      "separation_speed_m_s": 1.9
+    }
+  ]
+}

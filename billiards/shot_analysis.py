@@ -3,6 +3,7 @@
 from math import atan2, degrees
 
 from .model import Vec2
+from .ball_contact import impact_report
 
 
 def angle(a, b):
@@ -39,6 +40,7 @@ def first_contact_analysis(result):
     initial_cue = next(b for b in result.initial if b.id=='cue')
     initial_target = next(b for b in result.initial if b.id==target.id)
     return {'target':target.id,'time_s':hit.time,
+            'impact':impact_report(cue,target,target_after,result.physics),
             'aim_offset_deg':angle(initial_cue.velocity,initial_target.position-initial_cue.position),
             'cut_angle_deg':angle(incoming,normal),'backspin_speed_ratio':ratio,
             'immediate_direction_deg':angle(incoming,after.velocity),

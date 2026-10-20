@@ -155,6 +155,23 @@ def test_local_api_serves_ui_config_and_a_real_shot(server,service):
     assert json.loads(body)['summary']['potted'] == ['1']
 
 
+def test_lab_and_calibration_endpoints_keep_profile_state_immutable(server,service):
+    original=deepcopy(service.model)
+    status,_,body=request(server,'GET','/lab')
+    assert status==200 and '旋转与碰撞' in body.decode('utf-8')
+    status,_,body=request(server,'GET','/assets/calibration-example.json')
+    measurements=json.loads(body)
+    assert status==200 and measurements['data_origin']=='synthetic'
+    status,_,body=request(server,'POST','/api/lab',json.dumps(dict(kind='ball',speed=1.341,cut=30,follow=0,side=0)).encode())
+    assert status==200 and all(v['complete'] for v in json.loads(body)['variants'])
+    status,_,body=request(server,'POST','/api/calibration',json.dumps(measurements).encode())
+    assert status==200 and json.loads(body)['parameters']['rolling_friction']==pytest.approx(.007)
+    assert service.model==original
+    for endpoint in ('/api/lab','/api/calibration'):
+        status,_,_=request(server,'POST',endpoint,b'{}')
+        assert status==400
+
+
 def test_api_rejects_bad_payloads_and_cross_origin_requests(server,service):
     body = json.dumps(service.presets()[0]['scene']).encode()
     assert request(server,'POST','/api/shot',body,{'Origin':'https://example.com'})[0]==403

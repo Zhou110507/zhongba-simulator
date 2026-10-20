@@ -54,6 +54,8 @@ def make_handler(service):
                 return
             if path in ('/','/play','/play/'):
                 target = service.root/'web'/'index.html'
+            elif path=='/lab':
+                target = service.root/'web'/'lab.html'
             elif path.startswith('/assets/'):
                 base = (service.root/'web').resolve()
                 target = (base/path.removeprefix('/assets/')).resolve()
@@ -84,7 +86,7 @@ def make_handler(service):
                 self.send_json(403,{'error':'仅接受本机练习页面的请求'})
                 return
             path = urlsplit(self.path).path
-            if path not in ('/api/validate','/api/shot'):
+            if path not in ('/api/validate','/api/shot','/api/lab','/api/calibration'):
                 self.send_json(404,{'error':'未知接口'})
                 return
             if self.headers.get_content_type() != 'application/json':
@@ -100,7 +102,14 @@ def make_handler(service):
                     self.send_json(503,{'error':'计算繁忙，请稍后重试'})
                     return
                 try:
-                    response = service.shoot(data) if path=='/api/shot' else service.validate(data)
+                    if path=='/api/lab':
+                        from .physics_lab import run_experiment
+                        response=run_experiment(service,data)
+                    elif path=='/api/calibration':
+                        from .calibration import fit_measurements
+                        response=fit_measurements(data)
+                    else:
+                        response = service.shoot(data) if path=='/api/shot' else service.validate(data)
                 finally:
                     jobs.release()
                 self.send_json(200,response)
