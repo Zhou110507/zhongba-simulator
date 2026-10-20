@@ -203,6 +203,31 @@ def test_launcher_reuses_its_existing_server_without_starting_a_second_one(serve
     assert opened == [f'http://127.0.0.1:{port}/']
 
 
+def test_inverse_http_job_can_be_polled_and_cancelled_without_blocking_shots(server,service):
+    from time import monotonic, sleep
+    data = dict(scene=next(p['scene'] for p in service.presets() if p['id']=='draw'),
+                target='1',goal=dict(x=.7,y=.6,radius=.06),seconds=30,evaluations=1000)
+    body=json.dumps(data).encode()
+    assert request(server,'POST','/api/plan/start',body,{'Origin':'https://example.com'})[0]==403
+    assert request(server,'POST','/api/plan/start',b'[]')[0]==400
+    status,_,raw=request(server,'POST','/api/plan/start',body)
+    value=json.loads(raw);assert status==200 and value['status']=='running'
+    job=json.dumps({'id':value['id']}).encode()
+    assert request(server,'POST','/api/plan/status',job)[0]==200
+    assert request(server,'POST','/api/plan/cancel',job)[0]==200
+    deadline=monotonic()+3
+    while monotonic()<deadline:
+        status,_,raw=request(server,'POST','/api/plan/status',job)
+        value=json.loads(raw)
+        if value['status']!='running':break
+        sleep(.01)
+    assert value['status']=='cancelled' and value['result']['solutions']==[]
+    assert request(server,'POST','/api/plan/status',b'{"id":"missing"}')[0]==400
+    assert request(server,'POST','/api/shot',json.dumps(data['scene']).encode())[0]==200
+    for asset in ('planner.js','planner.css'):
+        assert request(server,'GET','/assets/'+asset)[0]==200
+
+
 def test_rule_and_free_mode_http_contracts(server):
     status,_,body=request(server,'GET','/api/rules/config')
     config=json.loads(body)

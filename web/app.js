@@ -130,6 +130,7 @@ function refreshUI() {
   for(let i=Math.min(lo,eventCursor);i<Math.max(lo,eventCursor);i++)eventRows[i].classList.toggle('active',i<lo);eventCursor=lo;
   canvas.style.cursor = fired ? 'default' : mode === 'edit' ? 'grab' : 'crosshair';
   window.TableModes?.refresh();
+  window.ShotPlanner?.refresh();
 }
 
 function populateEvents() {
@@ -326,6 +327,7 @@ function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(background,0,0);
   const traceTime=fired?time:record?.result.duration||0;
   window.TableModes?.drawMarkings(map);
+  window.ShotPlanner?.drawGoal(map);
   const showTrails=Boolean(record&&(window.TableModes?.showTrails()??$('trails').checked));
   canvas.dataset.trails=String(showTrails);
   if(showTrails){
@@ -403,6 +405,7 @@ function drawTip() {
 
 canvas.addEventListener('pointerdown',event=>{
   if(!scene||locked()||event.button!==0)return;canvas.focus();const position=pointerPosition(event);
+  if(window.ShotPlanner?.pickGoal(position))return;
   if(pending){placeBall(pending,position,!scene.balls.some(ball=>ball.id===pending));return;}
   if(mode==='aim'){queueAim(position);canvas.setPointerCapture(event.pointerId);drag={aim:true};return;}
   const ball=scene.balls.filter(active).find(ball=>Math.hypot(ball.position.x-position.x,ball.position.y-position.y)<ball.spec.radius*1.6);

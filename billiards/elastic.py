@@ -21,6 +21,10 @@ class ElasticFailure(RuntimeError):
     pass
 
 
+class ElasticCancelled(ElasticFailure):
+    pass
+
+
 @dataclass(frozen=True)
 class ContactStep:
     """Keep the dense integrator state; materialize audit objects only on demand."""
@@ -106,7 +110,7 @@ def nearby_network(contacts,balls,margin=.001):
     return False
 
 
-def burst(balls,physics,*,limit=.008,step=None):
+def burst(balls,physics,*,limit=.008,step=None,cancel=None,record_segments=True):
     """Return (elapsed, final, microsegments, contact-onsets).
 
     Integrate all active balls together, never project a compressed rack into
@@ -144,6 +148,7 @@ def burst(balls,physics,*,limit=.008,step=None):
         return tuple(changed)
     h=step or physics.elastic_step;elapsed=0.;segments=[];onsets=[];seen=set();initial_energy=sum(b.energy for b in balls)
     while elapsed<limit-1e-14:
+        if cancel is not None and cancel():raise ElasticCancelled('Contact cancelled')
         dt=min(h,limit-elapsed)
         a,az,_,_=force(p,v,wz)
         am,azm,overlap,fn=force(p+v*(dt/2)+a*(dt*dt/8),v+a*(dt/2),wz+az*(dt/2))
@@ -151,7 +156,7 @@ def burst(balls,physics,*,limit=.008,step=None):
             key=(int(i[pair]),int(j[pair]))
             if key not in seen:
                 seen.add(key);onsets.append((elapsed,source[key[0]].id,source[key[1]].id,snapshot(p,v,wz)))
-        segments.append(ContactStep(elapsed,elapsed+dt,tuple(balls),tuple(order),p,v,wz,am,azm))
+        if record_segments:segments.append(ContactStep(elapsed,elapsed+dt,tuple(balls),tuple(order),p,v,wz,am,azm))
         p=p+v*dt+am*(dt*dt/2);v=v+am*dt;wz=wz+azm*dt;elapsed+=dt
         gap=np.sqrt(np.sum((p[j]-p[i])**2,axis=1))-diameter
         if np.min(gap)>=-1e-12 and seen:

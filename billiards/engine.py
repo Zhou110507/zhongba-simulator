@@ -56,6 +56,8 @@ class Result:
         if not isfinite(time) or time < -tolerance or time > self.duration+tolerance:
             raise ValueError("Time must be within the recorded simulation")
         time = max(0.0, min(time, self.duration))
+        if not self.segments and time < self.duration:
+            raise ValueError('Trajectory segments were not recorded; only final state and events are available')
         if time == self.duration or not self.segments:
             return self.final
         index = bisect_right([s.start for s in self.segments], time)-1
@@ -266,7 +268,12 @@ def island_touches_cushion(contacts,balls,table):
     return False
 
 
-def simulate(balls, table=Table(), physics=Physics(), *, max_time=60.0, max_events=10000):
+def simulate(balls, table=Table(), physics=Physics(), *, max_time=60.0, max_events=10000,cancel=None,record_segments=True):
+    """Forward solve; light recording keeps final/events, not replay samples.
+
+    A cooperative cancellation predicate is checked at event and Hertz steps.
+    Cancelled results are incomplete and must not be applied as a finished shot.
+    """
     balls = tuple(balls)
     validate_scene(balls, table, physics)
     if not isfinite(max_time) or max_time <= 0:
@@ -286,6 +293,9 @@ def simulate(balls, table=Table(), physics=Physics(), *, max_time=60.0, max_even
                 events.append(Event(0.0,'ball_pocket',(ball.id,),pocket,before,balls))
     time, iterations, status = 0.0, 0, "max_time"
     while True:
+        if cancel is not None and cancel():
+            status='cancelled'
+            break
         motions = tuple(describe(b, physics) for b in balls)
         if all(m.phase == "stationary" for m in motions):
             status = "stopped"
@@ -303,7 +313,7 @@ def simulate(balls, table=Table(), physics=Physics(), *, max_time=60.0, max_even
         dt = min([horizon] + [c.time for c in candidates])
         group = [c for c in candidates if abs(c.time-dt) <= GROUP_EPS]
         if dt > 0:
-            segments.append(Segment(time, time+dt, balls, motions))
+            if record_segments:segments.append(Segment(time, time+dt, balls, motions))
             balls = tuple(advance(b, m, dt) for b, m in zip(balls, motions))
         time += dt
         contacts = [c for c in group if c.kind != "transition"]
@@ -318,7 +328,7 @@ def simulate(balls, table=Table(), physics=Physics(), *, max_time=60.0, max_even
                     break
                 before=balls
                 plastic=touching_pairs(balls)
-                segments.append(Segment(time,time+step,balls,motions))
+                if record_segments:segments.append(Segment(time,time+step,balls,motions))
                 stepped=tuple(advance(b,m,step) for b,m in zip(balls,motions))
                 try:
                     stepped=project_positions(stepped)
@@ -334,11 +344,14 @@ def simulate(balls, table=Table(), physics=Physics(), *, max_time=60.0, max_even
             status = "unsupported_persistent_contact"
             break
         if physics.contact_solver=='hybrid_hertz' and contacts and all(c.kind=='ball_ball' for c in contacts):
-            from .elastic import nearby_network, burst, ElasticFailure
+            from .elastic import nearby_network, burst, ElasticFailure, ElasticCancelled
             if nearby_network(contacts,balls) and elastic_window_clear(balls,table,.008):
                 before=balls
                 try:
-                    elapsed,balls,micro,onsets=burst(balls,physics,limit=min(.008,max_time-time))
+                    elapsed,balls,micro,onsets=burst(balls,physics,limit=min(.008,max_time-time),cancel=cancel,record_segments=record_segments)
+                except ElasticCancelled:
+                    status='cancelled'
+                    break
                 except ElasticFailure:
                     status='elastic_model_failure'
                     break

@@ -19,6 +19,8 @@ def reject_constant(value):
 
 def make_handler(service):
     jobs = threading.BoundedSemaphore(2)
+    from .planner_jobs import PlannerJobs
+    planners = PlannerJobs(service, jobs)
     rules_service=PlayService(service.root,table_profile='cbsa_2017')
     from .game import GameStore, free_table
     games=GameStore(rules_service,service.root/'artifacts'/'rules'/'matches',compact=True)
@@ -103,7 +105,8 @@ def make_handler(service):
                 return
             path = urlsplit(self.path).path
             if path not in ('/api/validate','/api/shot','/api/lab','/api/calibration','/api/free-table',
-                            '/api/game/new','/api/game/get','/api/game/action','/api/game/preview'):
+                            '/api/game/new','/api/game/get','/api/game/action','/api/game/preview',
+                            '/api/plan/start','/api/plan/status','/api/plan/cancel'):
                 self.send_json(404,{'error':'未知接口'})
                 return
             if self.headers.get_content_type() != 'application/json':
@@ -115,6 +118,11 @@ def make_handler(service):
                     self.send_json(413,{'error':'场景数据为空或超过 64 KB'})
                     return
                 data = json.loads(self.rfile.read(length).decode('utf-8'),parse_constant=reject_constant)
+                # Control requests must remain available while a worker holds a CPU slot.
+                if path.startswith('/api/plan/'):
+                    response = planners.start(data) if path.endswith('/start') else planners.status(data, cancel=path.endswith('/cancel'))
+                    self.send_json(200, response)
+                    return
                 if not jobs.acquire(blocking=False):
                     self.send_json(503,{'error':'计算繁忙，请稍后重试'})
                     return
