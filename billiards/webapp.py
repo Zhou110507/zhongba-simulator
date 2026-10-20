@@ -106,7 +106,7 @@ def make_handler(service):
             path = urlsplit(self.path).path
             if path not in ('/api/validate','/api/shot','/api/lab','/api/calibration','/api/free-table',
                             '/api/game/new','/api/game/get','/api/game/action','/api/game/preview',
-                            '/api/plan/start','/api/plan/status','/api/plan/cancel'):
+                            '/api/plan/start','/api/plan/status','/api/plan/cancel','/api/plan/example'):
                 self.send_json(404,{'error':'未知接口'})
                 return
             if self.headers.get_content_type() != 'application/json':
@@ -120,7 +120,11 @@ def make_handler(service):
                 data = json.loads(self.rfile.read(length).decode('utf-8'),parse_constant=reject_constant)
                 # Control requests must remain available while a worker holds a CPU slot.
                 if path.startswith('/api/plan/'):
-                    response = planners.start(data) if path.endswith('/start') else planners.status(data, cancel=path.endswith('/cancel'))
+                    if path.endswith('/example'):
+                        from .planner_examples import example
+                        response = example(service, data.get('kind') if isinstance(data, dict) else None)
+                    else:
+                        response = planners.start(data) if path.endswith('/start') else planners.status(data, cancel=path.endswith('/cancel'))
                     self.send_json(200, response)
                     return
                 if not jobs.acquire(blocking=False):

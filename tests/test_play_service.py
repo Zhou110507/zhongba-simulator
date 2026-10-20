@@ -226,6 +226,12 @@ def test_inverse_http_job_can_be_polled_and_cancelled_without_blocking_shots(ser
     assert request(server,'POST','/api/shot',json.dumps(data['scene']).encode())[0]==200
     for asset in ('planner.js','planner.css'):
         assert request(server,'GET','/assets/'+asset)[0]==200
+    for kind in ('one_bank','two_bank'):
+        status,_,raw=request(server,'POST','/api/plan/example',json.dumps({'kind':kind}).encode())
+        task=json.loads(raw)
+        assert status==200 and task['approach']==kind and len(task['scene']['balls'])==3
+        assert task['scene']['shot']['angle_deg']==0
+    assert request(server,'POST','/api/plan/example',b'[]')[0]==400
 
 
 def test_rule_and_free_mode_http_contracts(server):

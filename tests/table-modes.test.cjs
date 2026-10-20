@@ -58,3 +58,13 @@ test('rules never render trails, and returning to free preserves its checkbox pr
   $('trails').checked=false;await $('rules-mode').onclick();assert.equal(flow.showTrails(),false);
   await $('free-mode').onclick();assert.equal(flow.showTrails(),false);assert.equal($('trails').checked,false);
 });
+
+test('practice and planner tabs preserve the same layout, shot and preview',async()=>{
+  const {c,$,flow,count}=await harness();await $('free-mode').onclick();
+  c.scene.shot={angle_deg:32,cue_speed:1.7,tip_x:.1,tip_y:-.3};c.record={complete:true,result:{duration:2}};
+  const n=count(),scene=structuredClone(c.scene),preview=c.record;
+  await $('planner-mode').onclick();assert.equal(flow.isPlanner(),true);assert.equal($('shot-settings').hidden,true);
+  assert.equal(count(),n);assert.deepEqual(c.scene,scene);assert.equal(c.record,preview);
+  await $('free-mode').onclick();assert.equal(flow.isPlanner(),false);assert.equal($('shot-settings').hidden,false);
+  assert.equal(count(),n);assert.deepEqual(c.scene,scene);assert.equal(c.record,preview);
+});

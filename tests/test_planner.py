@@ -98,7 +98,7 @@ def test_blocking_ball_is_a_hard_failure_even_at_exact_goal(service):
     final = next(b for b in actual.final if b.id == 'cue').position
     assessment = assess(actual, replace(request, goal=final))
     assert assessment['error_m'] == 0 and not assessment['valid'] and not assessment['inside']
-    assert '未直击指定目标球' in assessment['reasons']
+    assert '首次触球不是指定目标球' in assessment['reasons']
 
 
 def test_no_solution_in_tiny_budget_is_not_reported_unreachable(service):

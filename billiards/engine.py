@@ -268,11 +268,13 @@ def island_touches_cushion(contacts,balls,table):
     return False
 
 
-def simulate(balls, table=Table(), physics=Physics(), *, max_time=60.0, max_events=10000,cancel=None,record_segments=True):
+def simulate(balls, table=Table(), physics=Physics(), *, max_time=60.0, max_events=10000,cancel=None,record_segments=True,reject_events=None):
     """Forward solve; light recording keeps final/events, not replay samples.
 
     A cooperative cancellation predicate is checked at event and Hertz steps.
     Cancelled results are incomplete and must not be applied as a finished shot.
+    reject_events may abort an impossible constraint prefix; this also produces
+    an incomplete result and is only intended for inverse candidate pruning.
     """
     balls = tuple(balls)
     validate_scene(balls, table, physics)
@@ -295,6 +297,9 @@ def simulate(balls, table=Table(), physics=Physics(), *, max_time=60.0, max_even
     while True:
         if cancel is not None and cancel():
             status='cancelled'
+            break
+        if reject_events is not None and reject_events(events):
+            status='constraint_rejected'
             break
         motions = tuple(describe(b, physics) for b in balls)
         if all(m.phase == "stationary" for m in motions):

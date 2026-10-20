@@ -477,7 +477,7 @@ async function boot(){
     setScene(initial,presetId,false);$('canvas-empty').hidden=true;
     $('model-detail').textContent=`研究用能量恢复参数 ${config.model.physics.cushion_restitution}；滑动摩擦 ${config.model.physics.sliding_friction}；滚动减速度系数 ${config.model.physics.rolling_friction}。球球摩擦随表面滑速变化，含水平带偏和侧旋传递；暂不含碰撞竖直冲量或高低旋转移。`;
     $('build').textContent=`${config.app_version} · ${config.model_signature.slice(0,8)}`;
-    announce(active(cueBall())?(oldVersion?'旋转碰撞模型已更新，旧参数场景已在本机备份。':'球桌已就绪，可试打侧旋传递与碰薄带偏，或进入旋转实验台对照。'):'已恢复上次场景。白球已落袋，点击台面空位重新摆放白球。');
+    announce(active(cueBall())?(oldVersion?'旋转碰撞模型已更新，旧参数场景已在本机备份。':'练习台可在右侧调整力度与杆法；走位计算请切换到反算台。'):'已恢复上次场景。白球已落袋，点击台面空位重新摆放白球。');
     requestFrame();
   }catch(error){announce(`无法连接练习台服务：${error.message}。请运行“启动练习台.cmd”后刷新。`,true);$('canvas-empty').textContent='本地服务尚未就绪';}
 }
