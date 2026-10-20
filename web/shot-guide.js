@@ -1,6 +1,17 @@
 'use strict';
 
 (function(root) {
+  // Immediate direction feedback only. A contact circle still requires an
+  // engine result; this ray must never claim a reachable collision or stop.
+  function aimDirection(cue, angleDeg, table) {
+    const angle=angleDeg*Math.PI/180, dx=Math.cos(angle),dy=Math.sin(angle);
+    const p=cue.position, margin=.08;
+    const times=[dx>1e-12?(table.length+margin-p.x)/dx:dx<-1e-12?(-margin-p.x)/dx:Infinity,
+      dy>1e-12?(table.width+margin-p.y)/dy:dy<-1e-12?(-margin-p.y)/dy:Infinity];
+    const distance=Math.max(0,Math.min(...times));
+    return {start:p,end:{x:p.x+distance*dx,y:p.y+distance*dy}};
+  }
+
   function contactGuide(result, geometry) {
     const initial = result.initial.find(ball => ball.id === 'cue');
     const event = result.events.find(item => item.actors.includes('cue') && ['ball_ball','ball_cushion','ball_pocket'].includes(item.kind));
@@ -25,7 +36,7 @@
     }
     return {kind:event.kind,start:initial.position,center:cue.position,radius:cue.spec.radius,contact,target:target?.position || null,time:event.time};
   }
-  const api = {contactGuide};
+  const api = {contactGuide,aimDirection};
   if (typeof module !== 'undefined' && module.exports) module.exports=api;
   else root.ShotGuide=api;
 })(globalThis);

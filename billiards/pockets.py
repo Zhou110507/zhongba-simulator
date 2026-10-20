@@ -61,7 +61,7 @@ def validate_geometry(table):
     corner = spec.corner_mouth/sqrt(2)
     if 2*corner >= table.width or corner+spec.side_mouth/2+2*spec.jaw_radius >= table.length/2:
         raise ValueError("Pocket openings overlap")
-    if spec.version == 'tangent-jaws-v2':
+    if spec.version in ('tangent-jaws-v2','tangent-jaws-v3'):
         end = (spec.corner_mouth+2*spec.jaw_radius)/sqrt(2)-spec.jaw_radius
         if 2*end >= table.width or end+spec.side_mouth/2+side_radius >= table.length/2:
             raise ValueError('Rounded pocket transitions overlap')
@@ -70,7 +70,7 @@ def validate_geometry(table):
 @lru_cache(maxsize=32)
 def outline(table):
     validate_geometry(table)
-    if table.pockets.version == 'tangent-jaws-v2':
+    if table.pockets.version in ('tangent-jaws-v2','tangent-jaws-v3'):
         return tangent_outline(table)
     length,width,spec = table.length,table.width,table.pockets
     radius,corner,half = spec.jaw_radius,spec.corner_mouth/sqrt(2),spec.side_mouth/2
@@ -136,7 +136,10 @@ def tangent_outline(table):
     pockets = []
     for name,mouth,outward,opening,radius in descriptions:
         tangent = Vec2(-outward.y,outward.x)
-        pockets.append(Pocket(name,mouth,outward,tangent,opening/2,spec.shelf_depth,-radius))
+        # v3 measures the support lip from the flared entrance, rather than
+        # stacking a long shelf behind the already recessed throat.
+        depth = -radius+spec.shelf_depth if spec.version=='tangent-jaws-v3' else spec.shelf_depth
+        pockets.append(Pocket(name,mouth,outward,tangent,opening/2,depth,-radius))
         for sign in (-1,1):
             start = mouth+tangent*(sign*(opening/2+radius))
             surfaces.append(Surface(f'jaw:{name}:{sign}',start,
@@ -156,7 +159,8 @@ def validate_position(ball, table):
         displacement = position-pocket.mouth
         across_limit = (pocket.half_width-pocket.entry_depth if pocket.entry_depth < 0
                         else pocket.half_width-ball.spec.radius)
-        if (pocket.entry_depth-SPACE_EPS <= displacement.dot(pocket.outward) <= pocket.depth+SPACE_EPS
+        far = (table.pockets.jaw_extension if table.pockets.version=='tangent-jaws-v3' else pocket.depth)
+        if (pocket.entry_depth-SPACE_EPS <= displacement.dot(pocket.outward) <= far+SPACE_EPS
                 and abs(displacement.dot(pocket.tangent)) <= across_limit+SPACE_EPS):
             return
     raise ValueError(f"球 {ball.id} 在可玩区域之外")
@@ -169,6 +173,31 @@ def touches_surface(ball, table):
 
 def _position(ball, acceleration, time):
     return ball.position+ball.velocity*time+acceleration*(.5*time*time)
+
+
+def clear_drop_position(position, radius, pocket, geometry):
+    """A lip crossing must fit the actual rounded jaws, not a narrow box."""
+    across = abs((position-pocket.mouth).dot(pocket.tangent))
+    if across > pocket.half_width-pocket.entry_depth+SPACE_EPS:
+        return False
+    return all((position-surface.closest(position)).norm() >= radius+surface.radius-SPACE_EPS
+               for surface in geometry.surfaces)
+
+
+def unsupported_pocket(ball, table):
+    """Capture an initial ball already beyond v3's support lip, even at rest.
+
+    This is an absorbing 2-D support boundary, not a vertical falling solver.
+    """
+    if table.pockets is None or table.pockets.version!='tangent-jaws-v3' or ball.pocket is not None:
+        return None
+    geometry = outline(table)
+    for pocket in geometry.pockets:
+        along = (ball.position-pocket.mouth).dot(pocket.outward)
+        if (pocket.depth-SPACE_EPS <= along <= table.pockets.jaw_extension+SPACE_EPS
+                and clear_drop_position(ball.position,ball.spec.radius,pocket,geometry)):
+            return pocket.id
+    return None
 
 
 def boundary_candidates(ball, motion, table, horizon, roots):
@@ -236,8 +265,10 @@ def boundary_candidates(ball, motion, table, horizon, roots):
         acc = acceleration.dot(pocket.outward)
         for time in roots([gap,velocity,.5*acc],horizon):
             position = _position(ball,acceleration,time)
-            if (velocity+acc*time > SPEED_EPS and
-                    abs((position-pocket.gate).dot(pocket.tangent)) <= pocket.half_width-ball.spec.radius+SPACE_EPS):
+            fits = (clear_drop_position(position,ball.spec.radius,pocket,geometry)
+                    if table.pockets.version=='tangent-jaws-v3' else
+                    abs((position-pocket.gate).dot(pocket.tangent)) <= pocket.half_width-ball.spec.radius+SPACE_EPS)
+            if velocity+acc*time > SPEED_EPS and fits:
                 candidates.append((time,'ball_pocket',pocket.id))
                 break
     return candidates

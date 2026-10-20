@@ -29,7 +29,7 @@ async function api(path, data, signal) {
 
 function invalidate() {
   clearTimeout(launchTimer); guideController?.abort(); guideController=null; guideRecord=null; guideKey='';
-  $('guide-info').textContent='正在更新实际接触位置…'; $('contact-analysis').textContent='';
+  $('guide-info').textContent='方向线实时更新；正在计算实际接触位置…'; $('contact-analysis').textContent='';
   revision++; requestNumber++; requestController?.abort(); requestController = null; busy = false;
   record = null; cachedKey = ''; fired = false; playing = false; time = 0; finishedAnnounced = false;
   const hint = document.createElement('p'); hint.className = 'hint';
@@ -254,20 +254,26 @@ function draw() {
   const map=transform(), table=config.model.table, {X,Y,scale}=map;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   const outer=.105;
-  ctx.shadowColor='#0007';ctx.shadowBlur=30;ctx.shadowOffsetY=18;ctx.fillStyle='#63513a';ctx.beginPath();ctx.roundRect(X(-outer),Y(table.width+outer),(table.length+2*outer)*scale,(table.width+2*outer)*scale,24);ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
-  ctx.strokeStyle='#bca374';ctx.lineWidth=2;ctx.stroke();
-  ctx.fillStyle='#173b2a';ctx.fillRect(X(-.05),Y(table.width+.05),(table.length+.1)*scale,(table.width+.1)*scale);
+  const wood=ctx.createLinearGradient(0,Y(table.width+outer),0,Y(-outer));wood.addColorStop(0,'#66523d');wood.addColorStop(.48,'#493c30');wood.addColorStop(1,'#352e27');
+  ctx.shadowColor='#0007';ctx.shadowBlur=30;ctx.shadowOffsetY=18;ctx.fillStyle=wood;ctx.beginPath();ctx.roundRect(X(-outer),Y(table.width+outer),(table.length+2*outer)*scale,(table.width+2*outer)*scale,24);ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+  ctx.strokeStyle='#a18d66';ctx.lineWidth=1.5;ctx.stroke();
   const cloth=ctx.createLinearGradient(0,Y(table.width),0,Y(0));cloth.addColorStop(0,'#286949');cloth.addColorStop(1,'#1d573d');ctx.fillStyle=cloth;ctx.fillRect(X(0),Y(table.width),table.length*scale,table.width*scale);
   ctx.save();ctx.beginPath();ctx.roundRect(X(-outer),Y(table.width+outer),(table.length+2*outer)*scale,(table.width+2*outer)*scale,24);ctx.clip();
   for(const pocket of config.geometry.pockets){
-    const tangent=pocket.tangent,normal=pocket.outward,half=pocket.half_width+.015-(pocket.entry_depth||0),depth=pocket.depth+.06,entry=(pocket.entry_depth||0);
-    ctx.beginPath();for(const [index,across,along] of [[0,-half,entry],[1,half,entry],[2,half,depth],[3,-half,depth]]){const position={x:pocket.mouth.x+tangent.x*across+normal.x*along,y:pocket.mouth.y+tangent.y*across+normal.y*along};index?ctx.lineTo(X(position.x),Y(position.y)):ctx.moveTo(X(position.x),Y(position.y));}ctx.closePath();ctx.fillStyle='#0b1611';ctx.fill();
-    const hole={x:pocket.gate.x+normal.x*.035,y:pocket.gate.y+normal.y*.035};ctx.beginPath();ctx.ellipse(X(hole.x),Y(hole.y),.043*scale,.037*scale,0,0,Math.PI*2);ctx.fillStyle='#09100d';ctx.fill();
+    // One smooth well replaces overlapping rotated black boxes. Its entry
+    // follows the physical circular jaws; only the rounded back is decorative.
+    const t=pocket.tangent,n=pocket.outward,half=pocket.half_width,radius=-(pocket.entry_depth||-.03);
+    ctx.save();ctx.translate(X(pocket.mouth.x),Y(pocket.mouth.y));ctx.transform(t.x*scale,-t.y*scale,n.x*scale,-n.y*scale,0,0);
+    ctx.beginPath();ctx.moveTo(-half-radius,-radius);ctx.lineTo(half+radius,-radius);
+    ctx.arc(half+radius,0,radius,-Math.PI/2,-Math.PI,true);
+    ctx.lineTo(half,.01);ctx.quadraticCurveTo(half,.054,0,.054);ctx.quadraticCurveTo(-half,.054,-half,.01);
+    ctx.lineTo(-half,0);ctx.arc(-half-radius,0,radius,0,-Math.PI/2,true);ctx.closePath();
+    const well=ctx.createLinearGradient(0,-radius,0,.054);well.addColorStop(0,'#17251e');well.addColorStop(.45,'#0c1511');well.addColorStop(1,'#050a08');ctx.fillStyle=well;ctx.fill();ctx.restore();
   }
   // Fill the solid behind each nose so rounded jaws join the cushion body.
   // Clip remote channel caps to the frame; capture occurs before those caps.
   ctx.save();ctx.beginPath();ctx.roundRect(X(-.075),Y(table.width+.075),(table.length+.15)*scale,(table.width+.15)*scale,12);ctx.clip();
-  ctx.fillStyle='#367959';ctx.strokeStyle='#367959';
+  const rubber=ctx.createLinearGradient(0,Y(table.width+.075),0,Y(-.075));rubber.addColorStop(0,'#397b59');rubber.addColorStop(1,'#2d674b');ctx.fillStyle=rubber;ctx.strokeStyle=rubber;
   for(const surface of config.geometry.surfaces){
     if(surface.radius===0){
       const normal=surface.id.startsWith('bottom')?{x:0,y:-1}:surface.id.startsWith('top')?{x:0,y:1}:surface.id==='left'?{x:-1,y:0}:{x:1,y:0};
@@ -294,7 +300,12 @@ function draw() {
 
 function drawContactGuide(map) {
   const source=record||guideRecord;
-  if (!source) return;
+  if (!source) {
+    const line=ShotGuide.aimDirection(cueBall(),scene.shot.angle_deg,config.model.table);
+    ctx.save();ctx.strokeStyle='#f0ecd1c0';ctx.lineWidth=2;ctx.setLineDash([9,6]);
+    ctx.beginPath();ctx.moveTo(map.X(line.start.x),map.Y(line.start.y));ctx.lineTo(map.X(line.end.x),map.Y(line.end.y));ctx.stroke();ctx.restore();
+    return;
+  }
   const guide=ShotGuide.contactGuide(source.result,config.geometry), {X,Y,scale}=map;
   ctx.save();ctx.setLineDash([7,7]);ctx.strokeStyle='#f0ecd1a0';ctx.lineWidth=2;
   ctx.beginPath();ctx.moveTo(X(guide.start.x),Y(guide.start.y));ctx.lineTo(X(guide.center.x),Y(guide.center.y));ctx.stroke();
@@ -363,7 +374,7 @@ $('play').onclick=()=>{if(!record)return;if(time>=record.result.duration){startR
 $('replay').onclick=startReplay;
 $('seek').oninput=event=>{playing=false;time=Number(event.target.value)/1000*record.result.duration;if(time>=record.result.duration)reportFinish();else announce(`已暂停在 ${time.toFixed(2)} 秒，可继续播放或查看这一时刻。`);refreshUI();draw();};
 $('trails').onchange=draw;
-$('before').onclick=()=>{invalidate();announce('已回到出杆前，可重新调整这一杆。');refreshUI();draw();};
+$('before').onclick=()=>{invalidate();announce('已回到出杆前，可重新调整这一杆。');refreshLaunch();refreshUI();draw();};
 $('next').onclick=()=>{if(!record?.complete||time<record.result.duration)return;const next=record.next_scene;setScene(next);if(!active(cueBall())){mode='edit';pending='cue';announce('白球落袋。点击台面空位重新摆放白球后继续。');}else announce('已应用本杆停球位置，可以继续下一杆。');refreshUI();draw();};
 $('selected-ball').onchange=event=>{selected=event.target.value;mode='edit';refreshSelection();refreshUI();draw();};
 $('apply-position').onclick=()=>placeBall(selected,{x:Number($('ball-x').value)/1000,y:Number($('ball-y').value)/1000});
@@ -396,7 +407,7 @@ async function boot(){
     setScene(initial,presetId,false);$('canvas-empty').hidden=true;
     $('model-detail').textContent=`研究用能量恢复参数 ${config.model.physics.cushion_restitution}；滑动摩擦 ${config.model.physics.sliding_friction}；滚动减速度系数 ${config.model.physics.rolling_friction}。`;
     $('build').textContent=`${config.app_version} · ${config.model_signature.slice(0,8)}`;
-    announce(active(cueBall())?(oldVersion?'袋口与接触点显示已更新，旧场景已在本机备份。可试“低杆分离角”或角袋、中袋。':'球桌已就绪。50% 为中力，先试“中力走台”或调整击点出杆。'):'已恢复上次场景。白球已落袋，点击台面空位重新摆放白球。');
+    announce(active(cueBall())?(oldVersion?'进袋判定已更新，旧参数场景已在本机备份。可试角袋、中袋或慢速进袋。':'球桌已就绪。50% 为中力，先试“中力走台”或调整击点出杆。'):'已恢复上次场景。白球已落袋，点击台面空位重新摆放白球。');
     requestAnimationFrame(tick);
   }catch(error){announce(`无法连接练习台服务：${error.message}。请运行“启动练习台.cmd”后刷新。`,true);$('canvas-empty').textContent='本地服务尚未就绪';}
 }

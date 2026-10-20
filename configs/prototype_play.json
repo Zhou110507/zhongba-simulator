@@ -5,9 +5,9 @@
     "corner_mouth": 0.084,
     "side_mouth": 0.086,
     "jaw_radius": 0.03,
-    "shelf_depth": 0.045,
+    "shelf_depth": 0.01,
     "jaw_extension": 0.09,
-    "version": "tangent-jaws-v2",
+    "version": "tangent-jaws-v3",
     "calibration_status": "GB2008_mouth_reference_engineering_tangent_curves",
     "side_jaw_radius": 0.04
   },
@@ -18,7 +18,7 @@
     "side_mouth": "86 +/- 1 mm historical national-standard reference; current prototype uses 86 mm minimum throat width",
     "jaw_radius": "Corner R30 mm engineering approximation, not a measured standard radius. C1 tangent to flat rail and channel.",
     "side_jaw_radius": "Side R40 mm engineering approximation, not a measured standard radius. Distinct from corner jaws.",
-    "shelf_depth": "45 mm experimental capture-plane depth measured outward from throat plane; not a standard slate-cut depth",
+    "shelf_depth": "10 mm engineering support-lip setback from the flared entrance plane (not from the recessed throat). Crossing with jaw clearance captures the ball; an initially unsupported ball also drops at rest. Not a measured slate shelf or a 3-D falling model.",
     "jaw_extension": "90 mm experimental channel; unchanged. Slate cut, metal pocket body and rubber nose radii are not interchangeable.",
     "geometry": "Four identical mirrored corner pockets and two identical mirrored side pockets. Circles meet flat noses and channels tangentially; rendering and collision use the same surfaces."
   },

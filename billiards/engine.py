@@ -218,6 +218,15 @@ def simulate(balls, table=Table(), physics=Physics(), *, max_time=60.0, max_even
         raise ValueError("max_events must be a positive integer")
     initial = balls
     events, segments = [], []
+    if table.pockets is not None:
+        from .pockets import unsupported_pocket
+        for i, ball in enumerate(balls):
+            pocket = unsupported_pocket(ball,table)
+            if pocket is not None:
+                before, changed = balls, list(balls)
+                changed[i] = replace(ball,velocity=Vec2(),omega=Vec3(),pocket=pocket)
+                balls = tuple(changed)
+                events.append(Event(0.0,'ball_pocket',(ball.id,),pocket,before,balls))
     time, iterations, status = 0.0, 0, "max_time"
     while True:
         motions = tuple(describe(b, physics) for b in balls)
