@@ -10,7 +10,7 @@ async function harness({deferStart=false}={}){
       querySelectorAll(selector){const all=this.children.flatMap(c=>[c,...c.querySelectorAll(selector)]);return all.filter(c=>selector==='button'&&c.tag==='button');}};
   }
   const $=id=>{if(!nodes.has(id))nodes.set(id,element(id==='plan-target'?'select':'div'));return nodes.get(id);};
-  for(const [id,v] of Object.entries({'plan-x':'700','plan-y':'600','plan-radius':'60','plan-banks':'2','plan-seconds':'12'}))$(id).value=v;
+  for(const [id,v] of Object.entries({'plan-x':'700','plan-y':'600','plan-radius':'100','plan-banks':'2','plan-seconds':'12','plan-strategy':'pot_first','plan-stroke':'natural','plan-pocket':'any','plan-approach':'direct','plan-post':''}))$(id).value=v;
   const calls=[];let resolveStart,rules=false,planner=true,previews=0;
   const scene={model_signature:'model-a',balls:[{id:'cue',position:{x:.5,y:.5},pocket:null},{id:'1',position:{x:1,y:.5},pocket:null}],shot:{angle_deg:0,cue_speed:1,tip_x:0,tip_y:0}};
   const answer={shot:{angle_deg:1,cue_speed:2,tip_x:0,tip_y:-.4},inside:true,error_m:.01,cue_final:{x:.7,y:.6},target_pocket:null,cue_cushions:0,cue_ball_contacts:1,verified:true,launch_speed:1.8,perturbations:null};
@@ -59,4 +59,19 @@ test('returning to practice cancels a late start, hides goal and disables search
   assert.equal(h.$('planner-panel').hidden,true);assert.equal(h.$('plan-start').disabled,true);
   h.resolve({id:'late-job'});await pending;
   assert.ok(h.calls.some(v=>v.path==='/api/plan/cancel'&&v.data.id==='late-job'));
+});
+
+test('ordinary mode always requests a direct pot and permits departure banks',async()=>{
+  const h=await harness();h.$('plan-approach').value='two_bank';await h.$('plan-start').onclick();
+  const input=h.calls.find(v=>v.path==='/api/plan/start').data;
+  assert.equal(input.strategy,'pot_first');assert.equal(input.approach,'direct');
+  assert.equal(input.pocket,'any');assert.equal(input.stroke,'natural');
+  assert.equal(input.post_banks,null);assert.equal(input.max_cushions,2);assert.equal(input.goal.radius,.1);
+});
+
+test('returning from special mode resets pre-contact rails without forbidding departure banks',async()=>{
+  const h=await harness();h.$('plan-strategy').value='position';h.$('plan-approach').value='one_bank';h.$('plan-first').value='top';h.$('plan-pocket').value='';
+  h.$('plan-strategy').value='pot_first';h.$('plan-strategy').onchange();
+  assert.equal(h.$('plan-pocket').value,'any');assert.equal(h.$('plan-approach').value,'direct');assert.equal(h.$('plan-first').value,'any');
+  assert.equal(h.$('plan-banks').value,'2');assert.equal(h.$('plan-special-examples').hidden,true);
 });

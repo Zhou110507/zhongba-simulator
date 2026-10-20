@@ -32,6 +32,8 @@ class PlanRequest:
     second_rail: str = 'any'
     post_banks: int | None = None
     stability: str = 'basic'
+    strategy: str = 'position'
+    stroke: str = 'natural'
 
 
 def decode_request(service, data):
@@ -54,9 +56,9 @@ def decode_request(service, data):
     validate_scene((goal_ball,), service.table, service.physics)
     if unsupported_pocket(goal_ball, service.table) is not None:
         raise ValueError('白球终点不能位于落袋区域')
-    radius = _number(goal.get('radius', .06), '终点容差')
-    if not .01 <= radius <= .3:
-        raise ValueError('终点容差须在 10–300 mm 之间')
+    radius = _number(goal.get('radius', .1), '目标区域半径')
+    if not any(abs(radius-v) < 1e-12 for v in (.06, .08, .1, .12)):
+        raise ValueError('目标区域半径可选 60、80、100、120 mm')
     pocket = data.get('pocket')
     if pocket == '': pocket = None
     if pocket is not None and (not isinstance(pocket, str) or pocket not in {'any', *(p.id for p in outline(service.table).pockets)}):
@@ -92,8 +94,14 @@ def decode_request(service, data):
         raise ValueError('当前两库搜索不支持连续选择同一条直库')
     stability = data.get('stability', 'basic')
     if stability not in ('basic', 'full'): raise ValueError('未知微扰设置')
+    strategy = data.get('strategy', 'pot_first' if pocket and approach == 'direct' else 'position')
+    stroke = data.get('stroke', 'natural')
+    if strategy not in ('pot_first', 'position') or stroke not in ('natural', 'small_side', 'open'):
+        raise ValueError('未知反算流程或杆法范围')
+    if strategy == 'pot_first' and (pocket is None or approach != 'direct'):
+        raise ValueError('普通进球走位需要白球直击，并选择目标袋或任意袋')
     return PlanRequest(balls, shot, target, point, radius, pocket, cushions, allow, seconds, evaluations,
-                       approach, first, second, post, stability)
+                       approach, first, second, post, stability, strategy, stroke)
 
 
 def assess(result, request, expected_route=None):
@@ -123,6 +131,13 @@ def assess(result, request, expected_route=None):
     if request.post_banks is not None and len(post) != request.post_banks: reasons.append('首碰后碰库次数不符')
     if other and not request.allow_other: reasons.append('白球碰到其他目标球')
     if not pot_ok: reasons.append('目标球未按要求进袋')
+    if request.strategy == 'pot_first':
+        target_banks = [e for e in result.events if e.kind == 'ball_cushion' and request.target in e.actors]
+        if any(not e.detail.startswith('jaw:'+str(target.pocket)+':') for e in target_banks):
+            reasons.append('目标球未直接进袋')
+        target_hits = [e for e in result.events if e.kind == 'ball_ball' and request.target in e.actors]
+        if len(target_hits) != 1 or len(ball_contacts) > 1 and not request.allow_other:
+            reasons.append('普通进球线路出现二次碰球')
     if result.status == 'constraint_rejected' and not reasons: reasons.append('路线约束已拒绝')
     error = (cue.position-request.goal).norm()
     # Pocket-distance guidance helps an infeasible pot seed, but never certifies it.
@@ -153,7 +168,9 @@ def assess(result, request, expected_route=None):
     return {'valid': not reasons, 'reasons': reasons, 'simulation_status': result.status, 'error_m': error,
             'cue_final': asdict(cue.position), 'target_pocket': target.pocket,
             'approach_rails': pre, 'departure_rails': post,
-            'cue_cushions': banks, 'cue_ball_contacts': len(ball_contacts), 'inside': not reasons and error <= request.radius,
+            'cue_cushions': banks, 'cue_ball_contacts': len(ball_contacts),
+            'goal_margin_m': request.radius+cue.spec.radius-error,
+            'inside': not reasons and error <= request.radius+cue.spec.radius+1e-9,
             'score': (error if not reasons else .2*error) + 5*len(reasons) + 3*pot_distance + 15*miss}
 
 
@@ -167,6 +184,9 @@ def _halton(index, base):
 
 
 def solve(service, request, *, cancelled=lambda: False, progress=lambda value: None):
+    if request.strategy == 'pot_first':
+        from .planner_pot import solve_pot
+        return solve_pot(service, request, cancelled=cancelled, progress=progress)
     started = monotonic(); deadline = started + request.seconds
     full_stability = request.stability == 'full'
     reserve = 27 if full_stability else 7

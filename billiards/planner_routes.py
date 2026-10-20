@@ -36,11 +36,16 @@ def segment_distance(point, a, b):
 
 def prefix_rejector(request, expected):
     """Only prune event prefixes that cannot satisfy immutable hard constraints."""
-    seen = 0; pre = []; hit = False; banks = 0; post = 0
+    seen = 0; pre = []; hit = False; banks = 0; post = 0; target_hits = 0
     def rejected(events):
-        nonlocal seen, hit, banks, post
+        nonlocal seen, hit, banks, post, target_hits
         while seen < len(events):
             event = events[seen]; seen += 1
+            if request.strategy == 'pot_first' and request.target in event.actors:
+                if event.kind == 'ball_cushion' and not event.detail.startswith('jaw:'): return True
+                if event.kind == 'ball_ball':
+                    target_hits += 1
+                    if target_hits > 1: return True
             if 'cue' not in event.actors: continue
             if event.kind == 'ball_pocket': return True
             if event.kind == 'ball_cushion':
