@@ -7,9 +7,11 @@
     "jaw_radius": 0.03,
     "shelf_depth": 0.01,
     "jaw_extension": 0.09,
-    "version": "tangent-jaws-v3",
+    "version": "curved-support-v4",
     "calibration_status": "GB2008_mouth_reference_engineering_tangent_curves",
-    "side_jaw_radius": 0.04
+    "side_jaw_radius": 0.04,
+    "corner_fall_radius": 0.045,
+    "side_fall_radius": 0.047
   },
   "pocket_provenance": {
     "source": "GB/T 22751-2008, table 1, Chinese table row (original scanned page checked)",
@@ -18,7 +20,9 @@
     "side_mouth": "86 +/- 1 mm historical national-standard reference; current prototype uses 86 mm minimum throat width",
     "jaw_radius": "Corner R30 mm engineering approximation, not a measured standard radius. C1 tangent to flat rail and channel.",
     "side_jaw_radius": "Side R40 mm engineering approximation, not a measured standard radius. Distinct from corner jaws.",
-    "shelf_depth": "10 mm engineering support-lip setback from the flared entrance plane (not from the recessed throat). Crossing with jaw clearance captures the ball; an initially unsupported ball also drops at rest. Not a measured slate shelf or a 3-D falling model.",
+    "shelf_depth": "10 mm engineering central support-lip setback from the flared entrance plane; now the front tangent of a circular cut-out, not a straight capture line. Not a measured slate shelf or 3-D falling model.",
+    "support_curve": "CN2311752Y distinguishes circular lower fall lines from cushion-jaw curves. Slate of China describes separate rounded corner/side cut-outs machined to customer drawings. Corner fall R45 mm and side fall R47 mm are explicit engineering approximations, not published standard or manufacturer measurements. Circle interior with jaw clearance is the absorbing region; renderer uses the identical circles.",
+    "support_sources": ["https://patents.google.com/patent/CN2311752Y/zh", "https://slateofchina.com/product/9ft-heyball-table-slate/"],
     "jaw_extension": "90 mm experimental channel; unchanged. Slate cut, metal pocket body and rubber nose radii are not interchangeable.",
     "geometry": "Four identical mirrored corner pockets and two identical mirrored side pockets. Circles meet flat noses and channels tangentially; rendering and collision use the same surfaces."
   },

@@ -80,6 +80,8 @@ class PocketSpec:
     version: str = "experimental-rounded-jaws-v1"
     calibration_status: str = "experimental_pending_verified_drawing"
     side_jaw_radius: float | None = None
+    corner_fall_radius: float | None = None
+    side_fall_radius: float | None = None
 
 
 @dataclass(frozen=True)

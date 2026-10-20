@@ -16,7 +16,7 @@ from .pockets import geometry_dict, outline
 from .shot_analysis import first_contact_analysis
 
 ROOT = Path(__file__).resolve().parents[1]
-APP_VERSION = 'phase-b-playable-v4'
+APP_VERSION = 'phase-b-playable-v5'
 
 
 def _number(value, name):

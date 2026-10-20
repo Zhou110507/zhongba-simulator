@@ -253,26 +253,26 @@ function draw() {
   if(!config||!scene)return;
   const map=transform(), table=config.model.table, {X,Y,scale}=map;
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  const outer=.105;
+  const outer=.145;
   const wood=ctx.createLinearGradient(0,Y(table.width+outer),0,Y(-outer));wood.addColorStop(0,'#66523d');wood.addColorStop(.48,'#493c30');wood.addColorStop(1,'#352e27');
   ctx.shadowColor='#0007';ctx.shadowBlur=30;ctx.shadowOffsetY=18;ctx.fillStyle=wood;ctx.beginPath();ctx.roundRect(X(-outer),Y(table.width+outer),(table.length+2*outer)*scale,(table.width+2*outer)*scale,24);ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
   ctx.strokeStyle='#a18d66';ctx.lineWidth=1.5;ctx.stroke();
   const cloth=ctx.createLinearGradient(0,Y(table.width),0,Y(0));cloth.addColorStop(0,'#286949');cloth.addColorStop(1,'#1d573d');ctx.fillStyle=cloth;ctx.fillRect(X(0),Y(table.width),table.length*scale,table.width*scale);
   ctx.save();ctx.beginPath();ctx.roundRect(X(-outer),Y(table.width+outer),(table.length+2*outer)*scale,(table.width+2*outer)*scale,24);ctx.clip();
   for(const pocket of config.geometry.pockets){
-    // One smooth well replaces overlapping rotated black boxes. Its entry
-    // follows the physical circular jaws; only the rounded back is decorative.
-    const t=pocket.tangent,n=pocket.outward,half=pocket.half_width,radius=-(pocket.entry_depth||-.03);
-    ctx.save();ctx.translate(X(pocket.mouth.x),Y(pocket.mouth.y));ctx.transform(t.x*scale,-t.y*scale,n.x*scale,-n.y*scale,0,0);
-    ctx.beginPath();ctx.moveTo(-half-radius,-radius);ctx.lineTo(half+radius,-radius);
-    ctx.arc(half+radius,0,radius,-Math.PI/2,-Math.PI,true);
-    ctx.lineTo(half,.01);ctx.quadraticCurveTo(half,.054,0,.054);ctx.quadraticCurveTo(-half,.054,-half,.01);
-    ctx.lineTo(-half,0);ctx.arc(-half-radius,0,radius,0,-Math.PI/2,true);ctx.closePath();
-    const well=ctx.createLinearGradient(0,-radius,0,.054);well.addColorStop(0,'#17251e');well.addColorStop(.45,'#0c1511');well.addColorStop(1,'#050a08');ctx.fillStyle=well;ctx.fill();ctx.restore();
+    if(!pocket.fall_center)continue;
+    // Cloth wraps behind the pocket and joins both neighbouring cushions.
+    // The dark cut-out is the actual support circle used by the engine.
+    const center=pocket.fall_center,radius=pocket.fall_radius;
+    ctx.beginPath();ctx.arc(X(center.x),Y(center.y),(radius+.022)*scale,0,Math.PI*2);ctx.fillStyle='#306e4e';ctx.fill();
+    const well=ctx.createRadialGradient(X(center.x),Y(center.y),radius*.2*scale,X(center.x),Y(center.y),radius*scale);well.addColorStop(0,'#050a08');well.addColorStop(.8,'#0a1410');well.addColorStop(1,'#172b20');
+    ctx.beginPath();ctx.arc(X(center.x),Y(center.y),radius*scale,0,Math.PI*2);ctx.fillStyle=well;ctx.fill();
   }
   // Fill the solid behind each nose so rounded jaws join the cushion body.
   // Clip remote channel caps to the frame; capture occurs before those caps.
-  ctx.save();ctx.beginPath();ctx.roundRect(X(-.075),Y(table.width+.075),(table.length+.15)*scale,(table.width+.15)*scale,12);ctx.clip();
+  ctx.save();ctx.beginPath();ctx.roundRect(X(-.075),Y(table.width+.075),(table.length+.15)*scale,(table.width+.15)*scale,12);
+  for(const pocket of config.geometry.pockets)if(pocket.fall_center){const c=pocket.fall_center,r=(pocket.fall_radius+.022)*scale;ctx.moveTo(X(c.x)+r,Y(c.y));ctx.arc(X(c.x),Y(c.y),r,0,Math.PI*2);}
+  ctx.clip();
   const rubber=ctx.createLinearGradient(0,Y(table.width+.075),0,Y(-.075));rubber.addColorStop(0,'#397b59');rubber.addColorStop(1,'#2d674b');ctx.fillStyle=rubber;ctx.strokeStyle=rubber;
   for(const surface of config.geometry.surfaces){
     if(surface.radius===0){
@@ -300,17 +300,12 @@ function draw() {
 
 function drawContactGuide(map) {
   const source=record||guideRecord;
-  if (!source) {
-    const line=ShotGuide.aimDirection(cueBall(),scene.shot.angle_deg,config.model.table);
-    ctx.save();ctx.strokeStyle='#f0ecd1c0';ctx.lineWidth=2;ctx.setLineDash([9,6]);
-    ctx.beginPath();ctx.moveTo(map.X(line.start.x),map.Y(line.start.y));ctx.lineTo(map.X(line.end.x),map.Y(line.end.y));ctx.stroke();ctx.restore();
-    return;
-  }
-  const guide=ShotGuide.contactGuide(source.result,config.geometry), {X,Y,scale}=map;
+  const guide=source?ShotGuide.contactGuide(source.result,config.geometry):ShotGuide.instantGuide(scene,config.model,config.geometry), {X,Y,scale}=map;
   ctx.save();ctx.setLineDash([7,7]);ctx.strokeStyle='#f0ecd1a0';ctx.lineWidth=2;
   ctx.beginPath();ctx.moveTo(X(guide.start.x),Y(guide.start.y));ctx.lineTo(X(guide.center.x),Y(guide.center.y));ctx.stroke();
   if (['ball_ball','ball_cushion'].includes(guide.kind)) {
-    ctx.beginPath();ctx.arc(X(guide.center.x),Y(guide.center.y),guide.radius*scale,0,Math.PI*2);ctx.stroke();
+    ctx.setLineDash([4,3]);ctx.strokeStyle='#fff9e8';ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.arc(X(guide.center.x),Y(guide.center.y),guide.radius*scale,0,Math.PI*2);ctx.fillStyle='#fff9e84d';ctx.fill();ctx.stroke();
   } else {
     const x=X(guide.center.x),y=Y(guide.center.y);ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(x-4,y-4);ctx.lineTo(x+4,y+4);ctx.moveTo(x-4,y+4);ctx.lineTo(x+4,y-4);ctx.stroke();
   }
@@ -324,7 +319,13 @@ function drawContactGuide(map) {
 
 function updateContactReadout() {
   const source=record||guideRecord;
-  if (!source) return;
+  if (!source) {
+    if(active(cueBall())&&mode==='aim'){
+      const guide=ShotGuide.instantGuide(scene,config.model,config.geometry);
+      $('guide-info').textContent=guide.kind==='ball_ball'?'虚线白球随瞄准即时更新；正在用完整物理结果校核。':guide.kind==='stop'?'当前力度先停，× 为即时停点；正在校核。':'瞄准与接触位置即时更新；正在用完整物理结果校核。';
+    }
+    return;
+  }
   const guide=ShotGuide.contactGuide(source.result,config.geometry);
   const labels={ball_ball:'虚线圆＝白球碰撞前的位置；亮点＝两球接触点。',ball_cushion:'先碰库：虚线圆＝接触前白球位置；亮点＝球库接触点。',ball_pocket:'这条路线先越过落袋线，未发生球球或球库接触。',stop:'白球会先停止：× 为真实停点，这一力度到不了更远的目标球。',incomplete:'当前模型未能完成接触计算，暂不显示碰撞圆。'};
   $('guide-info').textContent=labels[guide.kind];
@@ -407,7 +408,7 @@ async function boot(){
     setScene(initial,presetId,false);$('canvas-empty').hidden=true;
     $('model-detail').textContent=`研究用能量恢复参数 ${config.model.physics.cushion_restitution}；滑动摩擦 ${config.model.physics.sliding_friction}；滚动减速度系数 ${config.model.physics.rolling_friction}。`;
     $('build').textContent=`${config.app_version} · ${config.model_signature.slice(0,8)}`;
-    announce(active(cueBall())?(oldVersion?'进袋判定已更新，旧参数场景已在本机备份。可试角袋、中袋或慢速进袋。':'球桌已就绪。50% 为中力，先试“中力走台”或调整击点出杆。'):'已恢复上次场景。白球已落袋，点击台面空位重新摆放白球。');
+    announce(active(cueBall())?(oldVersion?'弧形袋沿与即时虚线白球已更新，旧参数场景已在本机备份。':'球桌已就绪。虚线白球随瞄准即时更新，可直接调整方向试打。'):'已恢复上次场景。白球已落袋，点击台面空位重新摆放白球。');
     requestAnimationFrame(tick);
   }catch(error){announce(`无法连接练习台服务：${error.message}。请运行“启动练习台.cmd”后刷新。`,true);$('canvas-empty').textContent='本地服务尚未就绪';}
 }

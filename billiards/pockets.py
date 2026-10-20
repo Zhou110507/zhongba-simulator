@@ -13,6 +13,8 @@ from .model import Vec2
 
 SPACE_EPS = 1e-9
 SPEED_EPS = 1e-10
+TANGENT_VERSIONS = ('tangent-jaws-v2','tangent-jaws-v3','curved-support-v4')
+SUPPORT_VERSIONS = ('tangent-jaws-v3','curved-support-v4')
 
 
 @dataclass(frozen=True)
@@ -38,10 +40,15 @@ class Pocket:
     half_width: float
     depth: float
     entry_depth: float = 0.0
+    fall_radius: float | None = None
 
     @property
     def gate(self):
         return self.mouth+self.outward*self.depth
+
+    @property
+    def fall_center(self):
+        return self.gate+self.outward*self.fall_radius if self.fall_radius is not None else None
 
 
 @dataclass(frozen=True)
@@ -61,7 +68,11 @@ def validate_geometry(table):
     corner = spec.corner_mouth/sqrt(2)
     if 2*corner >= table.width or corner+spec.side_mouth/2+2*spec.jaw_radius >= table.length/2:
         raise ValueError("Pocket openings overlap")
-    if spec.version in ('tangent-jaws-v2','tangent-jaws-v3'):
+    if spec.version=='curved-support-v4':
+        if not all(value is not None and isfinite(value) and value > 0
+                   for value in (spec.corner_fall_radius,spec.side_fall_radius)):
+            raise ValueError('Curved support boundaries require positive radii')
+    if spec.version in TANGENT_VERSIONS:
         end = (spec.corner_mouth+2*spec.jaw_radius)/sqrt(2)-spec.jaw_radius
         if 2*end >= table.width or end+spec.side_mouth/2+side_radius >= table.length/2:
             raise ValueError('Rounded pocket transitions overlap')
@@ -70,7 +81,7 @@ def validate_geometry(table):
 @lru_cache(maxsize=32)
 def outline(table):
     validate_geometry(table)
-    if table.pockets.version in ('tangent-jaws-v2','tangent-jaws-v3'):
+    if table.pockets.version in TANGENT_VERSIONS:
         return tangent_outline(table)
     length,width,spec = table.length,table.width,table.pockets
     radius,corner,half = spec.jaw_radius,spec.corner_mouth/sqrt(2),spec.side_mouth/2
@@ -138,8 +149,10 @@ def tangent_outline(table):
         tangent = Vec2(-outward.y,outward.x)
         # v3 measures the support lip from the flared entrance, rather than
         # stacking a long shelf behind the already recessed throat.
-        depth = -radius+spec.shelf_depth if spec.version=='tangent-jaws-v3' else spec.shelf_depth
-        pockets.append(Pocket(name,mouth,outward,tangent,opening/2,depth,-radius))
+        depth = -radius+spec.shelf_depth if spec.version in SUPPORT_VERSIONS else spec.shelf_depth
+        fall_radius = ((spec.side_fall_radius if 'middle' in name else spec.corner_fall_radius)
+                       if spec.version=='curved-support-v4' else None)
+        pockets.append(Pocket(name,mouth,outward,tangent,opening/2,depth,-radius,fall_radius))
         for sign in (-1,1):
             start = mouth+tangent*(sign*(opening/2+radius))
             surfaces.append(Surface(f'jaw:{name}:{sign}',start,
@@ -159,7 +172,7 @@ def validate_position(ball, table):
         displacement = position-pocket.mouth
         across_limit = (pocket.half_width-pocket.entry_depth if pocket.entry_depth < 0
                         else pocket.half_width-ball.spec.radius)
-        far = (table.pockets.jaw_extension if table.pockets.version=='tangent-jaws-v3' else pocket.depth)
+        far = (table.pockets.jaw_extension if table.pockets.version in SUPPORT_VERSIONS else pocket.depth)
         if (pocket.entry_depth-SPACE_EPS <= displacement.dot(pocket.outward) <= far+SPACE_EPS
                 and abs(displacement.dot(pocket.tangent)) <= across_limit+SPACE_EPS):
             return
@@ -185,16 +198,19 @@ def clear_drop_position(position, radius, pocket, geometry):
 
 
 def unsupported_pocket(ball, table):
-    """Capture an initial ball already beyond v3's support lip, even at rest.
+    """Capture an initial ball inside the declared unsupported region at rest.
 
     This is an absorbing 2-D support boundary, not a vertical falling solver.
     """
-    if table.pockets is None or table.pockets.version!='tangent-jaws-v3' or ball.pocket is not None:
+    if table.pockets is None or table.pockets.version not in SUPPORT_VERSIONS or ball.pocket is not None:
         return None
     geometry = outline(table)
     for pocket in geometry.pockets:
         along = (ball.position-pocket.mouth).dot(pocket.outward)
-        if (pocket.depth-SPACE_EPS <= along <= table.pockets.jaw_extension+SPACE_EPS
+        beyond = ((ball.position-pocket.fall_center).norm() <= pocket.fall_radius+SPACE_EPS
+                  if pocket.fall_radius is not None else
+                  pocket.depth-SPACE_EPS <= along <= table.pockets.jaw_extension+SPACE_EPS)
+        if (beyond
                 and clear_drop_position(ball.position,ball.spec.radius,pocket,geometry)):
             return pocket.id
     return None
@@ -260,6 +276,18 @@ def boundary_candidates(ball, motion, table, horizon, roots):
                 candidates.append((time,'ball_cushion',surface.id))
             break
     for pocket in geometry.pockets:
+        if pocket.fall_radius is not None:
+            delta,velocity = ball.position-pocket.fall_center,ball.velocity
+            coefficients = [delta.dot(delta)-pocket.fall_radius**2,2*delta.dot(velocity),
+                            velocity.dot(velocity)+delta.dot(acceleration),
+                            velocity.dot(acceleration),.25*acceleration.dot(acceleration)]
+            for time in roots(coefficients,horizon):
+                position = _position(ball,acceleration,time)
+                if ((position-pocket.fall_center).dot(velocity+acceleration*time) < -SPEED_EPS*pocket.fall_radius
+                        and clear_drop_position(position,ball.spec.radius,pocket,geometry)):
+                    candidates.append((time,'ball_pocket',pocket.id))
+                    break
+            continue
         gap = (ball.position-pocket.gate).dot(pocket.outward)
         velocity = ball.velocity.dot(pocket.outward)
         acc = acceleration.dot(pocket.outward)
@@ -289,5 +317,7 @@ def resolve_surface(ball, surface_id, table, physics):
 def geometry_dict(table):
     geometry = outline(table)
     return {'surfaces':[asdict(surface) for surface in geometry.surfaces],
-            'pockets':[{**asdict(pocket),'gate':asdict(pocket.gate)} for pocket in geometry.pockets],
+            'pockets':[{**asdict(pocket),'gate':asdict(pocket.gate),
+                        'fall_center':asdict(pocket.fall_center) if pocket.fall_center is not None else None}
+                       for pocket in geometry.pockets],
             'profile':asdict(table.pockets)}

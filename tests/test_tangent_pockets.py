@@ -1,5 +1,5 @@
 from dataclasses import replace
-from math import cos, sin, pi
+from math import cos, sin, pi, sqrt
 
 import pytest
 
@@ -73,6 +73,8 @@ def test_opposite_pockets_and_jaw_curves_are_mirrored(service):
         other = next(p for p in geometry.pockets if (p.mouth-reflected(pocket.mouth)).norm()<1e-9)
         assert other.half_width==pocket.half_width
         assert other.entry_depth==pocket.entry_depth
+        assert (other.fall_center-reflected(pocket.fall_center)).norm()<1e-9
+        assert other.fall_radius==pocket.fall_radius
     for surface in geometry.surfaces:
         if surface.kind=='jaw':
             assert any((other.start-reflected(surface.start)).norm()<1e-9 and
@@ -123,3 +125,26 @@ def test_weak_two_ball_shot_drops_in_new_profile_where_old_gate_left_it_in_the_h
     assert old.final[1].position.y<-.01
     assert current.final[1].pocket=='bottom-middle'
     assert current.final[0].pocket is None
+
+
+@pytest.mark.parametrize('index',range(6))
+def test_curved_fall_edge_has_sagitta_and_is_not_the_old_parallel_line(service,index):
+    pocket = outline(service.table).pockets[index]
+    across = .012
+    sagitta = pocket.fall_radius-sqrt(pocket.fall_radius**2-across**2)
+    assert sagitta>.001
+    for depth,expected in ((.001,None),(sagitta+.0005,pocket.id)):
+        position = pocket.gate+pocket.tangent*across+pocket.outward*depth
+        result = simulate([Ball('1',position)],service.table,service.physics)
+        assert result.final[0].pocket==expected
+
+
+@pytest.mark.parametrize('index',range(6))
+def test_offset_entry_crosses_shared_support_circle_not_a_straight_capture_plane(service,index):
+    pocket = outline(service.table).pockets[index]
+    ball = Ball('1',pocket.gate-pocket.outward*.003+pocket.tangent*.012,pocket.outward*.15)
+    result = simulate([ball],service.table,service.physics)
+    event = next(e for e in result.events if e.kind=='ball_pocket')
+    position = event.before[0].position
+    assert (position-pocket.fall_center).norm()==pytest.approx(pocket.fall_radius,abs=1e-9)
+    assert (position-pocket.gate).dot(pocket.outward)>.001
