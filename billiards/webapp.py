@@ -1,6 +1,7 @@
 """Local practice UI and bounded stateless shot API. Run: python -m billiards.webapp."""
 
 import argparse
+import gzip
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import mimetypes
@@ -20,7 +21,7 @@ def make_handler(service):
     jobs = threading.BoundedSemaphore(2)
     rules_service=PlayService(service.root,table_profile='cbsa_2017')
     from .game import GameStore, free_table
-    games=GameStore(rules_service,service.root/'artifacts'/'rules'/'matches')
+    games=GameStore(rules_service,service.root/'artifacts'/'rules'/'matches',compact=True)
 
     def scene_service(data):
         if isinstance(data,dict) and data.get('model_signature')==rules_service.signature:
@@ -31,8 +32,12 @@ def make_handler(service):
         protocol_version = 'HTTP/1.1'
 
         def send_bytes(self, status, body, content_type):
+            compressed=len(body)>2048 and 'gzip' in self.headers.get('Accept-Encoding','').lower()
+            if compressed:body=gzip.compress(body,compresslevel=1,mtime=0)
             self.send_response(status)
             self.send_header('Content-Type',content_type)
+            self.send_header('Vary','Accept-Encoding')
+            if compressed:self.send_header('Content-Encoding','gzip')
             self.send_header('Content-Length',str(len(body)))
             self.send_header('Cache-Control','no-store')
             self.send_header('X-Content-Type-Options','nosniff')
@@ -127,7 +132,7 @@ def make_handler(service):
                         response=fit_measurements(data)
                     else:
                         selected=scene_service(data)
-                        response = selected.shoot(data) if path=='/api/shot' else selected.validate(data)
+                        response = selected.shoot(data,compact=self.headers.get('X-Billiards-Playback')=='1') if path=='/api/shot' else selected.validate(data)
                 finally:
                     jobs.release()
                 self.send_json(200,response)

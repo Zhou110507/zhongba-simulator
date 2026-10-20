@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import random
 import re
+import secrets
 import threading
 from uuid import uuid4
 
@@ -45,8 +46,9 @@ def free_table(service,data):
 
 
 class GameStore:
-    def __init__(self,service,directory=None):
+    def __init__(self,service,directory=None,*,compact=False):
         self.service=service;self.games=OrderedDict();self.cache={};self.lock=threading.RLock()
+        self.compact=compact
         self.directory=Path(directory) if directory is not None else None
 
     def _save(self,state):
@@ -83,16 +85,19 @@ class GameStore:
     def _rack(self,state,breaker,seed,keep_warning=False):
         state.update(turn=breaker,breaker=breaker,phase='playing',winner=None,groups=[None,None],
                      is_break=True,ball_in_hand='head',needs_placement=False,choices=[],chooser=None,
-                     scene=self.service.snapshot(racked_balls(self.service,seed),ShotInput(0,4,0,0)),last_decision=None)
+                     scene=self.service.snapshot(racked_balls(self.service,seed,state.get('gap_mm',0)),ShotInput(0,4,0,0)),last_decision=None,seed=seed)
         if not keep_warning:state['break_warnings']=[0,0]
 
     def new(self,data):
         if not isinstance(data,dict):raise ValueError('对局参数无效')
         breaker=integer(data.get('breaker',0),'开球方',0,1)
-        seed=integer(data.get('seed',0),'摆球编号')
+        seed=integer(data.get('seed',secrets.randbits(32)),'摆球编号')
+        from .play import _number
+        gap=_number(data.get('gap_mm',.2),'摆球微隙')
+        if not 0<=gap<=.5:raise ValueError('摆球微隙必须在 0–0.5 mm 内')
         with self.lock:
             state={'id':uuid4().hex,'revision':0,'rule_version':RULE_VERSION,'scores':[0,0],
-                   'rack_number':1,'history':[],'last_decision':None,'seed':seed}
+                   'rack_number':1,'history':[],'last_decision':None,'seed':seed,'gap_mm':gap,'rack_version':'bounded-micro-gaps-v1'}
             self._rack(state,breaker,seed)
             self.games[state['id']]=state;self._save(state)
             while len(self.games)>8:
@@ -117,7 +122,7 @@ class GameStore:
         key=json.dumps([state['revision'],scene['shot']],sort_keys=True)
         cached=self.cache.get(state['id'])
         if cached and cached[0]==key:return deepcopy(cached[1])
-        response=self.service.shoot(scene)
+        response=self.service.shoot(scene,compact=True) if self.compact else self.service.shoot(scene)
         self.cache[state['id']]=(key,deepcopy(response))
         return response
 
@@ -155,7 +160,7 @@ class GameStore:
                 if choice in ('rerack_self','rerack_opponent'):
                     breaker=who if choice=='rerack_self' else 1-who
                     if choice=='rerack_opponent':state['break_warnings'][breaker]=1
-                    self._rack(state,breaker,state['seed'],keep_warning=True)
+                    self._rack(state,breaker,(state['seed']+1)%2**32,keep_warning=True)
                 elif choice.startswith('choose_'):
                     chosen='solid' if choice=='choose_solid' else 'stripe'
                     state['groups'][who]=chosen;state['groups'][1-who]='stripe' if chosen=='solid' else 'solid'

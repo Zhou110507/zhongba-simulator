@@ -16,7 +16,7 @@ from .pockets import geometry_dict, outline
 from .shot_analysis import first_contact_analysis
 
 ROOT = Path(__file__).resolve().parents[1]
-APP_VERSION = 'phase-c-tables-v1'
+APP_VERSION = 'phase-c-performance-v2'
 
 
 def _number(value, name):
@@ -87,7 +87,7 @@ class PlayService:
                 'launch':{'speed':launched.velocity.norm(),'velocity':asdict(launched.velocity),
                           'omega':asdict(launched.omega)}}
 
-    def shoot(self, data):
+    def shoot(self, data, *, compact=False):
         balls,shot = self.decode(data)
         cue_ball = next(ball for ball in balls if ball.id=='cue')
         launched = strike(cue_ball,shot,self.cue)
@@ -98,7 +98,7 @@ class PlayService:
         elapsed = (perf_counter()-started)*1000
         complete = result.status=='stopped'
         final = tuple(replace(ball,velocity=Vec2(),omega=Vec3()) for ball in result.final)
-        return {'result':result.to_dict(None),'compute_ms':elapsed,'complete':complete,
+        return {'result':result.to_dict(None,compact=compact),'compute_ms':elapsed,'complete':complete,
                 'contact_analysis':first_contact_analysis(result),
                 'next_scene':self.snapshot(final,shot) if complete else None,
                 'snapshot':self.snapshot(balls,shot),

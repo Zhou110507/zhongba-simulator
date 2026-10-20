@@ -1,7 +1,8 @@
 'use strict';
 
 const $ = id => document.getElementById(id);
-const canvas = $('table'), ctx = canvas.getContext('2d'), tipCanvas = $('tip'), tipCtx = tipCanvas.getContext('2d');
+const canvas = $('table'), tipCanvas = $('tip'), tipCtx = tipCanvas.getContext('2d');
+let ctx=canvas.getContext('2d');
 const clone = value => JSON.parse(JSON.stringify(value));
 const colors = ['#efe9cf','#e6b63a','#4b79c8','#c85146','#8c64b4','#df8c38','#4c9373','#9c4548','#242b28'];
 const pocketNames = {'bottom-left':'左下角袋','bottom-middle':'下中袋','bottom-right':'右下角袋','top-left':'左上角袋','top-middle':'上中袋','top-right':'右上角袋'};
@@ -9,6 +10,9 @@ const STORAGE = 'zhongba.practice.scene.v1';
 let config, scene, record = null, cachedKey = '', revision = 0, requestNumber = 0, requestController = null;
 let busy = false, fired = false, playing = false, time = 0, lastFrame = 0, finishedAnnounced = false;
 let mode = 'aim', selected = 'cue', pending = null, drag = null, tipDragging = false, history = [], launchTimer = null;
+let background=null,backgroundKey='',trailLayer=null,trailSource=null,guideCache=null,pottedKey=null,eventCursor=0,eventRows=[],tipKey='';
+let aimFrame=0,queuedAim=null,animationFrame=0,lastUiFrame=0;
+const ballSprites=new Map();
 let guideRecord = null, guideKey = '', guideController = null;
 
 function announce(text, error = false) { $('message').textContent = text; $('message').classList.toggle('error', error); }
@@ -21,7 +25,7 @@ function storeScene() { if(window.TableModes?.isRules()){window.TableModes.store
 function pushHistory() { history.push(clone(scene)); if (history.length > 50) history.shift(); }
 
 async function api(path, data, signal) {
-  const response = await fetch(path, {method: data ? 'POST' : 'GET', headers: data ? {'Content-Type':'application/json'} : {}, body: data ? JSON.stringify(data) : undefined, signal});
+  const response = await fetch(path, {method: data ? 'POST' : 'GET', headers: data ? {'Content-Type':'application/json','X-Billiards-Playback':'1'} : {}, body: data ? JSON.stringify(data) : undefined, signal});
   const value = await response.json();
   if (!response.ok) throw new Error(value.error || '本地服务请求失败');
   return value;
@@ -31,9 +35,8 @@ function invalidate() {
   clearTimeout(launchTimer); guideController?.abort(); guideController=null; guideRecord=null; guideKey='';
   $('guide-info').textContent='方向线实时更新；正在计算实际接触位置…'; $('contact-analysis').textContent='';
   revision++; requestNumber++; requestController?.abort(); requestController = null; busy = false;
-  record = null; cachedKey = ''; fired = false; playing = false; time = 0; finishedAnnounced = false;
-  const hint = document.createElement('p'); hint.className = 'hint';
-  hint.textContent = '出杆后显示触球、碰库与进袋事件。'; $('events').replaceChildren(hint);
+  record = null; trailSource=null;trailLayer=null;cachedKey = ''; fired = false; playing = false; time = 0; finishedAnnounced = false;
+  if(eventRows.length){const hint=document.createElement('p');hint.className='hint';hint.textContent='出杆后显示触球、碰库与进袋事件。';$('events').replaceChildren(hint);eventRows=[];eventCursor=0;}
 }
 
 function syncShotControls() {
@@ -54,27 +57,12 @@ function updateShotLabels() {
 }
 
 function refreshLaunch() {
-  clearTimeout(launchTimer); const currentRevision = revision;
+  clearTimeout(launchTimer);
   if(window.TableModes?.deferLaunch())return;
-  if (!active(cueBall())) { $('launch-speed').textContent='—'; $('guide-info').textContent='请先将白球摆回台面。'; return; }
-  $('launch-speed').textContent = '计算中';
-  const snapshot=clone(scene);
-  launchTimer = setTimeout(async () => {
-    guideController=new AbortController();
-    try {
-      const value = await api('/api/shot', snapshot, guideController.signal);
-      if (currentRevision === revision && !fired) {
-        guideRecord=value; guideKey=JSON.stringify(snapshot);
-        const ball=value.result.initial.find(ball=>ball.id==='cue');
-        $('launch-speed').textContent = `${Math.hypot(ball.velocity.x,ball.velocity.y).toFixed(2)} m/s`;
-        draw();
-      }
-    } catch (error) {
-      if (currentRevision === revision && error.name!=='AbortError') {
-        $('launch-speed').textContent = '—'; $('guide-info').textContent='接触位置尚未算出，可点击预览重试。';
-      }
-    }
-  }, 160);
+  if(!active(cueBall())){$('launch-speed').textContent='—';return;}
+  const shot=scene.shot,cue=config.model.cue,m=config.ball_spec.mass;
+  const inverse=1/cue.effective_mass+(1+2.5*(shot.tip_x**2+shot.tip_y**2))/m;
+  $('launch-speed').textContent=((1+cue.restitution)*shot.cue_speed/inverse/m).toFixed(2)+' m/s';
 }
 
 function setScene(value, preset = 'custom', remember = true) {
@@ -129,26 +117,30 @@ function refreshUI() {
   const currentCue = balls.find(ball => ball.id === 'cue');
   $('shot-summary').textContent = record ? `${record.result.duration.toFixed(2)} s · ${fired ? `白球 ${Math.hypot(currentCue.velocity.x,currentCue.velocity.y).toFixed(2)} m/s · 侧旋 ${currentCue.omega.z.toFixed(1)} rad/s` : '路线预览'}` : '调整方向、力度和击点，再试一杆';
   $('ball-count').textContent = `${balls.filter(active).length} / ${balls.length} 球在台`;
-  $('potted').replaceChildren(...balls.filter(ball => !active(ball)).map(ball => {
+  const nextPotted=balls.filter(ball=>!active(ball)).map(b=>b.id+':'+b.pocket).join('|');
+  if(pottedKey!==nextPotted){pottedKey=nextPotted;$('potted').replaceChildren(...balls.filter(ball => !active(ball)).map(ball => {
     const marker = document.createElement('span'); marker.textContent = ball.id === 'cue' ? '白' : ball.id;
     marker.title = `${ballName(ball.id)} · ${pocketNames[ball.pocket] || ball.pocket}`; return marker;
-  }));
+  }));}
   $('clock').textContent = `${time.toFixed(2)} / ${duration.toFixed(2)} s`;
   $('seek').value = duration ? time / duration * 1000 : 0;
-  for (const event of $('events').children) event.classList.toggle('active', fired && Number(event.dataset.time) <= time);
+  let lo=0,hi=eventRows.length;while(lo<hi){const mid=(lo+hi)>>>1;if(fired&&Number(eventRows[mid].dataset.time)<=time)lo=mid+1;else hi=mid;}
+  for(let i=Math.min(lo,eventCursor);i<Math.max(lo,eventCursor);i++)eventRows[i].classList.toggle('active',i<lo);eventCursor=lo;
   canvas.style.cursor = fired ? 'default' : mode === 'edit' ? 'grab' : 'crosshair';
   window.TableModes?.refresh();
 }
 
 function populateEvents() {
   const labels = {ball_ball:'触球',ball_cushion:'碰库',ball_pocket:'进袋',sliding_to_rolling:'恢复滚动',rolling_to_rest:'平动停止',spin_to_rest:'侧旋停止'};
-  $('events').replaceChildren(...record.result.events.map(event => {
+  const visibleEvents=[];let previous=null;
+  for(const e of record.result.events){const key=e.kind+'|'+e.actors.join('|')+'|'+e.detail;const support=e.detail==='cluster-support';if(previous&&previous.key===key&&(support?e.time-previous.time<.03:Math.abs(e.time-previous.time)<1e-9)){previous.count++;continue;}previous={...e,key,count:1};visibleEvents.push(previous);}
+  $('events').replaceChildren(...visibleEvents.map(event => {
     const row = document.createElement('div'); row.dataset.time = event.time;
     const stamp = document.createElement('time'); stamp.textContent = `${event.time.toFixed(3)} s`;
     const detail = document.createElement('span');
     detail.textContent = event.kind === 'ball_pocket' ? `${ballName(event.actors[0])} → ${pocketNames[event.detail]}` : `${event.actors.map(ballName).join(' / ')} · ${labels[event.kind] || event.kind}${event.detail?.startsWith('jaw:') ? '（袋角）' : ''}`;
-    row.append(stamp, detail); return row;
-  }));
+    if(event.count>1)detail.textContent+=`（持续接触 ×${event.count}）`;row.append(stamp, detail); return row;
+  }));eventRows=[...$('events').children];eventCursor=0;
 }
 
 async function calculate(commit) {
@@ -179,7 +171,7 @@ function statusText(status) {
 }
 
 function startReplay() {
-  fired = true; playing = true; time = 0; lastFrame = 0; finishedAnnounced = false;
+  fired = true; playing = true; requestFrame(); time = 0; lastFrame = 0; finishedAnnounced = false;
   announce(record.complete ? '这一杆正在回放。可暂停、慢放或拖动时间轴。' : statusText(record.result.status), !record.complete);
   refreshUI(); draw();
 }
@@ -193,17 +185,7 @@ function reportFinish() {
   window.TableModes?.finish();
 }
 
-function evaluate(ball, motion, elapsed) {
-  return {...ball,position:{x:ball.position.x+ball.velocity.x*elapsed+.5*motion.acceleration.x*elapsed**2,y:ball.position.y+ball.velocity.y*elapsed+.5*motion.acceleration.y*elapsed**2},velocity:{x:ball.velocity.x+motion.acceleration.x*elapsed,y:ball.velocity.y+motion.acceleration.y*elapsed},omega:{x:ball.omega.x+motion.angular_acceleration.x*elapsed,y:ball.omega.y+motion.angular_acceleration.y*elapsed,z:ball.omega.z+motion.angular_acceleration.z*elapsed}};
-}
-
-function stateAt(at) {
-  const result = record.result;
-  if (at >= result.duration || !result.segments.length) return result.final;
-  let segment = result.segments[0];
-  for (const candidate of result.segments) { if (candidate.start > at) break; segment = candidate; }
-  return segment.balls.map((ball,index) => evaluate(ball,segment.motion[index],at-segment.start));
-}
+function stateAt(at){return ReplayCore.stateAt(record.result,at);}
 
 function transform() {
   const margin = .16, width = config.model.table.length, height = config.model.table.width;
@@ -241,7 +223,7 @@ function placeBall(id, position, adding=false) {
   announce(`${ballName(id)}已摆好。切换到瞄准即可出杆。`); return true;
 }
 
-function drawBall(ball, map, ghost=false) {
+function paintBall(ball, map, ghost=false) {
   if (!active(ball)) return;
   const x=map.X(ball.position.x), y=map.Y(ball.position.y), radius=ball.spec.radius*map.scale;
   ctx.save(); if(ghost)ctx.globalAlpha=.6;
@@ -251,8 +233,22 @@ function drawBall(ball, map, ghost=false) {
   ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.fillStyle=gradient;ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
   if(Number(ball.id)>8){ctx.save();ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.clip();ctx.fillStyle='#ece9d9';ctx.fillRect(x-radius,y-radius,2*radius,radius*.45);ctx.fillRect(x-radius,y+radius*.55,2*radius,radius*.45);ctx.restore();}
   if(ball.id!=='cue'){ctx.beginPath();ctx.arc(x,y,radius*.47,0,Math.PI*2);ctx.fillStyle='#f0ecd8';ctx.fill();ctx.fillStyle='#27332b';ctx.font=`bold ${radius*.65}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(ball.id,x,y+.5);}
-  if(!fired&&ball.id===selected&&mode==='edit'){ctx.strokeStyle='#d4e8a7';ctx.lineWidth=2;ctx.setLineDash([5,4]);ctx.beginPath();ctx.arc(x,y,radius+7,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}
   ctx.restore();
+}
+
+function drawBall(ball,map,ghost=false){
+  if(!active(ball))return;
+  const radius=ball.spec.radius*map.scale,key=ball.id+'|'+radius;
+  let sprite=ballSprites.get(key);
+  if(!sprite){
+    if(ballSprites.size>48)ballSprites.clear();
+    const layer=document.createElement('canvas'),size=Math.ceil(radius*2+40);layer.width=layer.height=size;
+    const visible=ctx;ctx=layer.getContext('2d');paintBall(ball,{scale:map.scale,X:()=>size/2,Y:()=>size/2});ctx=visible;
+    sprite=layer;ballSprites.set(key,sprite);
+  }
+  const x=map.X(ball.position.x),y=map.Y(ball.position.y);
+  ctx.save();if(ghost)ctx.globalAlpha=.6;ctx.drawImage(sprite,x-sprite.width/2,y-sprite.height/2);
+  if(!fired&&ball.id===selected&&mode==='edit'){ctx.strokeStyle='#d4e8a7';ctx.lineWidth=2;ctx.setLineDash([5,4]);ctx.beginPath();ctx.arc(x,y,radius+7,0,Math.PI*2);ctx.stroke();}ctx.restore();
 }
 
 function drawPocketWell(pocket,map) {
@@ -287,9 +283,8 @@ function drawPocketWell(pocket,map) {
   ctx.strokeStyle='#97bea85c';ctx.lineWidth=Math.max(1,.0018*scale);ctx.stroke();ctx.restore();
 }
 
-function draw() {
-  if(!config||!scene)return;
-  const map=transform(), table=config.model.table, {X,Y,scale}=map;
+function drawTable(map){
+  const table=config.model.table,{X,Y,scale}=map;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   const outer=.145;
   const wood=ctx.createLinearGradient(0,Y(table.width+outer),0,Y(-outer));wood.addColorStop(0,'#66523d');wood.addColorStop(.48,'#493c30');wood.addColorStop(1,'#352e27');
@@ -317,9 +312,23 @@ function draw() {
   ctx.fillStyle='#d0b888';for(let index=1;index<8;index++){if(index===4)continue;for(const vertical of [-.076,table.width+.076]){const x=X(table.length*index/8),y=Y(vertical);ctx.beginPath();ctx.moveTo(x,y-4);ctx.lineTo(x+3,y);ctx.lineTo(x,y+4);ctx.lineTo(x-3,y);ctx.closePath();ctx.fill();}}
   for(let index=1;index<4;index++){for(const horizontal of [-.076,table.length+.076]){ctx.beginPath();ctx.arc(X(horizontal),Y(table.width*index/4),3,0,Math.PI*2);ctx.fill();}}
   ctx.strokeStyle='#c6ddc014';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(X(table.length/4),Y(0));ctx.lineTo(X(table.length/4),Y(table.width));ctx.stroke();
+}
+function draw(){
+  if(!config||!scene)return;
+  const started=performance.now(),map=transform(),table=config.model.table,{X,Y,scale}=map;
+  const key=config.model_signature+'|'+canvas.width+'|'+canvas.height;
+  if(key!==backgroundKey){
+    background=document.createElement('canvas');background.width=canvas.width;background.height=canvas.height;
+    const visible=ctx;ctx=background.getContext('2d');drawTable(map);ctx=visible;backgroundKey=key;trailSource=null;
+  }
+  ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(background,0,0);
   const traceTime=fired?time:record?.result.duration||0;
   window.TableModes?.drawMarkings(map);
-  if(record&&$('trails').checked){for(const segment of record.result.segments){if(segment.start>traceTime)break;const elapsed=Math.min(segment.end,traceTime)-segment.start;for(let index=0;index<segment.balls.length;index++){const ball=segment.balls[index];if(!active(ball)||Math.hypot(ball.velocity.x,ball.velocity.y)===0)continue;ctx.beginPath();ctx.strokeStyle=ball.id==='cue'?'#f0ecd19c':color(ball.id)+'b0';ctx.lineWidth=2;const steps=Math.max(2,Math.ceil(elapsed*70));for(let step=0;step<=steps;step++){const point=evaluate(ball,segment.motion[index],elapsed*step/steps).position;step?ctx.lineTo(X(point.x),Y(point.y)):ctx.moveTo(X(point.x),Y(point.y));}ctx.stroke();}}}
+  if(record&&$('trails').checked){
+    if(trailSource!==record.result){const layer=document.createElement('canvas');layer.width=canvas.width;layer.height=canvas.height;trailSource=record.result;
+      trailLayer=new ReplayCore.TrailLayer(record.result,layer,(target,segment,dt)=>ReplayCore.paintTrail(target,segment,dt,map,id=>id==='cue'?'#f0ecd19c':color(id)+'b0'));}
+    trailLayer.render(ctx,traceTime);
+  }
   const balls=fired?stateAt(time):scene.balls;
   if(!fired&&mode==='aim'&&active(cueBall())&&!window.TableModes?.locksAction()){
     const cue=cueBall(),angle=scene.shot.angle_deg*Math.PI/180,direction={x:Math.cos(angle),y:Math.sin(angle)};
@@ -329,12 +338,12 @@ function draw() {
   for(const ball of balls)drawBall(drag?.id===ball.id?{...ball,position:drag.position}:ball,map,drag?.id===ball.id);
   if(record&&!fired){ctx.fillStyle='#d7e8bc';ctx.font='18px "Microsoft YaHei", sans-serif';ctx.textAlign='left';ctx.fillText('计算预览 · 点击出杆播放',X(.08),Y(table.width-.07));}
   updateContactReadout();
-  drawTip();
+  drawTip();canvas.dataset.drawMs=(performance.now()-started).toFixed(3);
 }
 
+function currentGuide(){const source=record||guideRecord;if(!guideCache||guideCache.revision!==revision||guideCache.source!==source){guideCache={revision,source,value:source?ShotGuide.contactGuide(source.result,config.geometry):ShotGuide.instantGuide(scene,config.model,config.geometry)};}return guideCache.value;}
 function drawContactGuide(map) {
-  const source=record||guideRecord;
-  const guide=source?ShotGuide.contactGuide(source.result,config.geometry):ShotGuide.instantGuide(scene,config.model,config.geometry), {X,Y,scale}=map;
+  const guide=currentGuide(),{X,Y,scale}=map;
   ctx.save();ctx.setLineDash([7,7]);ctx.strokeStyle='#f0ecd1a0';ctx.lineWidth=2;
   ctx.beginPath();ctx.moveTo(X(guide.start.x),Y(guide.start.y));ctx.lineTo(X(guide.center.x),Y(guide.center.y));ctx.stroke();
   if (['ball_ball','ball_cushion'].includes(guide.kind)) {
@@ -356,12 +365,12 @@ function updateContactReadout() {
   if (!source) {
     if(scene.balls.filter(active).length>8){$('guide-info').textContent='即时瞄准已显示；多球局面请点击预览或出杆计算完整路线。';return;}
     if(active(cueBall())&&mode==='aim'){
-      const guide=ShotGuide.instantGuide(scene,config.model,config.geometry);
-      $('guide-info').textContent=guide.kind==='ball_ball'?'虚线白球随瞄准即时更新；正在用完整物理结果校核。':guide.kind==='stop'?'当前力度先停，× 为即时停点；正在校核。':'瞄准与接触位置即时更新；正在用完整物理结果校核。';
+      const guide=currentGuide();
+      $('guide-info').textContent=guide.kind==='ball_ball'?'虚线白球随瞄准即时更新；点击预览可查看完整路线。':guide.kind==='stop'?'当前力度先停，× 为即时停点；点击预览可查看完整路线。':'瞄准与接触位置即时更新；点击预览可查看完整路线。';
     }
     return;
   }
-  const guide=ShotGuide.contactGuide(source.result,config.geometry);
+  const guide=currentGuide();
   const labels={ball_ball:'虚线圆＝白球碰撞前的位置；亮点＝两球接触点。',ball_cushion:'先碰库：虚线圆＝接触前白球位置；亮点＝球库接触点。',ball_pocket:'这条路线先越过落袋线，未发生球球或球库接触。',stop:'白球会先停止：× 为真实停点，这一力度到不了更远的目标球。',incomplete:'当前模型未能完成接触计算，暂不显示碰撞圆。'};
   $('guide-info').textContent=labels[guide.kind];
   const data=source.contact_analysis;
@@ -373,6 +382,7 @@ function updateContactReadout() {
 }
 
 function drawTip() {
+  const key=scene.shot.tip_x+'|'+scene.shot.tip_y+'|'+config.limits.max_tip_offset;if(key===tipKey)return;tipKey=key;
   const context=tipCtx, center={x:140,y:119},radius=82;
   context.clearRect(0,0,280,250);context.fillStyle='#90a98e';context.font='11px "Microsoft YaHei",sans-serif';context.textAlign='center';context.fillText('高杆',140,16);context.fillText('低杆',140,237);context.fillText('左',22,123);context.fillText('右',258,123);
   const gradient=context.createRadialGradient(116,93,8,140,119,84);gradient.addColorStop(0,'#fffef1');gradient.addColorStop(.6,'#e6e6d6');gradient.addColorStop(1,'#a5b19a');context.beginPath();context.arc(center.x,center.y,radius,0,Math.PI*2);context.fillStyle=gradient;context.fill();
@@ -383,17 +393,19 @@ function drawTip() {
 canvas.addEventListener('pointerdown',event=>{
   if(!scene||locked()||event.button!==0)return;canvas.focus();const position=pointerPosition(event);
   if(pending){placeBall(pending,position,!scene.balls.some(ball=>ball.id===pending));return;}
-  if(mode==='aim'){setAim(position);canvas.setPointerCapture(event.pointerId);drag={aim:true};return;}
+  if(mode==='aim'){queueAim(position);canvas.setPointerCapture(event.pointerId);drag={aim:true};return;}
   const ball=scene.balls.filter(active).find(ball=>Math.hypot(ball.position.x-position.x,ball.position.y-position.y)<ball.spec.radius*1.6);
   if(ball){invalidate();selected=ball.id;drag={id:ball.id,position:{...ball.position}};canvas.setPointerCapture(event.pointerId);refreshSelection();refreshUI();draw();}
 });
 canvas.addEventListener('pointermove',event=>{
   if(!scene)return;const position=pointerPosition(event);$('coordinates').textContent=`x ${(position.x*1000).toFixed(0)} · y ${(position.y*1000).toFixed(0)} mm`;
-  if(!drag)return;if(drag.aim){setAim(position);return;}const radius=config.ball_spec.radius;drag.position={x:Math.max(radius,Math.min(config.model.table.length-radius,position.x)),y:Math.max(radius,Math.min(config.model.table.width-radius,position.y))};draw();
+  if(!drag)return;if(drag.aim){queueAim(position);return;}const radius=config.ball_spec.radius;drag.position={x:Math.max(radius,Math.min(config.model.table.length-radius,position.x)),y:Math.max(radius,Math.min(config.model.table.width-radius,position.y))};draw();
 });
-canvas.addEventListener('pointerup',()=>{if(drag&&!drag.aim){const current=drag;drag=null;placeBall(current.id,current.position);}else drag=null;draw();});
+canvas.addEventListener('pointerup',()=>{flushAim();storeScene();if(drag&&!drag.aim){const current=drag;drag=null;placeBall(current.id,current.position);}else drag=null;draw();});
 canvas.addEventListener('pointercancel',()=>{drag=null;draw();});
-function setAim(position){const cue=cueBall();if(!active(cue))return;const angle=(Math.atan2(position.y-cue.position.y,position.x-cue.position.x)*180/Math.PI+360)%360;invalidate();scene.shot.angle_deg=angle;$('angle').value=Number(angle.toFixed(2));$('preset').value='custom';storeScene();refreshLaunch();refreshUI();draw();}
+function queueAim(position){queuedAim={position,source:scene};if(!aimFrame)aimFrame=requestAnimationFrame(()=>{aimFrame=0;flushAim();});}
+function flushAim(){const next=queuedAim;queuedAim=null;if(next&&next.source===scene&&!locked())setAim(next.position);}
+function setAim(position){const cue=cueBall();if(!active(cue))return;const angle=(Math.atan2(position.y-cue.position.y,position.x-cue.position.x)*180/Math.PI+360)%360;invalidate();scene.shot.angle_deg=angle;$('angle').value=Number(angle.toFixed(2));$('preset').value='custom';refreshLaunch();refreshUI();draw();}
 function tipPointer(event){const rect=tipCanvas.getBoundingClientRect(),x=(event.clientX-rect.left)/rect.width*280,y=(event.clientY-rect.top)/rect.height*250;setTip((x-140)/82,(119-y)/82);}
 tipCanvas.addEventListener('pointerdown',event=>{if(!scene||locked())return;tipDragging=true;tipCanvas.setPointerCapture(event.pointerId);tipPointer(event);});
 tipCanvas.addEventListener('pointermove',event=>{if(tipDragging)tipPointer(event);});
@@ -407,7 +419,7 @@ $('power').oninput=event=>{invalidate();scene.shot.cue_speed=Number(event.target
 $('tip-x').oninput=event=>setTip(Number(event.target.value),scene.shot.tip_y);$('tip-y').oninput=event=>setTip(scene.shot.tip_x,Number(event.target.value));
 $('center-tip').onclick=()=>setTip(0,0);document.querySelectorAll('[data-tip]').forEach(button=>button.onclick=()=>setTip(...button.dataset.tip.split(',').map(Number)));
 $('preview').onclick=()=>calculate(false);$('shoot').onclick=()=>calculate(true);
-$('play').onclick=()=>{if(!record)return;if(time>=record.result.duration){startReplay();return;}playing=!playing;lastFrame=0;refreshUI();};
+$('play').onclick=()=>{if(!record)return;if(time>=record.result.duration){startReplay();return;}playing=!playing;lastFrame=0;if(playing)requestFrame();refreshUI();};
 $('replay').onclick=startReplay;
 $('seek').oninput=event=>{playing=false;time=Number(event.target.value)/1000*record.result.duration;if(time>=record.result.duration)reportFinish();else announce(`已暂停在 ${time.toFixed(2)} 秒，可继续播放或查看这一时刻。`);refreshUI();draw();};
 $('trails').onchange=draw;
@@ -432,8 +444,15 @@ document.addEventListener('keydown',event=>{
   }
 });
 
+function requestFrame(){if(!animationFrame)animationFrame=requestAnimationFrame(tick);}
 function tick(now){
-  if(playing&&record){const elapsed=lastFrame?Math.min(.15,(now-lastFrame)/1000):0;time=Math.min(record.result.duration,time+elapsed*Number($('speed').value));if(time>=record.result.duration)reportFinish();refreshUI();draw();}lastFrame=now;requestAnimationFrame(tick);
+  animationFrame=0;
+  if(playing&&record){
+    const elapsed=lastFrame?Math.min(.15,(now-lastFrame)/1000):0;time=Math.min(record.result.duration,time+elapsed*Number($('speed').value));
+    if(time>=record.result.duration)reportFinish();
+    if(now-lastUiFrame>=100||!playing){refreshUI();lastUiFrame=now;}
+    draw();lastFrame=now;if(playing)requestFrame();
+  }else lastFrame=0;
 }
 
 async function boot(){
@@ -445,7 +464,7 @@ async function boot(){
     $('model-detail').textContent=`研究用能量恢复参数 ${config.model.physics.cushion_restitution}；滑动摩擦 ${config.model.physics.sliding_friction}；滚动减速度系数 ${config.model.physics.rolling_friction}。球球摩擦随表面滑速变化，含水平带偏和侧旋传递；暂不含碰撞竖直冲量或高低旋转移。`;
     $('build').textContent=`${config.app_version} · ${config.model_signature.slice(0,8)}`;
     announce(active(cueBall())?(oldVersion?'旋转碰撞模型已更新，旧参数场景已在本机备份。':'球桌已就绪，可试打侧旋传递与碰薄带偏，或进入旋转实验台对照。'):'已恢复上次场景。白球已落袋，点击台面空位重新摆放白球。');
-    requestAnimationFrame(tick);
+    requestFrame();
   }catch(error){announce(`无法连接练习台服务：${error.message}。请运行“启动练习台.cmd”后刷新。`,true);$('canvas-empty').textContent='本地服务尚未就绪';}
 }
 boot();

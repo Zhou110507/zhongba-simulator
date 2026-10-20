@@ -27,5 +27,6 @@ jobs:
       - run: node --check web/app.js
       - run: node --check web/lab.js
       - run: node --check web/table-modes.js
-      - run: node --test tests/shot-guide.test.cjs
+      - run: node --check web/replay-core.js
+      - run: node --test tests/shot-guide.test.cjs tests/replay-core.test.cjs
       - run: node tools/audit_aim.cjs

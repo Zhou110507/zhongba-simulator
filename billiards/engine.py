@@ -7,7 +7,7 @@ Other persistent contacts return explicit unsupported statuses.
 
 from bisect import bisect_right
 from dataclasses import asdict, dataclass, replace
-from math import isfinite
+from math import isfinite, sqrt, copysign
 
 import numpy as np
 
@@ -63,10 +63,32 @@ class Result:
         return tuple(advance(b, m, time-segment.start)
                      for b, m in zip(segment.balls, segment.motions))
 
-    def to_dict(self, sample_hz: float | None = 60) -> dict:
+    def to_dict(self, sample_hz: float | None = 60, *, compact=False) -> dict:
         if sample_hz is not None and (not isfinite(sample_hz) or sample_hz <= 0):
             raise ValueError("Sampling frequency must be finite and positive")
         times = list(np.arange(0, self.duration, 1/sample_hz)) + [self.duration] if sample_hz is not None else []
+        if compact:
+            # Playback needs one contact snapshot for the ghost, not two full
+            # copies of all 16 balls at every support impulse.
+            def ball_data(b):
+                return {'id':b.id,'position':{'x':b.position.x,'y':b.position.y},
+                        'velocity':{'x':b.velocity.x,'y':b.velocity.y},
+                        'omega':{'x':b.omega.x,'y':b.omega.y,'z':b.omega.z},
+                        'spec':{'radius':b.spec.radius,'mass':b.spec.mass},'pocket':b.pocket}
+            events=[];first=False
+            for e in self.events:
+                entry={'time':e.time,'kind':e.kind,'actors':e.actors,'detail':e.detail}
+                if not first and 'cue' in e.actors and e.kind in ('ball_ball','ball_cushion','ball_pocket'):
+                    entry['before']=[ball_data(b) for b in e.before if b.id in e.actors];first=True
+                events.append(entry)
+            return {'schema_version':1,'detail':'playback-v1','engine_version':self.physics.version,
+                    'status':self.status,'duration':self.duration,'table':asdict(self.table),'physics':asdict(self.physics),
+                    'initial':[ball_data(b) for b in self.initial],'final':[ball_data(b) for b in self.final],
+                    'segments':[{'start':s.start,'end':s.end,'balls':[ball_data(b) for b in s.balls],
+                                 'motion':[{'phase':m.phase,'acceleration':{'x':m.acceleration.x,'y':m.acceleration.y},
+                                            'angular_acceleration':{'x':m.angular_acceleration.x,'y':m.angular_acceleration.y,'z':m.angular_acceleration.z}}
+                                           for m in s.motions]} for s in self.segments],
+                    'events':events,'samples':[]}
         return {"schema_version": 1, "engine_version": self.physics.version,
                 "status": self.status, "duration": self.duration,
                 "table": asdict(self.table), "physics": asdict(self.physics),
@@ -95,6 +117,18 @@ def real_roots(coefficients, horizon):
     """Roots on a finite interval, rescaled to dimensionless time [0, 1]."""
     if horizon <= 0:
         return []
+    coefficients=list(coefficients)
+    while coefficients and coefficients[-1]==0:coefficients.pop()
+    if len(coefficients)<=1:return []
+    if len(coefficients)<=3:
+        c,b=coefficients[:2]
+        if len(coefficients)==2:roots=[-c/b]
+        else:
+            a=coefficients[2];discriminant=b*b-4*a*c
+            if discriminant<0:return []
+            q=-.5*(b+copysign(sqrt(discriminant),b))
+            roots=[q/a,c/q] if q else [-b/(2*a)]
+        return sorted(max(0.0,min(horizon,t)) for t in roots if -TIME_EPS<=t<=horizon+TIME_EPS)
     coeff = np.asarray(coefficients, dtype=float)
     coeff = np.trim_zeros(coeff, "b")
     if len(coeff) <= 1:
@@ -140,12 +174,13 @@ def contact_candidates(balls, motions, table, horizon):
             other = balls[j]
             if other.pocket is not None:
                 continue
-            dp = other.position-b.position
-            dv = other.velocity-b.velocity
-            da = motions[j].acceleration-a
             diameter = r+other.spec.radius
-            reach=dv.norm()*horizon+.5*da.norm()*horizon*horizon
-            if dp.norm()>diameter+reach+SPACE_EPS:continue
+            dx=other.position.x-b.position.x;dy=other.position.y-b.position.y
+            vx=other.velocity.x-b.velocity.x;vy=other.velocity.y-b.velocity.y
+            ax=motions[j].acceleration.x-a.x;ay=motions[j].acceleration.y-a.y
+            reach=(vx*vx+vy*vy)**.5*horizon+.5*(ax*ax+ay*ay)**.5*horizon*horizon
+            if dx*dx+dy*dy>(diameter+reach+SPACE_EPS)**2:continue
+            dp=Vec2(dx,dy);dv=Vec2(vx,vy);da=Vec2(ax,ay)
             if (dp.norm()-diameter <= SPACE_EPS and
                     abs(dp.dot(dv)) <= SPEED_EPS*diameter and
                     dv.dot(dv)+dp.dot(da) < -SPEED_EPS):
@@ -219,7 +254,7 @@ def island_touches_cushion(contacts,balls,table):
         changed=False
         for i,b in enumerate(balls):
             if i in indices or b.pocket is not None:continue
-            if any((b.position-balls[j].position).norm()<=b.spec.radius+balls[j].spec.radius+SPACE_EPS for j in indices):
+            if any((b.position.x-balls[j].position.x)**2+(b.position.y-balls[j].position.y)**2<=(b.spec.radius+balls[j].spec.radius+SPACE_EPS)**2 for j in indices):
                 indices.add(i);changed=True
     for i in indices:
         b=balls[i];p=b.position;r=b.spec.radius

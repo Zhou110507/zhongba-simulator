@@ -5,7 +5,7 @@ Numbers below refer to section III. No called pocket is required, including 8.
 """
 
 from copy import deepcopy
-from math import sqrt
+from math import sqrt, cos, sin, pi
 import random
 
 from .model import Ball, Vec2
@@ -21,17 +21,31 @@ def group(ball_id):
     return 'solid' if 1<=n<=7 else 'stripe' if 9<=n<=15 else None
 
 
-def racked_balls(service,seed=0):
+def racked_balls(service,seed=0,gap_mm=0):
+    """0 = ideal tight rack; positive = explicit, bounded engineering error.
+
+    Dilating by half the maximum gap plus bounded independent radial offsets
+    guarantees no overlap. The apex remains exactly on the foot spot.
+    """
+    if isinstance(gap_mm,bool) or not isinstance(gap_mm,(float,int)) or not 0<=gap_mm<=.5:
+        raise ValueError('摆球微隙幅度必须在 0–0.5 mm 内')
+    rng=random.Random(seed)
     remaining=[str(n) for n in range(2,15) if n not in (7,8)]
-    random.Random(seed).shuffle(remaining)
+    rng.shuffle(remaining)
     layout=[];iterator=iter(remaining)
     r=service.ball_spec.radius
     for row in range(5):
         for column in range(row+1):
             key=('1' if row==0 else '8' if (row,column)==(2,1) else
                  '7' if (row,column)==(4,0) else '15' if (row,column)==(4,4) else next(iterator))
-            layout.append(Ball(key,Vec2(service.table.length-HEAD+row*sqrt(3)*r,
-                                       service.table.width/2+(2*column-row)*r),spec=service.ball_spec))
+            half_gap=gap_mm/2000
+            pitch=r+half_gap/2
+            x=service.table.length-HEAD+row*sqrt(3)*pitch
+            y=service.table.width/2+(2*column-row)*pitch
+            if row and gap_mm:
+                angle=rng.uniform(0,2*pi);offset=rng.uniform(0,half_gap/2)
+                x+=offset*cos(angle);y+=offset*sin(angle)
+            layout.append(Ball(key,Vec2(x,y),spec=service.ball_spec))
     return [Ball('cue',Vec2(.3,service.table.width/2),spec=service.ball_spec),*layout]
 
 

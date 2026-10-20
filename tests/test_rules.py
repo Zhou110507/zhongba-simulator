@@ -16,7 +16,7 @@ def service():
 
 @pytest.fixture
 def state(service):
-    value=GameStore(service).new({})
+    value=GameStore(service).new({'seed':0,'gap_mm':0})
     value.update(is_break=False,ball_in_hand=None)
     return value
 
@@ -40,7 +40,7 @@ def response(state,potted=(),events=None):
 
 
 def test_rack_dimensions_spots_tightness_and_numbers(service):
-    state=GameStore(service).new({});balls=state['scene']['balls'];r=service.ball_spec.radius
+    state=GameStore(service).new({'seed':0,'gap_mm':0});balls=state['scene']['balls'];r=service.ball_spec.radius
     assert (service.table.length,service.table.width)==(2.54,1.27)
     assert {b['id'] for b in balls}=={'cue',*(str(n) for n in range(1,16))}
     assert state['foot_spot']=={'x':1.905,'y':.635}
@@ -200,7 +200,7 @@ def test_server_revision_placement_persistence_and_authority(service,monkeypatch
     from pathlib import Path
     from uuid import uuid4
     directory=Path('artifacts/rules/test-matches')/uuid4().hex
-    store=GameStore(service,directory);game=store.new({});key=game['id']
+    store=GameStore(service,directory);game=store.new({'seed':0,'gap_mm':0});key=game['id']
     with pytest.raises(ValueError,match='开球线后'):
         store.action({'id':key,'revision':0,'action':'place','x':1,'y':.4})
     game=store.action({'id':key,'revision':0,'action':'place','x':.4,'y':.4})
@@ -223,7 +223,7 @@ def test_server_revision_placement_persistence_and_authority(service,monkeypatch
 
 
 def test_weak_break_choices_and_warning_persist(service,monkeypatch):
-    store=GameStore(service);game=store.new({})
+    store=GameStore(service);game=store.new({'seed':0,'gap_mm':0})
     def fake(scene):
         value=response(store.games[game['id']],events=[hit()]);value['next_scene']=deepcopy(scene)
         return value

@@ -5,7 +5,7 @@ rounded capsule ends are a prototype profile, not a measured JOY pocket shape.
 """
 
 from dataclasses import asdict, dataclass, replace
-from functools import lru_cache
+from functools import lru_cache, cached_property
 from math import isfinite, sqrt
 
 from .cushion import resolve_cushion_normal
@@ -26,10 +26,21 @@ class Surface:
     radius: float
     kind: str = "rail"
 
+    @cached_property
+    def axis_data(self):
+        dx=self.end.x-self.start.x;dy=self.end.y-self.start.y
+        return dx,dy,dx*dx+dy*dy
+
     def closest(self, position):
-        axis = self.end-self.start
-        fraction = max(0.0,min(1.0,(position-self.start).dot(axis)/axis.dot(axis)))
-        return self.start+axis*fraction
+        dx,dy,length2=self.axis_data
+        fraction=max(0.0,min(1.0,((position.x-self.start.x)*dx+(position.y-self.start.y)*dy)/length2))
+        return Vec2(self.start.x+dx*fraction,self.start.y+dy*fraction)
+
+    def distance_squared(self,position):
+        dx,dy,length2=self.axis_data
+        x=position.x-self.start.x;y=position.y-self.start.y
+        fraction=max(0.0,min(1.0,(x*dx+y*dy)/length2))
+        return (x-dx*fraction)**2+(y-dy*fraction)**2
 
 
 @dataclass(frozen=True)
@@ -43,11 +54,11 @@ class Pocket:
     entry_depth: float = 0.0
     fall_radius: float | None = None
 
-    @property
+    @cached_property
     def gate(self):
         return self.mouth+self.outward*self.depth
 
-    @property
+    @cached_property
     def fall_center(self):
         return self.gate+self.outward*self.fall_radius if self.fall_radius is not None else None
 
@@ -190,8 +201,8 @@ def validate_position(ball, table):
 
 
 def touches_surface(ball, table):
-    return any((ball.position-surface.closest(ball.position)).norm()
-               <= ball.spec.radius+surface.radius+SPACE_EPS for surface in outline(table).surfaces)
+    return any(surface.distance_squared(ball.position)<=(ball.spec.radius+surface.radius+SPACE_EPS)**2
+               for surface in outline(table).surfaces)
 
 
 def _position(ball, acceleration, time):
@@ -235,7 +246,7 @@ def boundary_candidates(ball, motion, table, horizon, roots):
     reach=ball.velocity.norm()*horizon+.5*acceleration.norm()*horizon*horizon
     if reach==0:return candidates
     for surface in geometry.surfaces:
-        if (ball.position-surface.closest(ball.position)).norm()>ball.spec.radius+surface.radius+reach+SPACE_EPS:
+        if surface.distance_squared(ball.position)>(ball.spec.radius+surface.radius+reach+SPACE_EPS)**2:
             continue
         axis = surface.end-surface.start
         length = axis.norm()

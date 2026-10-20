@@ -47,7 +47,7 @@ def test_mixed_network_does_not_silently_ignore_frozen_rail():
 
 @pytest.mark.parametrize('angle,speed',[(0,4),(.45,5)])
 def test_actual_tightly_racked_break_completes_and_commits_legal_decision(angle,speed):
-    service=PlayService(table_profile='cbsa_2017');store=GameStore(service);game=store.new({'seed':0})
+    service=PlayService(table_profile='cbsa_2017');store=GameStore(service);game=store.new({'seed':0,'gap_mm':0})
     request={'id':game['id'],'revision':0,'shot':{**game['scene']['shot'],'angle_deg':angle,'cue_speed':speed}}
     preview=store.preview(request)
     assert preview['complete'],preview['result']['status']

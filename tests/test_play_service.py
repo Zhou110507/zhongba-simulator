@@ -221,3 +221,19 @@ def test_rule_and_free_mode_http_contracts(server):
     assert status==200 and [b['id'] for b in value['scene']['balls']]==['cue','3','8','13']
     assert value['scene']['table']['width']==1.26
     assert request(server,'POST','/api/free-table',b'{"balls":["1","1"],"cue":{"x":0.3,"y":0.4}}')[0]==400
+
+
+def test_compact_playback_and_gzip_transport_keep_exact_final_balls(server,service):
+    import gzip
+    body=json.dumps(service.presets()[0]['scene']).encode()
+    status,_,raw=request(server,'POST','/api/shot',body)
+    full=json.loads(raw)
+    status,headers,packed=request(server,'POST','/api/shot',body,
+        {'X-Billiards-Playback':'1','Accept-Encoding':'gzip'})
+    assert status==200
+    # Successful decoding also verifies the negotiated compressed response.
+    compact=json.loads(gzip.decompress(packed))
+    assert compact['result']['detail']=='playback-v1'
+    assert compact['result']['final']==full['result']['final']
+    assert compact['result']['segments']==full['result']['segments']
+    assert len(packed)<len(raw)*.3
