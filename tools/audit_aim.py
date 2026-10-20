@@ -1,9 +1,13 @@
 """Build real engine cases for independent, synchronous JS first-contact QA."""
 
 from copy import deepcopy
+from math import atan2, degrees
 import json
 
 from billiards.play import PlayService, ROOT
+from billiards import Ball
+from billiards.cue import ShotInput
+from billiards.pockets import outline
 
 
 def build():
@@ -15,6 +19,15 @@ def build():
             scene = deepcopy(base)
             scene['shot'].update(angle_deg=angle,cue_speed=speed,tip_y=tip,tip_x=0)
             cases.append((f'angle={angle},speed={speed},tip={tip}',scene))
+    # All six curved support edges, offset entries and jaw misses must agree
+    # immediately in JS before any asynchronous full-shot result arrives.
+    for pocket in outline(service.table).pockets:
+        miss = .04 if 'middle' in pocket.id else .025
+        for across in (0,.012,miss,-miss):
+            position = pocket.gate-pocket.outward*.2+pocket.tangent*across
+            scene = service.snapshot([Ball('cue',position,spec=service.ball_spec)],
+                                     ShotInput(degrees(atan2(pocket.outward.y,pocket.outward.x))%360,1,0,0))
+            cases.append((f'{pocket.id},offset={across}',scene))
     reports = []
     for name,scene in cases:
         response = service.shoot(scene)

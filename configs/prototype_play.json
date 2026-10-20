@@ -7,11 +7,12 @@
     "jaw_radius": 0.03,
     "shelf_depth": 0.01,
     "jaw_extension": 0.09,
-    "version": "curved-support-v4",
-    "calibration_status": "GB2008_mouth_reference_engineering_tangent_curves",
+    "version": "curved-support-v5",
+    "calibration_status": "GB2008_mouth_reference_engineering_side_registration_v1",
     "side_jaw_radius": 0.04,
     "corner_fall_radius": 0.045,
-    "side_fall_radius": 0.047
+    "side_fall_radius": 0.047,
+    "side_fall_front_offset": -0.015
   },
   "pocket_provenance": {
     "source": "GB/T 22751-2008, table 1, Chinese table row (original scanned page checked)",
@@ -20,7 +21,8 @@
     "side_mouth": "86 +/- 1 mm historical national-standard reference; current prototype uses 86 mm minimum throat width",
     "jaw_radius": "Corner R30 mm engineering approximation, not a measured standard radius. C1 tangent to flat rail and channel.",
     "side_jaw_radius": "Side R40 mm engineering approximation, not a measured standard radius. Distinct from corner jaws.",
-    "shelf_depth": "10 mm engineering central support-lip setback from the flared entrance plane; now the front tangent of a circular cut-out, not a straight capture line. Not a measured slate shelf or 3-D falling model.",
+    "shelf_depth": "Corner support front tangent remains 10 mm behind the flared entrance. Side pockets now use the independent signed side_fall_front_offset. Neither is a measured slate shelf or 3-D falling model.",
+    "side_fall_front_offset": "Engineering revision after review: side support front is 15 mm inward of the straight cushion nose (positive means outward). With R47 mm this moves both side fall centres inward 25 mm, from 57 to 32 mm outward. Selected as a bounded geometry adjustment below half a ball diameter; NOT a manufacturer standard, photo measurement or calibrated real-table value. The circular slate edge is independent of the unchanged rubber jaws and 86 mm throat.",
     "support_curve": "CN2311752Y distinguishes circular lower fall lines from cushion-jaw curves. Slate of China describes separate rounded corner/side cut-outs machined to customer drawings. Corner fall R45 mm and side fall R47 mm are explicit engineering approximations, not published standard or manufacturer measurements. Circle interior with jaw clearance is the absorbing region; renderer uses the identical circles.",
     "support_sources": ["https://patents.google.com/patent/CN2311752Y/zh", "https://slateofchina.com/product/9ft-heyball-table-slate/"],
     "jaw_extension": "90 mm experimental channel; unchanged. Slate cut, metal pocket body and rubber nose radii are not interchangeable.",

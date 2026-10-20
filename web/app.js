@@ -249,6 +249,38 @@ function drawBall(ball, map, ghost=false) {
   ctx.restore();
 }
 
+function drawPocketWell(pocket,map) {
+  const {X,Y,scale}=map,center=pocket.fall_center,radius=pocket.fall_radius;
+  const x=X(center.x),y=Y(center.y),r=radius*scale,wrap=(radius+.018)*scale;
+  const outward=Math.atan2(-pocket.outward.y,pocket.outward.x);
+  ctx.save();
+  // Cloth wraps continuously around the pocket; the outer rim is decorative.
+  const cloth=ctx.createRadialGradient(x,y,r*.7,x,y,wrap);
+  cloth.addColorStop(0,'#1d5039');cloth.addColorStop(.8,'#397653');cloth.addColorStop(1,'#2c6548');
+  ctx.beginPath();ctx.arc(x,y,wrap,0,Math.PI*2);ctx.fillStyle=cloth;ctx.fill();
+  ctx.strokeStyle='#75a87e30';ctx.lineWidth=Math.max(1,.0015*scale);ctx.stroke();
+  // All dark pixels stay inside the shared physical cut-out. Rounded rubber
+  // is painted over this well below, so solid jaws never look like open holes.
+  ctx.save();ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.clip();
+  const well=ctx.createRadialGradient(x-Math.cos(outward)*r*.35,y-Math.sin(outward)*r*.35,r*.08,x,y,r);
+  well.addColorStop(0,'#101f19');well.addColorStop(.65,'#07120d');well.addColorStop(1,'#020906');
+  ctx.fillStyle=well;ctx.fillRect(x-r,y-r,2*r,2*r);
+  // A subdued net at depth gives the bag a readable interior without moving
+  // the slate edge or adding decorative collision surfaces.
+  const nx=x+Math.cos(outward)*r*.22,ny=y+Math.sin(outward)*r*.22,nr=r*.58;
+  ctx.save();ctx.beginPath();ctx.arc(nx,ny,nr,0,Math.PI*2);ctx.clip();
+  ctx.fillStyle='#71877418';ctx.fillRect(nx-nr,ny-nr,2*nr,2*nr);
+  ctx.strokeStyle='#b9c7aa38';ctx.lineWidth=Math.max(.8,.001*scale);
+  for(let i=-2;i<=2;i++){
+    const offset=i*nr/2.5;ctx.beginPath();ctx.moveTo(nx+offset,ny-nr);ctx.quadraticCurveTo(nx+offset*.75,ny,nx+offset,ny+nr);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(nx-nr,ny+offset);ctx.quadraticCurveTo(nx,ny+offset*.75,nx+nr,ny+offset);ctx.stroke();
+  }
+  ctx.restore();ctx.restore();
+  // Front lip follows the actual circle, including the newly inset side lip.
+  ctx.beginPath();ctx.arc(x,y,r,outward+Math.PI*.58,outward+Math.PI*1.42);
+  ctx.strokeStyle='#97bea85c';ctx.lineWidth=Math.max(1,.0018*scale);ctx.stroke();ctx.restore();
+}
+
 function draw() {
   if(!config||!scene)return;
   const map=transform(), table=config.model.table, {X,Y,scale}=map;
@@ -261,12 +293,7 @@ function draw() {
   ctx.save();ctx.beginPath();ctx.roundRect(X(-outer),Y(table.width+outer),(table.length+2*outer)*scale,(table.width+2*outer)*scale,24);ctx.clip();
   for(const pocket of config.geometry.pockets){
     if(!pocket.fall_center)continue;
-    // Cloth wraps behind the pocket and joins both neighbouring cushions.
-    // The dark cut-out is the actual support circle used by the engine.
-    const center=pocket.fall_center,radius=pocket.fall_radius;
-    ctx.beginPath();ctx.arc(X(center.x),Y(center.y),(radius+.022)*scale,0,Math.PI*2);ctx.fillStyle='#306e4e';ctx.fill();
-    const well=ctx.createRadialGradient(X(center.x),Y(center.y),radius*.2*scale,X(center.x),Y(center.y),radius*scale);well.addColorStop(0,'#050a08');well.addColorStop(.8,'#0a1410');well.addColorStop(1,'#172b20');
-    ctx.beginPath();ctx.arc(X(center.x),Y(center.y),radius*scale,0,Math.PI*2);ctx.fillStyle=well;ctx.fill();
+    drawPocketWell(pocket,map);
   }
   // Fill the solid behind each nose so rounded jaws join the cushion body.
   // Clip remote channel caps to the frame; capture occurs before those caps.
@@ -408,7 +435,7 @@ async function boot(){
     setScene(initial,presetId,false);$('canvas-empty').hidden=true;
     $('model-detail').textContent=`研究用能量恢复参数 ${config.model.physics.cushion_restitution}；滑动摩擦 ${config.model.physics.sliding_friction}；滚动减速度系数 ${config.model.physics.rolling_friction}。`;
     $('build').textContent=`${config.app_version} · ${config.model_signature.slice(0,8)}`;
-    announce(active(cueBall())?(oldVersion?'弧形袋沿与即时虚线白球已更新，旧参数场景已在本机备份。':'球桌已就绪。虚线白球随瞄准即时更新，可直接调整方向试打。'):'已恢复上次场景。白球已落袋，点击台面空位重新摆放白球。');
+    announce(active(cueBall())?(oldVersion?'两个中袋已向内调整，旧参数场景已在本机备份。':'球桌已就绪。虚线白球随瞄准即时更新，可直接调整方向试打。'):'已恢复上次场景。白球已落袋，点击台面空位重新摆放白球。');
     requestAnimationFrame(tick);
   }catch(error){announce(`无法连接练习台服务：${error.message}。请运行“启动练习台.cmd”后刷新。`,true);$('canvas-empty').textContent='本地服务尚未就绪';}
 }

@@ -13,8 +13,9 @@ from .model import Vec2
 
 SPACE_EPS = 1e-9
 SPEED_EPS = 1e-10
-TANGENT_VERSIONS = ('tangent-jaws-v2','tangent-jaws-v3','curved-support-v4')
-SUPPORT_VERSIONS = ('tangent-jaws-v3','curved-support-v4')
+CURVED_VERSIONS = ('curved-support-v4','curved-support-v5')
+TANGENT_VERSIONS = ('tangent-jaws-v2','tangent-jaws-v3',*CURVED_VERSIONS)
+SUPPORT_VERSIONS = ('tangent-jaws-v3',*CURVED_VERSIONS)
 
 
 @dataclass(frozen=True)
@@ -68,10 +69,15 @@ def validate_geometry(table):
     corner = spec.corner_mouth/sqrt(2)
     if 2*corner >= table.width or corner+spec.side_mouth/2+2*spec.jaw_radius >= table.length/2:
         raise ValueError("Pocket openings overlap")
-    if spec.version=='curved-support-v4':
+    if spec.version in CURVED_VERSIONS:
         if not all(value is not None and isfinite(value) and value > 0
                    for value in (spec.corner_fall_radius,spec.side_fall_radius)):
             raise ValueError('Curved support boundaries require positive radii')
+    if spec.version=='curved-support-v5':
+        offset = spec.side_fall_front_offset
+        if (offset is None or isinstance(offset,bool) or not isfinite(offset)
+                or not -spec.side_fall_radius < offset < spec.jaw_extension):
+            raise ValueError('Side support offset must be finite and inside the local pocket region')
     if spec.version in TANGENT_VERSIONS:
         end = (spec.corner_mouth+2*spec.jaw_radius)/sqrt(2)-spec.jaw_radius
         if 2*end >= table.width or end+spec.side_mouth/2+side_radius >= table.length/2:
@@ -150,8 +156,12 @@ def tangent_outline(table):
         # v3 measures the support lip from the flared entrance, rather than
         # stacking a long shelf behind the already recessed throat.
         depth = -radius+spec.shelf_depth if spec.version in SUPPORT_VERSIONS else spec.shelf_depth
+        if spec.version=='curved-support-v5' and 'middle' in name:
+            # mouth is one jaw radius outward of the straight nose. Register
+            # the support edge independently; do not move rubber to move slate.
+            depth = -radius+spec.side_fall_front_offset
         fall_radius = ((spec.side_fall_radius if 'middle' in name else spec.corner_fall_radius)
-                       if spec.version=='curved-support-v4' else None)
+                       if spec.version in CURVED_VERSIONS else None)
         pockets.append(Pocket(name,mouth,outward,tangent,opening/2,depth,-radius,fall_radius))
         for sign in (-1,1):
             start = mouth+tangent*(sign*(opening/2+radius))

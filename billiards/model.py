@@ -82,6 +82,8 @@ class PocketSpec:
     side_jaw_radius: float | None = None
     corner_fall_radius: float | None = None
     side_fall_radius: float | None = None
+    # Signed from the straight cushion nose: positive outward, negative inward.
+    side_fall_front_offset: float | None = None
 
 
 @dataclass(frozen=True)

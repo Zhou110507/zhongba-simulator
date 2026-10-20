@@ -7,7 +7,7 @@ from billiards import Ball, Physics, Vec2, Vec3, simulate
 from billiards.cue import ShotInput, strike
 from billiards.model import validate_scene
 from billiards.play import PlayService
-from billiards.pockets import outline
+from billiards.pockets import clear_drop_position, outline
 
 
 @pytest.fixture(scope='module')
@@ -148,3 +148,52 @@ def test_offset_entry_crosses_shared_support_circle_not_a_straight_capture_plane
     position = event.before[0].position
     assert (position-pocket.fall_center).norm()==pytest.approx(pocket.fall_radius,abs=1e-9)
     assert (position-pocket.gate).dot(pocket.outward)>.001
+
+
+def test_side_registration_moves_the_shared_fall_edge_without_moving_rubber_or_corners(service):
+    previous = replace(service.table,pockets=replace(service.table.pockets,version='curved-support-v4'))
+    old,new = outline(previous),outline(service.table)
+    assert new.surfaces==old.surfaces
+    for before,after in zip(old.pockets,new.pockets):
+        if 'middle' in after.id:
+            assert (after.fall_center-before.fall_center).dot(after.outward)==pytest.approx(-.025)
+            assert (after.gate-before.gate).dot(after.outward)==pytest.approx(-.025)
+        else:
+            assert after==before
+
+
+@pytest.mark.parametrize('name',('bottom-middle','top-middle'))
+def test_ball_in_new_side_cutout_drops_where_previous_profile_left_it_supported(service,name):
+    pocket = next(p for p in outline(service.table).pockets if p.id==name)
+    ball = Ball('1',pocket.gate+pocket.outward*.003)
+    previous = replace(service.table,pockets=replace(service.table.pockets,version='curved-support-v4'))
+    assert simulate([ball],previous,service.physics).final[0].pocket is None
+    assert simulate([ball],service.table,service.physics).final[0].pocket==name
+
+
+@pytest.mark.parametrize('index',range(6))
+@pytest.mark.parametrize('sign',(-1,1))
+def test_a_jaw_obstructs_a_missed_pocket_before_the_support_circle_can_capture(service,index,sign):
+    geometry = outline(service.table)
+    pocket = geometry.pockets[index]
+    across = sign*(.04 if 'middle' in pocket.id else .025)
+    ball = Ball('1',pocket.gate-pocket.outward*.2+pocket.tangent*across,pocket.outward*.6)
+    result = simulate([ball],service.table,service.physics,max_time=1)
+    first = next(e for e in result.events if e.kind in ('ball_cushion','ball_pocket'))
+    assert first.kind=='ball_cushion'
+    assert first.detail.startswith('jaw:'+pocket.id+':')
+    before = first.before[0]
+    jaw = next(s for s in geometry.surfaces if s.id==first.detail)
+    assert (before.position-jaw.closest(before.position)).norm()==pytest.approx(jaw.radius+ball.spec.radius,abs=1e-9)
+    # Even a point geometrically inside the cut-out must not absorb a ball
+    # whose sphere intersects a solid jaw.
+    obstructed = pocket.fall_center+pocket.tangent*across
+    assert (obstructed-pocket.fall_center).norm()<pocket.fall_radius
+    assert not clear_drop_position(obstructed,ball.spec.radius,pocket,geometry)
+
+
+@pytest.mark.parametrize('offset',(None,float('nan'),float('inf'),-.047,.09,True))
+def test_side_registration_rejects_invalid_or_nonlocal_offsets(service,offset):
+    table = replace(service.table,pockets=replace(service.table.pockets,side_fall_front_offset=offset))
+    with pytest.raises(ValueError,match='Side support offset'):
+        outline(table)
