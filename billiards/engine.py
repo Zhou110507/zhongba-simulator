@@ -81,13 +81,14 @@ class Result:
                 if not first and 'cue' in e.actors and e.kind in ('ball_ball','ball_cushion','ball_pocket'):
                     entry['before']=[ball_data(b) for b in e.before if b.id in e.actors];first=True
                 events.append(entry)
-            return {'schema_version':1,'detail':'playback-v1','engine_version':self.physics.version,
+            return {'schema_version':1,'detail':'playback-v2','engine_version':self.physics.version,
                     'status':self.status,'duration':self.duration,'table':asdict(self.table),'physics':asdict(self.physics),
                     'initial':[ball_data(b) for b in self.initial],'final':[ball_data(b) for b in self.final],
-                    'segments':[{'start':s.start,'end':s.end,'balls':[ball_data(b) for b in s.balls],
-                                 'motion':[{'phase':m.phase,'acceleration':{'x':m.acceleration.x,'y':m.acceleration.y},
-                                            'angular_acceleration':{'x':m.angular_acceleration.x,'y':m.angular_acceleration.y,'z':m.angular_acceleration.z}}
-                                           for m in s.motions]} for s in self.segments],
+                    # Lossless numeric rows avoid repeating field names, IDs and
+                    # immutable specs at every contact microsecond contact sample.
+                    'segments':[s.packed() if hasattr(s,'packed') else [s.start,s.end,
+                                 [[b.position.x,b.position.y,b.velocity.x,b.velocity.y,b.omega.x,b.omega.y,b.omega.z,b.pocket] for b in s.balls],
+                                 [[m.phase,m.acceleration.x,m.acceleration.y,m.angular_acceleration.x,m.angular_acceleration.y,m.angular_acceleration.z] for m in s.motions]] for s in self.segments],
                     'events':events,'samples':[]}
         return {"schema_version": 1, "engine_version": self.physics.version,
                 "status": self.status, "duration": self.duration,
@@ -307,7 +308,7 @@ def simulate(balls, table=Table(), physics=Physics(), *, max_time=60.0, max_even
         time += dt
         contacts = [c for c in group if c.kind != "transition"]
         if any(c.kind == "persistent_contact" for c in contacts):
-            if (physics.contact_solver=='cluster' and all(len(c.indices)==2 for c in contacts)
+            if (physics.contact_solver in ('cluster','hybrid_hertz') and all(len(c.indices)==2 for c in contacts)
                     and not island_touches_cushion(contacts,balls,table)):
                 from .cluster import resolve_cluster, touching_pairs, project_positions, ClusterFailure
                 positive=[c.time for c in candidates if c.time>1e-12]
@@ -332,8 +333,24 @@ def simulate(balls, table=Table(), physics=Physics(), *, max_time=60.0, max_even
                 continue
             status = "unsupported_persistent_contact"
             break
+        if physics.contact_solver=='hybrid_hertz' and contacts and all(c.kind=='ball_ball' for c in contacts):
+            from .elastic import nearby_network, burst, ElasticFailure
+            if nearby_network(contacts,balls) and elastic_window_clear(balls,table,.008):
+                before=balls
+                try:
+                    elapsed,balls,micro,onsets=burst(balls,physics,limit=min(.008,max_time-time))
+                except ElasticFailure:
+                    status='elastic_model_failure'
+                    break
+                segments.extend(s.shifted(time) for s in micro)
+                for onset,a,b,values in onsets:
+                    events.append(Event(time+onset,'ball_ball',(a,b),'hertz-onset',values,values))
+                time+=elapsed
+                events.append(Event(time,'elastic_release',tuple(b.id for b in balls),'hertz-burst',before,balls))
+                iterations+=1
+                continue
         if coupled_contacts(contacts, balls, table, physics):
-            if (physics.contact_solver=='cluster' and any(c.kind=='ball_ball' for c in contacts)
+            if (physics.contact_solver in ('cluster','hybrid_hertz') and any(c.kind=='ball_ball' for c in contacts)
                     and all(c.kind in ('ball_ball','ball_cushion') for c in contacts)):
                 from .cluster import resolve_network, ClusterFailure
                 try:
@@ -386,3 +403,14 @@ def simulate(balls, table=Table(), physics=Physics(), *, max_time=60.0, max_even
             status = "numerical_failure"
             break
     return Result(initial, balls, table, physics, time, status, tuple(events), tuple(segments))
+
+
+def elastic_window_clear(balls,table,window):
+    """Conservative global energy bound excludes rails/pockets during a burst."""
+    active=[b for b in balls if b.pocket is None]
+    reach=sqrt(2*sum(b.energy for b in active)/min(b.spec.mass for b in active))*window+1e-5
+    if table.pockets is not None:
+        from .pockets import outline
+        surfaces=outline(table).surfaces
+        return all(s.distance_squared(b.position)>(b.spec.radius+s.radius+reach)**2 for b in active for s in surfaces)
+    return all(min(b.position.x,b.position.y,table.length-b.position.x,table.width-b.position.y)>b.spec.radius+reach for b in active)

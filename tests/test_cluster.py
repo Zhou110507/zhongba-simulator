@@ -59,7 +59,7 @@ def test_actual_tightly_racked_break_completes_and_commits_legal_decision(angle,
     service.decode(result['next_scene'])
     # Every instantaneous contact obeys passivity; no external energy is added.
     for event in result['result']['events']:
-        if event['kind']!='ball_ball':continue
+        if event['kind'] not in ('ball_ball','elastic_release'):continue
         def energy(values):
             return sum(.5*b['spec']['mass']*(b['velocity']['x']**2+b['velocity']['y']**2)+
                        .2*b['spec']['mass']*b['spec']['radius']**2*sum(w*w for w in b['omega'].values()) for b in values)
@@ -69,4 +69,8 @@ def test_actual_tightly_racked_break_completes_and_commits_legal_decision(angle,
         for i,a in enumerate(active):
             for b in active[i+1:]:
                 distance=sqrt(sum((a['position'][axis]-b['position'][axis])**2 for axis in ('x','y')))
-                assert distance>=a['spec']['radius']+b['spec']['radius']-1e-8
+                # Hertz compression is elastic deformation, not rigid overlap.
+                initial_energy=energy(result['result']['initial'])
+                k=2*service.physics.ball_young_modulus*sqrt(a['spec']['radius']*b['spec']['radius']/(a['spec']['radius']+b['spec']['radius']))/(3*(1-service.physics.ball_poisson_ratio**2))
+                tolerance=(2.5*initial_energy/k)**.4+1e-8 if segment['motion'][0]['phase']=='elastic_contact' else 1e-8
+                assert distance>=a['spec']['radius']+b['spec']['radius']-tolerance

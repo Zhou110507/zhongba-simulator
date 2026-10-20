@@ -117,7 +117,7 @@ def test_touching_neighbors_are_now_supported_by_the_cluster_solver(service):
     response = service.shoot(scene)
     assert response['result']['status'] == 'stopped'
     assert response['complete'] and response['next_scene'] is not None
-    assert any(e['detail']=='cluster' for e in response['result']['events'])
+    assert any(e['detail']=='hertz-onset' for e in response['result']['events'])
     service.decode(response['next_scene'])
 
 
@@ -233,7 +233,8 @@ def test_compact_playback_and_gzip_transport_keep_exact_final_balls(server,servi
     assert status==200
     # Successful decoding also verifies the negotiated compressed response.
     compact=json.loads(gzip.decompress(packed))
-    assert compact['result']['detail']=='playback-v1'
+    assert compact['result']['detail']=='playback-v2'
     assert compact['result']['final']==full['result']['final']
-    assert compact['result']['segments']==full['result']['segments']
+    assert len(compact['result']['segments'])==len(full['result']['segments'])
+    assert compact['result']['segments'][0][:2]==[full['result']['segments'][0][key] for key in ('start','end')]
     assert len(packed)<len(raw)*.3

@@ -16,7 +16,7 @@ def first_contact_analysis(result):
     hit = next((e for e in result.events if e.kind=='ball_ball' and 'cue' in e.actors),None)
     if hit is None:
         return None
-    if hit.detail.startswith('cluster'):
+    if hit.detail.startswith(('cluster','hertz')):
         return None  # An isolated two-ball diagnostic cannot describe an island.
     cue = next(b for b in hit.before if b.id=='cue')
     target = next(b for b in hit.before if b.id in hit.actors and b.id!='cue')

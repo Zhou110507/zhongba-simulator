@@ -16,7 +16,7 @@ from .pockets import geometry_dict, outline
 from .shot_analysis import first_contact_analysis
 
 ROOT = Path(__file__).resolve().parents[1]
-APP_VERSION = 'phase-c-performance-v2'
+APP_VERSION = 'phase-c-elastic-break-v1'
 
 
 def _number(value, name):
@@ -94,7 +94,7 @@ class PlayService:
         initial = tuple(launched if ball.id=='cue' else ball for ball in balls)
         started = perf_counter()
         result = simulate(initial,self.table,self.physics,max_time=60,
-                          max_events=6000 if self.physics.contact_solver=='cluster' else 1200)
+                          max_events=6000 if self.physics.contact_solver in ('cluster','hybrid_hertz') else 1200)
         elapsed = (perf_counter()-started)*1000
         complete = result.status=='stopped'
         final = tuple(replace(ball,velocity=Vec2(),omega=Vec3()) for ball in result.final)

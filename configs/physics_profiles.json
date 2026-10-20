@@ -123,14 +123,17 @@
         "cushion_friction": 0.14,
         "cushion_contact_height_ratio": 1.4,
         "cushion_steps": 512,
-        "version": "general-pool-spin-v2-cluster",
+        "version": "general-pool-spin-v3-hertz",
         "ball_contact_model": "projected_throw",
         "ball_friction_model": "alciatore",
         "ball_friction": 0.06,
         "ball_friction_a": 0.009951,
         "ball_friction_b": 0.108,
         "ball_friction_c": 1.088,
-        "contact_solver": "cluster"
+        "contact_solver": "hybrid_hertz",
+        "ball_young_modulus": 3800000000.0,
+        "ball_poisson_ratio": 0.375,
+        "elastic_step": 2e-06
       },
       "provenance": {
         "sliding_friction": {
@@ -152,9 +155,13 @@
         "ball_friction": {
           "source": "https://drdavepoolinfo.com/technical_proofs/new/TP_A-14.pdf",
           "basis": "Equations 5-17, p4 speed fit: mu=a+b*exp(-c*surface_slip), a=.009951, b=.108, c=1.088. Marlow data as reproduced and fitted by Alciatore; not new original measurements. Horizontal projection only; vertical ball contact impulse and draw/follow spin transfer omitted."
+        },
+        "multi_ball_contact": {
+          "source": "https://doi.org/10.1007/s11071-021-07117-4",
+          "basis": "Table 1: phenolic resin Young modulus 3800 MPa and Poisson ratio 0.375; Hertz sphere stiffness equation 3.4. Transfer reference, not direct measurements of the current balls. Damped Hertz force with exponent 1/4 follows the constant-restitution dimensional condition in Ramirez et al. 1999 section II (https://doi.org/10.1103/PhysRevE.60.4465); damping numerically matches e=0.95. Force-based contact in brief open-table networks, isolated CCD otherwise; cloth impulse omitted only during the bounded contact burst. Rail networks retain the documented rigid approximation."
         }
       },
-      "scope": "Projected horizontal throw and z spin transfer, including 3D surface-slip speed. Historical cloth/cushion settings retained. Not a full 3D collision or jointly calibrated real table. Ball networks use a deterministic projected impulse solve; persistent ball contacts use bounded 2 ms support steps with position projection. Historical isolated defaults retained."
+      "scope": "Planar throw and z spin transfer. Hybrid CCD and short finite-duration Hertz contact bursts for ball networks away from boundaries. 2 microsecond midpoint integration; elastic overlap stores energy, no plastic rack support during the burst. Microgap positions are included during contact propagation. No hop or vertical ball contact impulse. Rail networks retain the rigid impulse approximation. Not jointly calibrated to real break footage."
     }
   }
 }

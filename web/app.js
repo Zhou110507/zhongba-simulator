@@ -28,6 +28,7 @@ async function api(path, data, signal) {
   const response = await fetch(path, {method: data ? 'POST' : 'GET', headers: data ? {'Content-Type':'application/json','X-Billiards-Playback':'1'} : {}, body: data ? JSON.stringify(data) : undefined, signal});
   const value = await response.json();
   if (!response.ok) throw new Error(value.error || '本地服务请求失败');
+  if(value.result)value.result=ReplayCore.unpack(value.result);
   return value;
 }
 
@@ -131,14 +132,14 @@ function refreshUI() {
 }
 
 function populateEvents() {
-  const labels = {ball_ball:'触球',ball_cushion:'碰库',ball_pocket:'进袋',sliding_to_rolling:'恢复滚动',rolling_to_rest:'平动停止',spin_to_rest:'侧旋停止'};
+  const labels = {ball_ball:'触球',ball_cushion:'碰库',ball_pocket:'进袋',elastic_release:'弹性接触结束',sliding_to_rolling:'恢复滚动',rolling_to_rest:'平动停止',spin_to_rest:'侧旋停止'};
   const visibleEvents=[];let previous=null;
   for(const e of record.result.events){const key=e.kind+'|'+e.actors.join('|')+'|'+e.detail;const support=e.detail==='cluster-support';if(previous&&previous.key===key&&(support?e.time-previous.time<.03:Math.abs(e.time-previous.time)<1e-9)){previous.count++;continue;}previous={...e,key,count:1};visibleEvents.push(previous);}
   $('events').replaceChildren(...visibleEvents.map(event => {
     const row = document.createElement('div'); row.dataset.time = event.time;
     const stamp = document.createElement('time'); stamp.textContent = `${event.time.toFixed(3)} s`;
     const detail = document.createElement('span');
-    detail.textContent = event.kind === 'ball_pocket' ? `${ballName(event.actors[0])} → ${pocketNames[event.detail]}` : `${event.actors.map(ballName).join(' / ')} · ${labels[event.kind] || event.kind}${event.detail?.startsWith('jaw:') ? '（袋角）' : ''}`;
+    detail.textContent = event.kind === 'elastic_release' ? '球堆弹性接触结束' : event.kind === 'ball_pocket' ? `${ballName(event.actors[0])} → ${pocketNames[event.detail]}` : `${event.actors.map(ballName).join(' / ')} · ${labels[event.kind] || event.kind}${event.detail?.startsWith('jaw:') ? '（袋角）' : ''}`;
     if(event.count>1)detail.textContent+=`（持续接触 ×${event.count}）`;row.append(stamp, detail); return row;
   }));eventRows=[...$('events').children];eventCursor=0;
 }
@@ -166,7 +167,7 @@ async function calculate(commit) {
 }
 
 function statusText(status) {
-  const names = {cluster_model_failure:'当前多球接触未能可靠求解，本杆不推进对局。',unsupported_coupled_contact:'这一杆出现当前模型尚不支持的同时多点接触。请回到出杆前调整球位。',unsupported_persistent_contact:'这一杆出现持续贴库或贴球接触，当前模型尚不能可靠处理。',cushion_model_failure:'此杆碰库超出当前平面模型的求解范围。',max_events:'这一杆达到事件计算上限。',max_time:'这一杆在 60 秒内尚未完全停止。'};
+  const names = {elastic_model_failure:'当前弹性球堆接触未能可靠求解，本杆不推进对局。',cluster_model_failure:'当前多球接触未能可靠求解，本杆不推进对局。',unsupported_coupled_contact:'这一杆出现当前模型尚不支持的同时多点接触。请回到出杆前调整球位。',unsupported_persistent_contact:'这一杆出现持续贴库或贴球接触，当前模型尚不能可靠处理。',cushion_model_failure:'此杆碰库超出当前平面模型的求解范围。',max_events:'这一杆达到事件计算上限。',max_time:'这一杆在 60 秒内尚未完全停止。'};
   return names[status] || `计算未完成：${status}`;
 }
 
@@ -180,9 +181,9 @@ function reportFinish() {
   playing = false;
   if (finishedAnnounced) return;
   finishedAnnounced = true;
+  if(window.TableModes?.finish())return;
   const potted = record.summary.potted.filter(id => id !== 'cue').map(ballName);
   announce(record.complete ? `${potted.length ? `${potted.join('、')}进袋。` : '本杆结束。'}${record.summary.scratch ? '白球落袋，点击“摆放白球并继续”。' : '可以继续下一杆，或回到出杆前重试。'}` : statusText(record.result.status), !record.complete);
-  window.TableModes?.finish();
 }
 
 function stateAt(at){return ReplayCore.stateAt(record.result,at);}
@@ -326,7 +327,8 @@ function draw(){
   window.TableModes?.drawMarkings(map);
   if(record&&$('trails').checked){
     if(trailSource!==record.result){const layer=document.createElement('canvas');layer.width=canvas.width;layer.height=canvas.height;trailSource=record.result;
-      trailLayer=new ReplayCore.TrailLayer(record.result,layer,(target,segment,dt)=>ReplayCore.paintTrail(target,segment,dt,map,id=>id==='cue'?'#f0ecd19c':color(id)+'b0'));}
+      const trailColor=id=>id==='cue'?'#f0ecd19c':color(id)+'b0';
+      trailLayer=new ReplayCore.TrailLayer(record.result,layer,(target,segment,dt)=>ReplayCore.paintTrail(target,segment,dt,map,trailColor),(target,segments,start,end)=>ReplayCore.paintBurst(target,segments,start,end,map,trailColor));}
     trailLayer.render(ctx,traceTime);
   }
   const balls=fired?stateAt(time):scene.balls;
@@ -423,8 +425,8 @@ $('play').onclick=()=>{if(!record)return;if(time>=record.result.duration){startR
 $('replay').onclick=startReplay;
 $('seek').oninput=event=>{playing=false;time=Number(event.target.value)/1000*record.result.duration;if(time>=record.result.duration)reportFinish();else announce(`已暂停在 ${time.toFixed(2)} 秒，可继续播放或查看这一时刻。`);refreshUI();draw();};
 $('trails').onchange=draw;
-$('before').onclick=()=>{invalidate();announce('已回到出杆前，可重新调整这一杆。');refreshLaunch();refreshUI();draw();};
-$('next').onclick=()=>{if(window.TableModes?.isRules())return window.TableModes.next();if(!record?.complete||time<record.result.duration)return;const next=record.next_scene;setScene(next);if(!active(cueBall())){mode='edit';pending='cue';announce('白球落袋。点击台面空位重新摆放白球后继续。');}else announce('已应用本杆停球位置，可以继续下一杆。');refreshUI();draw();};
+$('before').onclick=()=>{if(window.TableModes?.before())return;invalidate();announce('已回到出杆前，可重新调整这一杆。');refreshLaunch();refreshUI();draw();};
+$('next').onclick=()=>{if(window.TableModes?.isRules())return;if(!record?.complete||time<record.result.duration)return;const next=record.next_scene;setScene(next);if(!active(cueBall())){mode='edit';pending='cue';announce('白球落袋。点击台面空位重新摆放白球后继续。');}else announce('已应用本杆停球位置，可以继续下一杆。');refreshUI();draw();};
 $('selected-ball').onchange=event=>{selected=event.target.value;mode='edit';refreshSelection();refreshUI();draw();};
 $('apply-position').onclick=()=>placeBall(selected,{x:Number($('ball-x').value)/1000,y:Number($('ball-y').value)/1000});
 $('add').onclick=()=>{pending=Array.from({length:15},(_,index)=>String(index+1)).find(id=>!scene.balls.some(ball=>ball.id===id));mode='edit';announce(`点击球桌空位，添加${ballName(pending)}。`);refreshUI();draw();};

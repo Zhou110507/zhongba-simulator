@@ -42,7 +42,15 @@ def test_micro_gap_breaks_finish_and_compact_decision_matches_full(service,seed)
     store=GameStore(service);game=store.new({'seed':seed,'gap_mm':.2})
     full=service.shoot(game['scene']);compact=service.shoot(game['scene'],compact=True)
     assert full['complete'] and compact['complete']
-    for key in ('initial','final','segments'):assert full['result'][key]==compact['result'][key]
+    for key in ('initial','final'):assert full['result'][key]==compact['result'][key]
+    # Numeric playback rows are lossless, including every contact microstep.
+    assert compact['result']['detail']=='playback-v2'
+    for a,b in zip(full['result']['segments'],compact['result']['segments'],strict=True):
+        assert [a['start'],a['end']]==b[:2]
+        for ball,row in zip(a['balls'],b[2],strict=True):
+            assert [*ball['position'].values(),*ball['velocity'].values(),*ball['omega'].values(),ball['pocket']]==row
+        for motion,row in zip(a['motion'],b[3],strict=True):
+            assert [motion['phase'],*motion['acceleration'].values(),*motion['angular_acceleration'].values()]==row
     assert adjudicate(game,full,service)==adjudicate(game,compact,service)
     before=next(e for e in full['result']['events'] if 'cue' in e['actors'] and e['kind'] in ('ball_ball','ball_cushion','ball_pocket'))
     after=next(e for e in compact['result']['events'] if 'before' in e)

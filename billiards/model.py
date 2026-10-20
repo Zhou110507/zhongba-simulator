@@ -114,6 +114,9 @@ class Physics:
     ball_friction_b: float = .108
     ball_friction_c: float = 1.088
     contact_solver: str = 'isolated'
+    ball_young_modulus: float = 3.8e9
+    ball_poisson_ratio: float = .375
+    elastic_step: float = .000002
 
 
 def validate_scene(balls, table, physics):
@@ -142,8 +145,14 @@ def validate_scene(balls, table, physics):
         raise ValueError("Unknown cushion model")
     if physics.ball_contact_model not in ('frictionless','projected_throw'):
         raise ValueError('Unknown ball contact model')
-    if physics.contact_solver not in ('isolated','cluster'):
+    if physics.contact_solver not in ('isolated','cluster','hybrid_hertz'):
         raise ValueError('Unknown contact solver')
+    if not isfinite(physics.ball_young_modulus) or physics.ball_young_modulus<=0:
+        raise ValueError('Ball elastic modulus must be positive')
+    if not isfinite(physics.ball_poisson_ratio) or not -1<physics.ball_poisson_ratio<.5:
+        raise ValueError('Invalid ball Poisson ratio')
+    if not isfinite(physics.elastic_step) or not 0<physics.elastic_step<=.00001:
+        raise ValueError('Elastic integration step must be in (0, 10 microseconds]')
     if physics.ball_friction_model not in ('constant','alciatore'):
         raise ValueError('Unknown ball friction model')
     if not all(isfinite(x) and x>=0 for x in (physics.ball_friction,physics.ball_friction_a,
