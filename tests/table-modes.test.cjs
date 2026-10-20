@@ -48,3 +48,13 @@ test('preview or incomplete computation never advances the match',async()=>{
     assert.equal(flow.finish(),false);assert.equal(count(),n);
   }
 });
+
+test('rules never render trails, and returning to free preserves its checkbox preference',async()=>{
+  const {flow,$}=await harness();$('trails').checked=true;flow.refresh();
+  assert.equal(flow.showTrails(),false);assert.equal($('trails-control').hidden,true);
+  assert.equal($('trails').disabled,true);assert.equal($('trails').checked,true);
+  await $('free-mode').onclick();assert.equal(flow.showTrails(),true);
+  assert.equal($('trails-control').hidden,false);assert.equal($('trails').disabled,false);
+  $('trails').checked=false;await $('rules-mode').onclick();assert.equal(flow.showTrails(),false);
+  await $('free-mode').onclick();assert.equal(flow.showTrails(),false);assert.equal($('trails').checked,false);
+});

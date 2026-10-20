@@ -1,6 +1,6 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {contactGuide,aimDirection,instantGuide}=require('../web/shot-guide.js');
+const {contactGuide,aimDirection,instantGuide,motionState,drawWindow}=require('../web/shot-guide.js');
 const ball=(id,x,y)=>({id,position:{x,y},spec:{radius:.03}});
 const base=()=>({status:'stopped',initial:[ball('cue',0,0),ball('1',1,0)],final:[ball('cue',.4,0)],events:[]});
 
@@ -43,4 +43,26 @@ test('instant ghost respects stopping distance at low power',()=>{
 test('instant ghost does not target a ball through a cushion',()=>{
  const guide=instantGuide(instantScene(2),instantModel,{surfaces:[{id:'wall',start:{x:.8,y:0},end:{x:.8,y:1.26},radius:0}],pockets:[]});
  assert.equal(guide.kind,'ball_cushion');assert.ok(Math.abs(guide.center.x-(.8-.028575))<1e-10);assert.ok(Math.abs(guide.contact.x-.8)<1e-10);
+});
+
+test('the live motion label distinguishes spin loss from the end of sliding',()=>{
+ const cue={...ball('cue',1,1),velocity:{x:1,y:0},omega:{x:0,y:-30,z:0},pocket:null};
+ assert.equal(motionState(cue).phase,'sliding');
+ cue.omega.y=0;assert.equal(motionState(cue).phase,'sliding');assert.equal(motionState(cue).slip,1);
+ cue.omega.y=10;assert.equal(motionState(cue).phase,'sliding');
+ cue.omega.y=1/cue.spec.radius;assert.equal(motionState(cue).phase,'rolling');
+ cue.velocity.x=0;cue.omega.y=-30;assert.equal(motionState(cue).phase,'sliding');
+ cue.pocket='top-left';assert.equal(motionState(cue).phase,'pocketed');
+});
+
+test('draw distance diagnostics match the independently verified 50 percent shot',()=>{
+ const scene=instantScene(2.5);scene.shot.tip_y=-.5;
+ const limits=drawWindow(scene.balls[0],scene.shot,instantModel);
+ assert.ok(Math.abs(limits.initialBackspin-98.09447832347455)<1e-10);
+ assert.ok(Math.abs(limits.zeroDistance-1.0679018310707233)<1e-10);
+ assert.ok(Math.abs(limits.rollDistance-1.242253150429209)<1e-10);
+ assert.ok(limits.zeroDistance<limits.rollDistance);
+ assert.equal(drawWindow(scene.balls[0],{...scene.shot,tip_y:0},instantModel),null);
+ assert.equal(drawWindow({...scene.balls[0],pocket:'top-left'},scene.shot,instantModel),null);
+ assert.equal(drawWindow(scene.balls[0],scene.shot,{...instantModel,physics:{...instantModel.physics,sliding_friction:0}}),null);
 });

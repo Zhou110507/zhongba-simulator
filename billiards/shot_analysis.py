@@ -4,6 +4,22 @@ from math import atan2, degrees
 
 from .model import Vec2
 from .ball_contact import impact_report
+from .motion import describe
+
+
+def cue_motion_report(result):
+    """Observe spin and slip independently of the isolated-impact angle report."""
+    initial=next(b for b in result.initial if b.id=='cue')
+    def state(ball):
+        speed=ball.velocity.norm()
+        direction=ball.velocity*(1/speed) if speed>1e-10 else Vec2()
+        return {'speed_m_s':speed,'forward_spin_rad_s':ball.omega.y*direction.x-ball.omega.x*direction.y,
+                'surface_slip_m_s':ball.slip.norm(),'phase':describe(ball,result.physics).phase}
+    hit=next((e for e in result.events if e.kind=='ball_ball' and 'cue' in e.actors),None)
+    before=next((b for b in hit.before if b.id=='cue'),None) if hit else None
+    return {'initial':state(initial),'first_target_contact':state(before) if before else None,
+            'first_target_contact_time_s':hit.time if hit else None,
+            'prior_cushion':any(e.kind=='ball_cushion' and 'cue' in e.actors and e.time<hit.time for e in result.events) if hit else False}
 
 
 def angle(a, b):

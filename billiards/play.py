@@ -13,10 +13,10 @@ from .engine import simulate
 from .equipment import load_equipment, load_physics_profile
 from .model import Ball, PocketSpec, Vec2, Vec3, validate_scene
 from .pockets import geometry_dict, outline
-from .shot_analysis import first_contact_analysis
+from .shot_analysis import first_contact_analysis, cue_motion_report
 
 ROOT = Path(__file__).resolve().parents[1]
-APP_VERSION = 'phase-c-elastic-break-v1'
+APP_VERSION = 'phase-c-draw-diagnostics-v1'
 
 
 def _number(value, name):
@@ -100,6 +100,7 @@ class PlayService:
         final = tuple(replace(ball,velocity=Vec2(),omega=Vec3()) for ball in result.final)
         return {'result':result.to_dict(None,compact=compact),'compute_ms':elapsed,'complete':complete,
                 'contact_analysis':first_contact_analysis(result),
+                'cue_motion':cue_motion_report(result),
                 'next_scene':self.snapshot(final,shot) if complete else None,
                 'snapshot':self.snapshot(balls,shot),
                 'summary':{'potted':[ball.id for ball in result.final if ball.pocket is not None and

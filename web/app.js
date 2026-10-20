@@ -116,7 +116,8 @@ function refreshUI() {
   $('apply-position').textContent = active(scene.balls.find(ball => ball.id === selected)) ? '应用坐标' : '摆回台面';
   const balls = fired ? stateAt(time) : scene.balls;
   const currentCue = balls.find(ball => ball.id === 'cue');
-  $('shot-summary').textContent = record ? `${record.result.duration.toFixed(2)} s · ${fired ? `白球 ${Math.hypot(currentCue.velocity.x,currentCue.velocity.y).toFixed(2)} m/s · 侧旋 ${currentCue.omega.z.toFixed(1)} rad/s` : '路线预览'}` : '调整方向、力度和击点，再试一杆';
+  const motion=ShotGuide.motionState(currentCue),phaseNames={sliding:'滑动',rolling:'纯滚动',spinning:'原地侧旋',stationary:'静止',pocketed:'已落袋'};
+  $('shot-summary').textContent = record ? `${record.result.duration.toFixed(2)} s · ${fired ? `白球 ${Math.hypot(currentCue.velocity.x,currentCue.velocity.y).toFixed(2)} m/s · ${phaseNames[motion.phase]}${motion.phase==='sliding'?`（底部滑速 ${motion.slip.toFixed(2)} m/s）`:''} · 侧旋 ${currentCue.omega.z.toFixed(1)} rad/s` : '路线预览'}` : '调整方向、力度和击点，再试一杆';
   $('ball-count').textContent = `${balls.filter(active).length} / ${balls.length} 球在台`;
   const nextPotted=balls.filter(ball=>!active(ball)).map(b=>b.id+':'+b.pocket).join('|');
   if(pottedKey!==nextPotted){pottedKey=nextPotted;$('potted').replaceChildren(...balls.filter(ball => !active(ball)).map(ball => {
@@ -325,7 +326,9 @@ function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(background,0,0);
   const traceTime=fired?time:record?.result.duration||0;
   window.TableModes?.drawMarkings(map);
-  if(record&&$('trails').checked){
+  const showTrails=Boolean(record&&(window.TableModes?.showTrails()??$('trails').checked));
+  canvas.dataset.trails=String(showTrails);
+  if(showTrails){
     if(trailSource!==record.result){const layer=document.createElement('canvas');layer.width=canvas.width;layer.height=canvas.height;trailSource=record.result;
       const trailColor=id=>id==='cue'?'#f0ecd19c':color(id)+'b0';
       trailLayer=new ReplayCore.TrailLayer(record.result,layer,(target,segment,dt)=>ReplayCore.paintTrail(target,segment,dt,map,trailColor),(target,segments,start,end)=>ReplayCore.paintBurst(target,segments,start,end,map,trailColor));}
@@ -365,6 +368,8 @@ function drawContactGuide(map) {
 function updateContactReadout() {
   const source=record||guideRecord;
   if (!source) {
+    const limits=ShotGuide.drawWindow(cueBall(),scene.shot,config.model);
+    $('contact-analysis').textContent=limits?`本杆直线无碰撞估计：倒旋约行进 ${limits.zeroDistance.toFixed(2)} m 耗尽，约 ${limits.rollDistance.toFixed(2)} m 后转为纯滚动；中间仍有滑动。点击预览核实碰前状态。`:'';
     if(scene.balls.filter(active).length>8){$('guide-info').textContent='即时瞄准已显示；多球局面请点击预览或出杆计算完整路线。';return;}
     if(active(cueBall())&&mode==='aim'){
       const guide=currentGuide();
@@ -376,10 +381,14 @@ function updateContactReadout() {
   const labels={ball_ball:'虚线圆＝白球碰撞前的位置；亮点＝两球接触点。',ball_cushion:'先碰库：虚线圆＝接触前白球位置；亮点＝球库接触点。',ball_pocket:'这条路线先越过落袋线，未发生球球或球库接触。',stop:'白球会先停止：× 为真实停点，这一力度到不了更远的目标球。',incomplete:'当前模型未能完成接触计算，暂不显示碰撞圆。'};
   $('guide-info').textContent=labels[guide.kind];
   const data=source.contact_analysis;
-  if (!data) { $('contact-analysis').textContent=''; return; }
+  const observed=source.cue_motion,contact=observed?.first_target_contact;
+  const spinName=value=>value<-.01?`倒旋 ${(-value).toFixed(1)}`:value>.01?`前旋 ${value.toFixed(1)}`:'接近无旋';
+  const stateNames={sliding:'仍在滑动',rolling:'已纯滚动',stationary:'静止',spinning:'原地侧旋'};
+  const observation=contact?`出杆${spinName(observed.initial.forward_spin_rad_s)} → 碰前${spinName(contact.forward_spin_rad_s)} rad/s；${stateNames[contact.phase]}，底部滑速 ${contact.surface_slip_m_s.toFixed(2)} m/s${observed.prior_cushion?'（中途经过碰库）':''}。`:'';
+  if (!data) { $('contact-analysis').textContent=observation; return; }
   const recovery=data.observed_return_angle_deg;
   const spin=data.backspin_speed_ratio>0 ? `碰前倒旋比 ${data.backspin_speed_ratio.toFixed(2)}` : data.backspin_speed_ratio<0 ? '碰前已为前旋' : '碰前无高低旋转';
-  $('contact-analysis').textContent=`第一碰：触球切角 ${data.cut_angle_deg.toFixed(2)}° · ${spin}${recovery!==null ? ` · ${data.backspin_speed_ratio>0 ? '回拉偏角' : '恢复滚动方向距回头线'} ${recovery.toFixed(2)}°（相对入射反向）` : ' · 下一次接触发生前未记录到滑动结束，不能直接拿停点估算分离角'}。`;
+  $('contact-analysis').textContent=observation+` 第一碰：触球切角 ${data.cut_angle_deg.toFixed(2)}° · ${spin}${recovery!==null ? ` · ${data.backspin_speed_ratio>0 ? '回拉偏角' : '恢复滚动方向距回头线'} ${recovery.toFixed(2)}°（相对入射反向）` : ' · 下一次接触发生前未记录到滑动结束，不能直接拿停点估算分离角'}。`;
   if(data.impact)$('contact-analysis').textContent+=` 目标球带偏 ${data.impact.throw_angle_deg.toFixed(2)}° · 碰后侧旋 ${data.impact.target_spin_after_rad_s.toFixed(1)} rad/s。`;
 }
 

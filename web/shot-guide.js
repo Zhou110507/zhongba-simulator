@@ -50,6 +50,20 @@
     const rolling=model.physics.rolling_friction*model.physics.gravity;
     return rolling?speed*duration+.5*acceleration*duration**2+v*v/(2*rolling):Infinity;
   }
+  function motionState(ball){
+    if(ball.pocket)return {phase:'pocketed',slip:0};
+    const r=ball.spec.radius,speed=Math.hypot(ball.velocity.x,ball.velocity.y);
+    const slip=Math.hypot(ball.velocity.x-r*ball.omega.y,ball.velocity.y+r*ball.omega.x);
+    return {phase:slip>1e-9?'sliding':speed>1e-10?'rolling':Math.abs(ball.omega.z)>1e-10?'spinning':'stationary',slip};
+  }
+  function drawWindow(ball,shot,model){
+    if(ball.pocket||shot.tip_y>=0||model.physics.sliding_friction<=0)return null;
+    const inverse=1/model.cue.effective_mass+(1+2.5*(shot.tip_x**2+shot.tip_y**2))/ball.spec.mass;
+    const speed=(1+model.cue.restitution)*shot.cue_speed/inverse/ball.spec.mass;
+    const spin=2.5*shot.tip_y*speed/ball.spec.radius,a=model.physics.sliding_friction*model.physics.gravity;
+    const zero=-spin*ball.spec.radius/(2.5*a),roll=(speed-ball.spec.radius*spin)/(3.5*a);
+    return {initialBackspin:-spin,zeroDistance:speed*zero-.5*a*zero*zero,rollDistance:speed*roll-.5*a*roll*roll};
+  }
   function instantGuide(scene,model,geometry) {
     const cue=scene.balls.find(b=>b.id==='cue'),angle=scene.shot.angle_deg*Math.PI/180,d={x:Math.cos(angle),y:Math.sin(angle)},p=cue.position;
     const range=freeTravel(cue,scene.shot,model);
@@ -99,7 +113,7 @@
     }
     return {kind:event.kind,start:initial.position,center:cue.position,radius:cue.spec.radius,contact,target:target?.position || null,time:event.time};
   }
-  const api = {contactGuide,aimDirection,instantGuide};
+  const api = {contactGuide,aimDirection,instantGuide,motionState,drawWindow};
   if (typeof module !== 'undefined' && module.exports) module.exports=api;
   else root.ShotGuide=api;
 })(globalThis);
