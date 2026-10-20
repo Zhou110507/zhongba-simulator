@@ -16,7 +16,7 @@ from .pockets import geometry_dict, outline
 from .shot_analysis import first_contact_analysis
 
 ROOT = Path(__file__).resolve().parents[1]
-APP_VERSION = 'phase-c-spin-v1'
+APP_VERSION = 'phase-c-tables-v1'
 
 
 def _number(value, name):
@@ -26,10 +26,10 @@ def _number(value, name):
 
 
 class PlayService:
-    def __init__(self, root=ROOT):
+    def __init__(self, root=ROOT, table_profile=None):
         self.root = Path(root)
         config = json.loads((self.root/'configs'/'prototype_play.json').read_text(encoding='utf-8'))
-        equipment = load_equipment(self.root/'configs'/'chinese_eight_ball.json',config['table_profile'])
+        equipment = load_equipment(self.root/'configs'/'chinese_eight_ball.json',table_profile or config['table_profile'])
         self.table = replace(equipment.table,pockets=PocketSpec(**config['pockets']))
         self.ball_spec = equipment.ball
         self.physics = load_physics_profile(self.root/'configs'/'physics_profiles.json',config['physics_profile'])
@@ -93,7 +93,8 @@ class PlayService:
         launched = strike(cue_ball,shot,self.cue)
         initial = tuple(launched if ball.id=='cue' else ball for ball in balls)
         started = perf_counter()
-        result = simulate(initial,self.table,self.physics,max_time=60,max_events=1200)
+        result = simulate(initial,self.table,self.physics,max_time=60,
+                          max_events=6000 if self.physics.contact_solver=='cluster' else 1200)
         elapsed = (perf_counter()-started)*1000
         complete = result.status=='stopped'
         final = tuple(replace(ball,velocity=Vec2(),omega=Vec3()) for ball in result.final)

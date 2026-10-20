@@ -1,9 +1,8 @@
 """Continuous collision detection for isolated sphere contacts and flat rails.
 
 Sphere contacts optionally include projected throw and vertical-axis spin transfer.
-Coupled multi-contact
-and zero-speed persistent contacts return explicit unsupported statuses. They
-are not silently resolved in arbitrary object order.
+The optional cluster solver handles ball networks and bounded ball support.
+Other persistent contacts return explicit unsupported statuses.
 """
 
 from bisect import bisect_right
@@ -145,6 +144,8 @@ def contact_candidates(balls, motions, table, horizon):
             dv = other.velocity-b.velocity
             da = motions[j].acceleration-a
             diameter = r+other.spec.radius
+            reach=dv.norm()*horizon+.5*da.norm()*horizon*horizon
+            if dp.norm()>diameter+reach+SPACE_EPS:continue
             if (dp.norm()-diameter <= SPACE_EPS and
                     abs(dp.dot(dv)) <= SPEED_EPS*diameter and
                     dv.dot(dv)+dp.dot(da) < -SPEED_EPS):
@@ -210,6 +211,25 @@ def coupled_contacts(contacts, balls, table, physics):
     return False
 
 
+def island_touches_cushion(contacts,balls,table):
+    """Do not apply a ball-only impulse solve to a connected frozen rail."""
+    indices={i for c in contacts for i in c.indices}
+    changed=True
+    while changed:
+        changed=False
+        for i,b in enumerate(balls):
+            if i in indices or b.pocket is not None:continue
+            if any((b.position-balls[j].position).norm()<=b.spec.radius+balls[j].spec.radius+SPACE_EPS for j in indices):
+                indices.add(i);changed=True
+    for i in indices:
+        b=balls[i];p=b.position;r=b.spec.radius
+        if table.pockets is not None:
+            from .pockets import touches_surface
+            if touches_surface(b,table):return True
+        elif min(p.x-r,p.y-r,table.length-r-p.x,table.width-r-p.y)<=SPACE_EPS:return True
+    return False
+
+
 def simulate(balls, table=Table(), physics=Physics(), *, max_time=60.0, max_events=10000):
     balls = tuple(balls)
     validate_scene(balls, table, physics)
@@ -252,9 +272,44 @@ def simulate(balls, table=Table(), physics=Physics(), *, max_time=60.0, max_even
         time += dt
         contacts = [c for c in group if c.kind != "transition"]
         if any(c.kind == "persistent_contact" for c in contacts):
+            if (physics.contact_solver=='cluster' and all(len(c.indices)==2 for c in contacts)
+                    and not island_touches_cushion(contacts,balls,table)):
+                from .cluster import resolve_cluster, touching_pairs, project_positions, ClusterFailure
+                positive=[c.time for c in candidates if c.time>1e-12]
+                step=min(.002,horizon,max_time-time,*positive)
+                if step<=1e-12:
+                    status='cluster_model_failure'
+                    break
+                before=balls
+                plastic=touching_pairs(balls)
+                segments.append(Segment(time,time+step,balls,motions))
+                stepped=tuple(advance(b,m,step) for b,m in zip(balls,motions))
+                try:
+                    stepped=project_positions(stepped)
+                    balls,pairs=resolve_cluster(stepped,physics,plastic_pairs=plastic,allow_zero=True)
+                except ClusterFailure:
+                    status='cluster_model_failure'
+                    break
+                time+=step
+                for i,j in pairs:
+                    events.append(Event(time,'ball_ball',(balls[i].id,balls[j].id),'cluster-support',before,balls))
+                iterations+=1
+                continue
             status = "unsupported_persistent_contact"
             break
         if coupled_contacts(contacts, balls, table, physics):
+            if (physics.contact_solver=='cluster' and any(c.kind=='ball_ball' for c in contacts)
+                    and all(c.kind in ('ball_ball','ball_cushion') for c in contacts)):
+                from .cluster import resolve_network, ClusterFailure
+                try:
+                    balls,operations=resolve_network(balls,table,physics)
+                except ClusterFailure:
+                    status='cluster_model_failure'
+                    break
+                for kind,actors,detail,before,after in operations:
+                    events.append(Event(time,kind,actors,detail,before,after))
+                iterations+=1
+                continue
             status = "unsupported_coupled_contact"
             break
         for c in group:

@@ -18,6 +18,14 @@ def reject_constant(value):
 
 def make_handler(service):
     jobs = threading.BoundedSemaphore(2)
+    rules_service=PlayService(service.root,table_profile='cbsa_2017')
+    from .game import GameStore, free_table
+    games=GameStore(rules_service,service.root/'artifacts'/'rules'/'matches')
+
+    def scene_service(data):
+        if isinstance(data,dict) and data.get('model_signature')==rules_service.signature:
+            return rules_service
+        return service
 
     class Handler(BaseHTTPRequestHandler):
         protocol_version = 'HTTP/1.1'
@@ -48,6 +56,9 @@ def make_handler(service):
             path = unquote(urlsplit(self.path).path)
             if path=='/api/config':
                 self.send_json(200,service.config())
+                return
+            if path=='/api/rules/config':
+                self.send_json(200,rules_service.config())
                 return
             if path=='/api/health':
                 self.send_json(200,{'status':'ok','app_version':APP_VERSION})
@@ -86,7 +97,8 @@ def make_handler(service):
                 self.send_json(403,{'error':'仅接受本机练习页面的请求'})
                 return
             path = urlsplit(self.path).path
-            if path not in ('/api/validate','/api/shot','/api/lab','/api/calibration'):
+            if path not in ('/api/validate','/api/shot','/api/lab','/api/calibration','/api/free-table',
+                            '/api/game/new','/api/game/get','/api/game/action','/api/game/preview'):
                 self.send_json(404,{'error':'未知接口'})
                 return
             if self.headers.get_content_type() != 'application/json':
@@ -102,14 +114,20 @@ def make_handler(service):
                     self.send_json(503,{'error':'计算繁忙，请稍后重试'})
                     return
                 try:
-                    if path=='/api/lab':
+                    if path.startswith('/api/game/'):
+                        response={'/api/game/new':games.new,'/api/game/get':games.get,
+                                  '/api/game/action':games.action,'/api/game/preview':games.preview}[path](data)
+                    elif path=='/api/free-table':
+                        response=free_table(service,data)
+                    elif path=='/api/lab':
                         from .physics_lab import run_experiment
                         response=run_experiment(service,data)
                     elif path=='/api/calibration':
                         from .calibration import fit_measurements
                         response=fit_measurements(data)
                     else:
-                        response = service.shoot(data) if path=='/api/shot' else service.validate(data)
+                        selected=scene_service(data)
+                        response = selected.shoot(data) if path=='/api/shot' else selected.validate(data)
                 finally:
                     jobs.release()
                 self.send_json(200,response)

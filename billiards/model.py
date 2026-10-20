@@ -113,6 +113,7 @@ class Physics:
     ball_friction_a: float = .009951
     ball_friction_b: float = .108
     ball_friction_c: float = 1.088
+    contact_solver: str = 'isolated'
 
 
 def validate_scene(balls, table, physics):
@@ -141,6 +142,8 @@ def validate_scene(balls, table, physics):
         raise ValueError("Unknown cushion model")
     if physics.ball_contact_model not in ('frictionless','projected_throw'):
         raise ValueError('Unknown ball contact model')
+    if physics.contact_solver not in ('isolated','cluster'):
+        raise ValueError('Unknown contact solver')
     if physics.ball_friction_model not in ('constant','alciatore'):
         raise ValueError('Unknown ball friction model')
     if not all(isfinite(x) and x>=0 for x in (physics.ball_friction,physics.ball_friction_a,

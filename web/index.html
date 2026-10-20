@@ -3,10 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>中八练习台 · 自由击球</title>
+  <title>中八球台 · 规则对局与自由练习</title>
   <link rel="stylesheet" href="/assets/style.css">
   <script src="/assets/shot-guide.js" defer></script>
   <script src="/assets/app.js" defer></script>
+  <script src="/assets/table-modes.js" defer></script>
+  <link rel="stylesheet" href="/assets/table-modes.css">
 </head>
 <body>
 <main>
@@ -15,6 +17,16 @@
     <div class="header-actions"><a class="lab-link" href="/lab">旋转实验台 ↗</a><button id="save" disabled>保存场景</button><button id="import" disabled>导入场景</button><input id="file" type="file" accept="application/json,.json" hidden></div>
   </header>
   <div id="message" class="message" role="status" aria-live="polite">正在连接本地物理服务…</div>
+  <nav class="table-modes" aria-label="球台模式"><button id="free-mode" aria-pressed="true">自由球台</button><button id="rules-mode" aria-pressed="false">中八规则对局</button><span id="mode-caption">自由摆球与杆法练习</span></nav>
+  <section id="free-setup" class="card mode-panel">
+    <div class="free-controls"><label for="target-count">目标球个数<input id="target-count" type="number" min="0" max="15" step="1" value="3"></label><label for="free-cue-x">白球 X / mm<input id="free-cue-x" type="number" step="1" value="500"></label><label for="free-cue-y">白球 Y / mm<input id="free-cue-y" type="number" step="1" value="550"></label><button id="generate-free" class="primary">生成自由球台</button></div>
+    <details><summary>选择具体球号 · 最多 15 颗</summary><div id="ball-picker" class="ball-picker"></div></details><p class="hint">可只留白球，也可选择任意球号组合。生成后可继续拖动摆球；自由球台不判犯规。</p>
+  </section>
+  <section id="rule-panel" class="card mode-panel" hidden>
+    <div class="rule-top"><div><div class="eyebrow">CHINESE BILLIARDS / CBSA 2017</div><h2 id="rule-turn">本地双人对局</h2></div><div class="rule-actions"><label for="breaker">开球方<select id="breaker"><option value="0">玩家 1</option><option value="1">玩家 2</option></select></label><button id="new-match">新对局</button><button id="next-rack" hidden>下一局</button></div></div>
+    <div class="player-grid"><div id="player-one" class="player-card"></div><div id="player-two" class="player-card"></div></div><p id="rule-status" class="rule-status" aria-live="polite"></p><div id="rule-choices" class="rule-choices"></div><div id="head-respot" class="rule-choices"></div>
+    <details><summary>本对局采用的规则与适用范围</summary><p class="hint">按 CBSA 2017 年 1 月公开规则：15 球紧密三角形摆放，8 号位于第三排中间，底边两角一全色一花色。开球入球或至少四颗目标球碰库；开球不分组。先打完本组，再合法打进 8 号获胜，包括 8 号在内无需指球定袋。犯规后按相应条款给对手自由球；打 8 号时仅白球落袋、8 号未进，不直接判负。</p><p class="hint">本地双人、非限时、轮流开下一局。对局由本机服务自动保存；只能移动有自由球权的白球。跳球、人身动作及赛事纪律不在本二维界面模拟范围内，球袋曲率仍为工程近似。</p><a class="rule-source" href="https://cbsa.cssf.net.cn/annoucement/2017/0120/142126.html" target="_blank" rel="noreferrer">查看协会公开规则 ↗</a></details>
+  </section>
   <div class="workspace">
     <section class="table-column">
       <div class="table-card">
@@ -32,7 +44,7 @@
     </section>
     <aside>
       <section class="card shot-settings"><div class="section-title"><h2>这一杆怎么打</h2><span class="pill">水平出杆</span></div><label class="control-title" for="angle">瞄准角度 <span class="muted">逆时针 / °</span></label><div class="angle-input"><input id="angle" type="number" min="0" max="360" step=".1" value="45" disabled><span>°</span></div><div class="control-title"><label for="power">力度</label><output id="power-value">50%</output></div><input id="power" type="range" min="5" max="100" step="1" value="50" disabled><div class="range-ends"><span>轻推</span><span>中力 50%</span><span>冲球级</span></div><div class="launch-readout"><span>杆头速度 <b id="cue-speed">—</b></span><span>白球初速 <b id="launch-speed">—</b></span></div><p class="hint">杆头速度上限 5.00 m/s，接近一组冲球实测水平；力度百分比为本软件档位。</p><div class="divider"></div><div class="control-title"><span>白球击点</span><button id="center-tip" class="text-button" disabled>回到中心</button></div><canvas id="tip" width="280" height="250" aria-label="白球击点圆盘：上为高杆、下为低杆，左右按出杆者视角" tabindex="0"></canvas><div class="tip-presets"><button data-tip="0,.5" disabled>高杆</button><button data-tip="0,0" disabled>中杆</button><button data-tip="0,-.5" disabled>低杆</button><button data-tip="-.45,0" disabled>左击点</button><button data-tip=".45,0" disabled>右击点</button></div><label class="tip-range">左右击点 <input id="tip-x" type="range" min="-.55" max=".55" step=".01" value="0" disabled><output id="tip-x-value">0.00 R</output></label><label class="tip-range">高低击点 <input id="tip-y" type="range" min="-.55" max=".55" step=".01" value="0" disabled><output id="tip-y-value">0.00 R</output></label><p class="hint">面向白球、沿出杆方向观察。击点限制在 0.55 R 圆盘内；高杆、低杆由击点产生的旋转计算。</p></section>
-      <section class="card equipment"><div class="section-title"><h2>球桌与模型</h2><span class="status-dot"></span></div><div class="equipment-row"><span>台型尺寸</span><b>乔氏公开台型</b></div><div class="equipment-row"><span>内沿 / mm</span><b>2540 × 1260</b></div><div class="equipment-row"><span>台呢参考</span><b>通用较快台面</b></div><div class="experimental">六袋连续圆弧 · 尺寸来源可查</div><details><summary>查看参数与适用范围</summary><p>角袋 84 mm、中袋 86 mm，采用 GB/T 22751—2008 原文尺寸作参考。四角袋 R30 mm、两中袋 R40 mm 为连续相切圆弧的工程近似，半径不是标准实测值；下球线采用独立圆弧，角袋 R45 mm、中袋 R47 mm，角袋下球线中央前沿保留入口后 10 mm。两中袋下球线向内调整 25 mm：前沿位于直库接触线内侧 15 mm，圆心位于外侧 32 mm；这是工程修正，尚非实测标定。球心进入弧内且通过袋角净空即入袋。上述弧度为有来源说明的二维工程近似，尚未实测。</p><p>台呢采用文献区间内的通用较快配置：滑动摩擦 0.18，滚动减速度系数 0.007；不限定品牌，尚未进行实桌联合标定。暂不支持跳球、扎杆、完整开球球堆或比赛判罚。</p><div id="model-detail" class="hint"></div><a href="https://drdavepoolinfo.com/faq/physics/physical-properties/" target="_blank" rel="noreferrer">台呢参数参考 ↗</a></details><a href="/artifacts/phase-a/验收演示.html" target="_blank" rel="noreferrer">打开第一阶段物理实验台 ↗</a></section>
+      <section class="card equipment"><div class="section-title"><h2>球桌与模型</h2><span class="status-dot"></span></div><div class="equipment-row"><span>台型尺寸</span><b>乔氏公开台型</b></div><div class="equipment-row"><span>内沿 / mm</span><b>2540 × 1260</b></div><div class="equipment-row"><span>台呢参考</span><b>通用较快台面</b></div><div class="experimental">六袋连续圆弧 · 尺寸来源可查</div><details><summary>查看参数与适用范围</summary><p>角袋 84 mm、中袋 86 mm，采用 GB/T 22751—2008 原文尺寸作参考。四角袋 R30 mm、两中袋 R40 mm 为连续相切圆弧的工程近似，半径不是标准实测值；下球线采用独立圆弧，角袋 R45 mm、中袋 R47 mm，角袋下球线中央前沿保留入口后 10 mm。两中袋下球线向内调整 25 mm：前沿位于直库接触线内侧 15 mm，圆心位于外侧 32 mm；这是工程修正，尚非实测标定。球心进入弧内且通过袋角净空即入袋。上述弧度为有来源说明的二维工程近似，尚未实测。</p><p>台呢采用文献区间内的通用较快配置：滑动摩擦 0.18，滚动减速度系数 0.007；不限定品牌，尚未进行实桌联合标定。支持十五球紧密开球与本地规则对局；多球接触采用刚体冲量近似，尚未用实测开球标定。暂不支持跳球与扎杆。</p><div id="model-detail" class="hint"></div><a href="https://drdavepoolinfo.com/faq/physics/physical-properties/" target="_blank" rel="noreferrer">台呢参数参考 ↗</a></details><a href="/artifacts/phase-a/验收演示.html" target="_blank" rel="noreferrer">打开第一阶段物理实验台 ↗</a></section>
     </aside>
   </div>
   <footer><span>第三阶段 · 旋转与碰撞</span><span>预览、出杆和回放使用同一杆物理结果 · 数据保存在本机</span><span id="build">—</span></footer>

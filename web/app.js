@@ -16,8 +16,8 @@ function ballName(id) { return id === 'cue' ? '白球' : `${id} 号球`; }
 function color(id) { return id === 'cue' ? colors[0] : colors[(Number(id) - 1) % 8 + 1]; }
 function active(ball) { return ball.pocket === null || ball.pocket === undefined; }
 function cueBall() { return scene.balls.find(ball => ball.id === 'cue'); }
-function locked() { return fired; }
-function storeScene() { try { localStorage.setItem(STORAGE, JSON.stringify(scene)); } catch {} }
+function locked() { return fired || Boolean(window.TableModes?.locksAction()); }
+function storeScene() { if(window.TableModes?.isRules()){window.TableModes.store();return;} try { localStorage.setItem(STORAGE, JSON.stringify(scene)); } catch {} }
 function pushHistory() { history.push(clone(scene)); if (history.length > 50) history.shift(); }
 
 async function api(path, data, signal) {
@@ -55,6 +55,7 @@ function updateShotLabels() {
 
 function refreshLaunch() {
   clearTimeout(launchTimer); const currentRevision = revision;
+  if(window.TableModes?.deferLaunch())return;
   if (!active(cueBall())) { $('launch-speed').textContent='—'; $('guide-info').textContent='请先将白球摆回台面。'; return; }
   $('launch-speed').textContent = '计算中';
   const snapshot=clone(scene);
@@ -82,6 +83,7 @@ function setScene(value, preset = 'custom', remember = true) {
   $('preset').value = preset; mode = active(cueBall()) ? 'aim' : 'edit';
   pending = active(cueBall()) ? null : 'cue';
   syncShotControls(); refreshSelection(); storeScene(); refreshLaunch(); refreshUI(); draw();
+  window.TableModes?.onScene();
 }
 
 function setTip(horizontal, vertical) {
@@ -135,6 +137,7 @@ function refreshUI() {
   $('seek').value = duration ? time / duration * 1000 : 0;
   for (const event of $('events').children) event.classList.toggle('active', fired && Number(event.dataset.time) <= time);
   canvas.style.cursor = fired ? 'default' : mode === 'edit' ? 'grab' : 'crosshair';
+  window.TableModes?.refresh();
 }
 
 function populateEvents() {
@@ -149,6 +152,7 @@ function populateEvents() {
 }
 
 async function calculate(commit) {
+  if(window.TableModes?.isRules())return window.TableModes.calculate(commit);
   if (fired || busy || !active(cueBall())) return;
   if (commit && record && cachedKey === JSON.stringify(scene)) { startReplay(); return; }
   const currentRevision = revision, currentRequest = ++requestNumber, snapshot = clone(scene);
@@ -170,7 +174,7 @@ async function calculate(commit) {
 }
 
 function statusText(status) {
-  const names = {unsupported_coupled_contact:'这一杆出现当前模型尚不支持的同时多点接触。请回到出杆前调整球位。',unsupported_persistent_contact:'这一杆出现持续贴库或贴球接触，当前模型尚不能可靠处理。',cushion_model_failure:'此杆碰库超出当前平面模型的求解范围。',max_events:'这一杆达到事件计算上限。',max_time:'这一杆在 60 秒内尚未完全停止。'};
+  const names = {cluster_model_failure:'当前多球接触未能可靠求解，本杆不推进对局。',unsupported_coupled_contact:'这一杆出现当前模型尚不支持的同时多点接触。请回到出杆前调整球位。',unsupported_persistent_contact:'这一杆出现持续贴库或贴球接触，当前模型尚不能可靠处理。',cushion_model_failure:'此杆碰库超出当前平面模型的求解范围。',max_events:'这一杆达到事件计算上限。',max_time:'这一杆在 60 秒内尚未完全停止。'};
   return names[status] || `计算未完成：${status}`;
 }
 
@@ -186,6 +190,7 @@ function reportFinish() {
   finishedAnnounced = true;
   const potted = record.summary.potted.filter(id => id !== 'cue').map(ballName);
   announce(record.complete ? `${potted.length ? `${potted.join('、')}进袋。` : '本杆结束。'}${record.summary.scratch ? '白球落袋，点击“摆放白球并继续”。' : '可以继续下一杆，或回到出杆前重试。'}` : statusText(record.result.status), !record.complete);
+  window.TableModes?.finish();
 }
 
 function evaluate(ball, motion, elapsed) {
@@ -227,11 +232,12 @@ function positionError(id, position) {
 }
 
 function placeBall(id, position, adding=false) {
+  if(window.TableModes?.isRules())return window.TableModes.place(id,position);
   const error = positionError(id,position); if (error) { announce(error,true); return false; }
   pushHistory(); invalidate();
   if (adding) scene.balls.push({id,position,velocity:{x:0,y:0},omega:{x:0,y:0,z:0},spec:clone(config.ball_spec),pocket:null});
   else { const ball=scene.balls.find(ball=>ball.id===id); ball.position=position; ball.pocket=null; }
-  selected=id; pending=null; $('preset').value='custom'; refreshSelection(); storeScene(); refreshLaunch(); refreshUI(); draw();
+  selected=id; pending=null; $('preset').value='custom'; refreshSelection(); storeScene(); refreshLaunch(); refreshUI(); window.TableModes?.onScene(); draw();
   announce(`${ballName(id)}已摆好。切换到瞄准即可出杆。`); return true;
 }
 
@@ -312,9 +318,10 @@ function draw() {
   for(let index=1;index<4;index++){for(const horizontal of [-.076,table.length+.076]){ctx.beginPath();ctx.arc(X(horizontal),Y(table.width*index/4),3,0,Math.PI*2);ctx.fill();}}
   ctx.strokeStyle='#c6ddc014';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(X(table.length/4),Y(0));ctx.lineTo(X(table.length/4),Y(table.width));ctx.stroke();
   const traceTime=fired?time:record?.result.duration||0;
+  window.TableModes?.drawMarkings(map);
   if(record&&$('trails').checked){for(const segment of record.result.segments){if(segment.start>traceTime)break;const elapsed=Math.min(segment.end,traceTime)-segment.start;for(let index=0;index<segment.balls.length;index++){const ball=segment.balls[index];if(!active(ball)||Math.hypot(ball.velocity.x,ball.velocity.y)===0)continue;ctx.beginPath();ctx.strokeStyle=ball.id==='cue'?'#f0ecd19c':color(ball.id)+'b0';ctx.lineWidth=2;const steps=Math.max(2,Math.ceil(elapsed*70));for(let step=0;step<=steps;step++){const point=evaluate(ball,segment.motion[index],elapsed*step/steps).position;step?ctx.lineTo(X(point.x),Y(point.y)):ctx.moveTo(X(point.x),Y(point.y));}ctx.stroke();}}}
   const balls=fired?stateAt(time):scene.balls;
-  if(!fired&&mode==='aim'&&active(cueBall())){
+  if(!fired&&mode==='aim'&&active(cueBall())&&!window.TableModes?.locksAction()){
     const cue=cueBall(),angle=scene.shot.angle_deg*Math.PI/180,direction={x:Math.cos(angle),y:Math.sin(angle)};
     drawContactGuide(map);
     ctx.strokeStyle='#c6a675';ctx.lineCap='round';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(X(cue.position.x-direction.x*.36),Y(cue.position.y-direction.y*.36));ctx.lineTo(X(cue.position.x-direction.x*.075),Y(cue.position.y-direction.y*.075));ctx.stroke();ctx.strokeStyle='#d9ddd0';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(X(cue.position.x-direction.x*.075),Y(cue.position.y-direction.y*.075));ctx.lineTo(X(cue.position.x-direction.x*.045),Y(cue.position.y-direction.y*.045));ctx.stroke();ctx.lineCap='butt';
@@ -347,6 +354,7 @@ function drawContactGuide(map) {
 function updateContactReadout() {
   const source=record||guideRecord;
   if (!source) {
+    if(scene.balls.filter(active).length>8){$('guide-info').textContent='即时瞄准已显示；多球局面请点击预览或出杆计算完整路线。';return;}
     if(active(cueBall())&&mode==='aim'){
       const guide=ShotGuide.instantGuide(scene,config.model,config.geometry);
       $('guide-info').textContent=guide.kind==='ball_ball'?'虚线白球随瞄准即时更新；正在用完整物理结果校核。':guide.kind==='stop'?'当前力度先停，× 为即时停点；正在校核。':'瞄准与接触位置即时更新；正在用完整物理结果校核。';
@@ -392,7 +400,7 @@ tipCanvas.addEventListener('pointermove',event=>{if(tipDragging)tipPointer(event
 tipCanvas.addEventListener('pointerup',()=>tipDragging=false);tipCanvas.addEventListener('pointercancel',()=>tipDragging=false);
 
 $('aim-mode').onclick=()=>{mode='aim';pending=null;refreshUI();draw();};
-$('edit-mode').onclick=()=>{mode='edit';pending=active(cueBall())?null:'cue';refreshUI();draw();};
+$('edit-mode').onclick=()=>{if(window.TableModes?.isRules())return window.TableModes.beginPlace();mode='edit';pending=active(cueBall())?null:'cue';refreshUI();draw();};
 $('angle').oninput=event=>{const angle=Number(event.target.value);if(!Number.isFinite(angle))return;invalidate();scene.shot.angle_deg=(angle%360+360)%360;$('preset').value='custom';storeScene();refreshLaunch();refreshUI();draw();};
 $('angle').onchange=()=>syncShotControls();
 $('power').oninput=event=>{invalidate();scene.shot.cue_speed=Number(event.target.value)/100*config.limits.max_cue_speed;$('preset').value='custom';updateShotLabels();storeScene();refreshLaunch();refreshUI();draw();};
@@ -404,16 +412,16 @@ $('replay').onclick=startReplay;
 $('seek').oninput=event=>{playing=false;time=Number(event.target.value)/1000*record.result.duration;if(time>=record.result.duration)reportFinish();else announce(`已暂停在 ${time.toFixed(2)} 秒，可继续播放或查看这一时刻。`);refreshUI();draw();};
 $('trails').onchange=draw;
 $('before').onclick=()=>{invalidate();announce('已回到出杆前，可重新调整这一杆。');refreshLaunch();refreshUI();draw();};
-$('next').onclick=()=>{if(!record?.complete||time<record.result.duration)return;const next=record.next_scene;setScene(next);if(!active(cueBall())){mode='edit';pending='cue';announce('白球落袋。点击台面空位重新摆放白球后继续。');}else announce('已应用本杆停球位置，可以继续下一杆。');refreshUI();draw();};
+$('next').onclick=()=>{if(window.TableModes?.isRules())return window.TableModes.next();if(!record?.complete||time<record.result.duration)return;const next=record.next_scene;setScene(next);if(!active(cueBall())){mode='edit';pending='cue';announce('白球落袋。点击台面空位重新摆放白球后继续。');}else announce('已应用本杆停球位置，可以继续下一杆。');refreshUI();draw();};
 $('selected-ball').onchange=event=>{selected=event.target.value;mode='edit';refreshSelection();refreshUI();draw();};
 $('apply-position').onclick=()=>placeBall(selected,{x:Number($('ball-x').value)/1000,y:Number($('ball-y').value)/1000});
 $('add').onclick=()=>{pending=Array.from({length:15},(_,index)=>String(index+1)).find(id=>!scene.balls.some(ball=>ball.id===id));mode='edit';announce(`点击球桌空位，添加${ballName(pending)}。`);refreshUI();draw();};
-$('remove').onclick=()=>{if(selected==='cue')return;pushHistory();invalidate();scene.balls=scene.balls.filter(ball=>ball.id!==selected);selected='cue';refreshSelection();$('preset').value='custom';storeScene();refreshLaunch();refreshUI();draw();};
+$('remove').onclick=()=>{if(selected==='cue')return;pushHistory();invalidate();scene.balls=scene.balls.filter(ball=>ball.id!==selected);selected='cue';refreshSelection();$('preset').value='custom';storeScene();refreshLaunch();refreshUI();window.TableModes?.onScene();draw();};
 $('undo').onclick=()=>{if(!history.length||locked())return;const previous=history.pop(),previousMode=mode,previousSelected=selected;setScene(previous,'custom',false);mode=active(cueBall())?previousMode:'edit';selected=scene.balls.some(ball=>ball.id===previousSelected)?previousSelected:'cue';refreshSelection();refreshUI();draw();announce('已撤销最近一次摆球或场景变更。');};
 $('preset').onchange=event=>{const preset=config.presets.find(preset=>preset.id===event.target.value);if(preset){setScene(preset.scene,preset.id);announce(`已载入${preset.name}，可直接出杆或自由调整。`);}};
-$('save').onclick=()=>{const blob=new Blob([JSON.stringify(scene,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download='中八练习场景.json';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);announce('已保存出杆前场景与完整参数，导入后可复现这一杆。');};
+$('save').onclick=()=>{if(window.TableModes?.exportRules())return;const blob=new Blob([JSON.stringify(scene,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download='中八练习场景.json';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);announce('已保存出杆前场景与完整参数，导入后可复现这一杆。');};
 $('import').onclick=()=>$('file').click();
-$('file').onchange=async event=>{const file=event.target.files[0];if(!file)return;try{if(file.size>65536)throw new Error('场景文件不能超过 64 KB');const data=JSON.parse(await file.text()),currentRevision=revision,value=await api('/api/validate',data);if(revision!==currentRevision)return;setScene(value.scene);announce('场景已导入，球桌与物理版本校验通过。');}catch(error){announce(error.message,true);}finally{event.target.value='';}};
+$('file').onchange=async event=>{if(window.TableModes?.isRules()){event.target.value='';return;}const file=event.target.files[0];if(!file)return;try{if(file.size>65536)throw new Error('场景文件不能超过 64 KB');const data=JSON.parse(await file.text()),currentRevision=revision,value=await api('/api/validate',data);if(revision!==currentRevision)return;setScene(value.scene);announce('场景已导入，球桌与物理版本校验通过。');}catch(error){announce(error.message,true);}finally{event.target.value='';}};
 document.addEventListener('keydown',event=>{
   if(!scene||['INPUT','SELECT','TEXTAREA'].includes(event.target.tagName))return;
   if(event.code==='Space'){event.preventDefault();if(fired)$('play').click();else calculate(true);}

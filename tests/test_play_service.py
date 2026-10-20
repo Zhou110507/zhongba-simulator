@@ -104,7 +104,7 @@ def test_invalid_scenes_are_rejected_before_simulation(service,change):
         service.shoot(scene)
 
 
-def test_unsupported_contact_is_reported_without_a_fake_next_scene(service):
+def test_touching_neighbors_are_now_supported_by_the_cluster_solver(service):
     scene = deepcopy(service.presets()[0]['scene'])
     radius = service.ball_spec.radius
     scene['balls'][0]['position'] = {'x':.5,'y':.5}
@@ -115,9 +115,20 @@ def test_unsupported_contact_is_reported_without_a_fake_next_scene(service):
     scene['balls'].append(neighbor)
     scene['shot'].update(angle_deg=0,tip_x=0,tip_y=0,cue_speed=1)
     response = service.shoot(scene)
-    assert response['result']['status'] == 'unsupported_coupled_contact'
-    assert not response['complete']
-    assert response['next_scene'] is None
+    assert response['result']['status'] == 'stopped'
+    assert response['complete'] and response['next_scene'] is not None
+    assert any(e['detail']=='cluster' for e in response['result']['events'])
+    service.decode(response['next_scene'])
+
+
+def test_incomplete_simulation_never_returns_a_fake_next_scene(service,monkeypatch):
+    from billiards.engine import simulate
+    def bounded(*args,**kwargs):
+        return simulate(*args,**{**kwargs,'max_events':1})
+    monkeypatch.setattr('billiards.play.simulate',bounded)
+    response=service.shoot(service.presets()[0]['scene'])
+    assert response['result']['status']=='max_events'
+    assert not response['complete'] and response['next_scene'] is None
 
 
 @pytest.fixture(scope='module')
@@ -190,3 +201,23 @@ def test_launcher_reuses_its_existing_server_without_starting_a_second_one(serve
     monkeypatch.setattr('webbrowser.open',opened.append)
     main()
     assert opened == [f'http://127.0.0.1:{port}/']
+
+
+def test_rule_and_free_mode_http_contracts(server):
+    status,_,body=request(server,'GET','/api/rules/config')
+    config=json.loads(body)
+    assert status==200 and config['model']['table']['width']==1.27
+    status,_,body=request(server,'POST','/api/game/new',b'{"breaker":1}')
+    game=json.loads(body)
+    assert status==200 and game['turn']==1 and len(game['scene']['balls'])==16
+    status,_,body=request(server,'POST','/api/validate',json.dumps(game['scene']).encode())
+    assert status==200 and json.loads(body)['scene']['model_signature']==game['scene']['model_signature']
+    for name in ('table-modes.js','table-modes.css'):
+        assert request(server,'GET','/assets/'+name)[0]==200
+    for endpoint in ('new','get','action','preview'):
+        assert request(server,'POST','/api/game/'+endpoint,b'[]')[0]==400
+    status,_,body=request(server,'POST','/api/free-table',b'{"balls":["3","8","13"],"cue":{"x":0.3,"y":0.4}}')
+    value=json.loads(body)
+    assert status==200 and [b['id'] for b in value['scene']['balls']]==['cue','3','8','13']
+    assert value['scene']['table']['width']==1.26
+    assert request(server,'POST','/api/free-table',b'{"balls":["1","1"],"cue":{"x":0.3,"y":0.4}}')[0]==400

@@ -230,7 +230,13 @@ def boundary_candidates(ball, motion, table, horizon, roots):
     geometry = outline(table)
     acceleration = motion.acceleration
     candidates = []
+    # Conservative path-length bound, including curved motion. Small support
+    # steps must not solve quartics for every distant jaw on the table.
+    reach=ball.velocity.norm()*horizon+.5*acceleration.norm()*horizon*horizon
+    if reach==0:return candidates
     for surface in geometry.surfaces:
+        if (ball.position-surface.closest(ball.position)).norm()>ball.spec.radius+surface.radius+reach+SPACE_EPS:
+            continue
         axis = surface.end-surface.start
         length = axis.norm()
         direction = axis*(1/length)
@@ -288,6 +294,7 @@ def boundary_candidates(ball, motion, table, horizon, roots):
     for pocket in geometry.pockets:
         if pocket.fall_radius is not None:
             delta,velocity = ball.position-pocket.fall_center,ball.velocity
+            if delta.norm()>pocket.fall_radius+reach+SPACE_EPS:continue
             coefficients = [delta.dot(delta)-pocket.fall_radius**2,2*delta.dot(velocity),
                             velocity.dot(velocity)+delta.dot(acceleration),
                             velocity.dot(acceleration),.25*acceleration.dot(acceleration)]
