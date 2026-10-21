@@ -1,0 +1,1464 @@
+{
+  "version": "random-gap-break-book-v1",
+  "physics_signature": "f4c258857aae789a",
+  "selected": [
+    {
+      "id": "break-133",
+      "position": {
+        "x": 0.5,
+        "y": 0.87
+      },
+      "shot": {
+        "angle_deg": 353.1009518114993,
+        "cue_speed": 5.0,
+        "tip_x": 0.0,
+        "tip_y": 0.0
+      }
+    },
+    {
+      "id": "break-76",
+      "position": {
+        "x": 0.5,
+        "y": 0.16
+      },
+      "shot": {
+        "angle_deg": 16.26803413973536,
+        "cue_speed": 5.0,
+        "tip_x": 0.0,
+        "tip_y": 0.0
+      }
+    }
+  ],
+  "method": "finite-action offline reward selection; no live rack inspection",
+  "random_gaps_mm": [
+    0.1,
+    0.5
+  ],
+  "train_seeds": [
+    91001,
+    91002,
+    91003,
+    91004,
+    91005,
+    91006,
+    91007,
+    91008,
+    91009,
+    91010,
+    91011,
+    91012
+  ],
+  "validation_seeds": [
+    92001,
+    92002,
+    92003,
+    92004,
+    92005,
+    92006,
+    92007,
+    92008,
+    92009,
+    92010,
+    92011,
+    92012
+  ],
+  "held_out_seeds": [
+    93001,
+    93002,
+    93003,
+    93004,
+    93005,
+    93006,
+    93007,
+    93008,
+    93009,
+    93010,
+    93011,
+    93012,
+    93013,
+    93014,
+    93015,
+    93016,
+    93017,
+    93018,
+    93019,
+    93020,
+    93021,
+    93022,
+    93023,
+    93024
+  ],
+  "training": {
+    "break-1": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 11.5,
+      "mean_reward": 0.7466666666666666
+    },
+    "break-2": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.75,
+      "mean_reward": 0.9583333333333331
+    },
+    "break-3": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.3333333333333333,
+      "legal_rate": 0.5833333333333334,
+      "mean_moved": 6.333333333333333,
+      "mean_reward": -0.9877777777777778
+    },
+    "break-4": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.8333333333333334,
+      "mean_moved": 6.916666666666667,
+      "mean_reward": -0.06722222222222234
+    },
+    "break-5": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 7.5,
+      "mean_reward": 0.35666666666666663
+    },
+    "break-6": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.3333333333333333,
+      "legal_rate": 0.5833333333333334,
+      "mean_moved": 7.833333333333333,
+      "mean_reward": -0.7894444444444445
+    },
+    "break-7": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.166666666666666,
+      "mean_reward": 0.7944444444444444
+    },
+    "break-8": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.166666666666666,
+      "mean_reward": 0.7894444444444444
+    },
+    "break-9": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 9.916666666666666,
+      "mean_reward": 0.5527777777777777
+    },
+    "break-10": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.0,
+      "mean_reward": 0.7599999999999999
+    },
+    "break-11": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 10.166666666666666,
+      "mean_reward": 0.28277777777777774
+    },
+    "break-12": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.75,
+      "mean_reward": 0.7916666666666666
+    },
+    "break-13": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 9.75,
+      "mean_reward": 0.40499999999999986
+    },
+    "break-14": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 8.833333333333334,
+      "mean_reward": 0.46388888888888885
+    },
+    "break-15": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 8.75,
+      "mean_reward": 0.4366666666666666
+    },
+    "break-16": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.5,
+      "mean_reward": 0.8116666666666665
+    },
+    "break-17": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 10.666666666666666,
+      "mean_reward": 0.5627777777777777
+    },
+    "break-18": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 8.75,
+      "mean_reward": 0.5349999999999999
+    },
+    "break-19": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.5,
+      "legal_rate": 0.5,
+      "mean_moved": 7.666666666666667,
+      "mean_reward": -1.243888888888889
+    },
+    "break-20": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 8.416666666666666,
+      "mean_reward": 0.3394444444444444
+    },
+    "break-21": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 8.166666666666666,
+      "mean_reward": 0.4527777777777777
+    },
+    "break-22": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.25,
+      "mean_reward": 0.5683333333333332
+    },
+    "break-23": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.666666666666666,
+      "mean_reward": 0.5077777777777778
+    },
+    "break-24": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 10.583333333333334,
+      "mean_reward": 0.3405555555555555
+    },
+    "break-25": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 11.75,
+      "mean_reward": 0.9116666666666666
+    },
+    "break-26": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 8.083333333333334,
+      "mean_reward": 0.6588888888888887
+    },
+    "break-27": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.25,
+      "mean_reward": 0.9699999999999999
+    },
+    "break-28": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.083333333333334,
+      "mean_reward": 0.9505555555555554
+    },
+    "break-29": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 8.916666666666666,
+      "mean_reward": 1.0094444444444444
+    },
+    "break-30": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.25,
+      "mean_reward": 0.48333333333333334
+    },
+    "break-31": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 9.5,
+      "mean_reward": 0.7716666666666665
+    },
+    "break-32": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 10.083333333333334,
+      "mean_reward": 0.7122222222222221
+    },
+    "break-33": {
+      "racks": 12,
+      "complete": 10,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.75,
+      "mean_moved": 7.166666666666667,
+      "mean_reward": 0.022777777777777727
+    },
+    "break-34": {
+      "racks": 12,
+      "complete": 9,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 0.75,
+      "mean_moved": 6.166666666666667,
+      "mean_reward": 0.17444444444444437
+    },
+    "break-35": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.166666666666666,
+      "mean_reward": 0.5411111111111111
+    },
+    "break-36": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.16666666666666666,
+      "legal_rate": 0.8333333333333334,
+      "mean_moved": 9.0,
+      "mean_reward": -0.07333333333333336
+    },
+    "break-37": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.333333333333334,
+      "mean_reward": 0.8255555555555555
+    },
+    "break-38": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.0,
+      "mean_reward": 0.9349999999999999
+    },
+    "break-39": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.5,
+      "mean_reward": 0.995
+    },
+    "break-40": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.5,
+      "scratch_rate": 0.25,
+      "legal_rate": 0.75,
+      "mean_moved": 9.916666666666666,
+      "mean_reward": 0.4694444444444444
+    },
+    "break-41": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.0,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 7.916666666666667,
+      "mean_reward": 0.30111111111111105
+    },
+    "break-42": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 8.083333333333334,
+      "mean_reward": 0.6705555555555555
+    },
+    "break-43": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.166666666666666,
+      "mean_reward": 0.7327777777777778
+    },
+    "break-44": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 9.166666666666666,
+      "mean_reward": 0.7811111111111111
+    },
+    "break-45": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.083333333333334,
+      "mean_reward": 0.7605555555555554
+    },
+    "break-46": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 9.0,
+      "mean_reward": 0.3466666666666666
+    },
+    "break-47": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.666666666666666,
+      "mean_reward": 0.6694444444444444
+    },
+    "break-48": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 7.833333333333333,
+      "mean_reward": 0.5738888888888888
+    },
+    "break-49": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.8333333333333334,
+      "mean_moved": 7.333333333333333,
+      "mean_reward": 0.06222222222222216
+    },
+    "break-50": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.166666666666666,
+      "mean_reward": 0.6727777777777777
+    },
+    "break-51": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.75,
+      "mean_reward": 0.6766666666666666
+    },
+    "break-52": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.75,
+      "mean_reward": 0.855
+    },
+    "break-53": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.416666666666666,
+      "mean_reward": 0.8377777777777777
+    },
+    "break-54": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 8.583333333333334,
+      "mean_reward": 0.14888888888888888
+    },
+    "break-55": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 8.416666666666666,
+      "mean_reward": 0.6727777777777777
+    },
+    "break-56": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 9.25,
+      "mean_reward": 0.3216666666666666
+    },
+    "break-57": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.75,
+      "legal_rate": 0.25,
+      "mean_moved": 7.833333333333333,
+      "mean_reward": -1.6944444444444446
+    },
+    "break-58": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.166666666666666,
+      "mean_reward": 1.0994444444444442
+    },
+    "break-59": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.5,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 10.333333333333334,
+      "mean_reward": 0.972222222222222
+    },
+    "break-60": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.333333333333334,
+      "mean_reward": 0.5455555555555555
+    },
+    "break-61": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.166666666666666,
+      "mean_reward": 0.9611111111111111
+    },
+    "break-62": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.5,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 7.916666666666667,
+      "mean_reward": 1.1144444444444443
+    },
+    "break-63": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 9.0,
+      "mean_reward": 0.5483333333333332
+    },
+    "break-64": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.16666666666666666,
+      "legal_rate": 0.8333333333333334,
+      "mean_moved": 9.166666666666666,
+      "mean_reward": 0.3044444444444444
+    },
+    "break-65": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.0,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.0,
+      "mean_reward": 0.40833333333333327
+    },
+    "break-66": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.5,
+      "mean_reward": 0.6466666666666666
+    },
+    "break-67": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 9.416666666666666,
+      "mean_reward": 0.7977777777777777
+    },
+    "break-68": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.666666666666666,
+      "mean_reward": 1.066111111111111
+    },
+    "break-69": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.25,
+      "mean_reward": 0.48166666666666663
+    },
+    "break-70": {
+      "racks": 12,
+      "complete": 10,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.3333333333333333,
+      "legal_rate": 0.5,
+      "mean_moved": 7.083333333333333,
+      "mean_reward": -0.8161111111111112
+    },
+    "break-71": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.0,
+      "scratch_rate": 0.16666666666666666,
+      "legal_rate": 0.8333333333333334,
+      "mean_moved": 7.333333333333333,
+      "mean_reward": -0.3794444444444445
+    },
+    "break-72": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.0,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 7.583333333333333,
+      "mean_reward": 0.12055555555555553
+    },
+    "break-73": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 11.333333333333334,
+      "mean_reward": 0.7305555555555555
+    },
+    "break-74": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.5,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 11.25,
+      "mean_reward": 1.0483333333333331
+    },
+    "break-75": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 8.333333333333334,
+      "mean_reward": 0.4655555555555555
+    },
+    "break-76": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.5,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 11.416666666666666,
+      "mean_reward": 1.2677777777777777
+    },
+    "break-77": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.5,
+      "scratch_rate": 0.0,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 10.083333333333334,
+      "mean_reward": 1.0422222222222222
+    },
+    "break-78": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 7.333333333333333,
+      "mean_reward": 0.3672222222222221
+    },
+    "break-79": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.8333333333333334,
+      "mean_moved": 6.916666666666667,
+      "mean_reward": -0.03722222222222226
+    },
+    "break-80": {
+      "racks": 12,
+      "complete": 8,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.0,
+      "legal_rate": 0.6666666666666666,
+      "mean_moved": 5.333333333333333,
+      "mean_reward": -0.3027777777777778
+    },
+    "break-81": {
+      "racks": 12,
+      "complete": 9,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.25,
+      "legal_rate": 0.5,
+      "mean_moved": 6.083333333333333,
+      "mean_reward": -0.7527777777777778
+    },
+    "break-82": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.333333333333334,
+      "mean_reward": 0.5855555555555555
+    },
+    "break-83": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.8333333333333334,
+      "mean_moved": 8.416666666666666,
+      "mean_reward": 0.12611111111111103
+    },
+    "break-84": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.5833333333333334,
+      "legal_rate": 0.4166666666666667,
+      "mean_moved": 10.333333333333334,
+      "mean_reward": -1.0444444444444445
+    },
+    "break-85": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.0,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.166666666666666,
+      "mean_reward": 0.40777777777777774
+    },
+    "break-86": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 11.333333333333334,
+      "mean_reward": 1.0138888888888888
+    },
+    "break-87": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.333333333333334,
+      "mean_reward": 1.0955555555555554
+    },
+    "break-88": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 8.5,
+      "mean_reward": 1.0066666666666666
+    },
+    "break-89": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.833333333333334,
+      "mean_reward": 0.5172222222222221
+    },
+    "break-90": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 8.666666666666666,
+      "mean_reward": 0.4044444444444444
+    },
+    "break-91": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.416666666666666,
+      "mean_reward": 0.9411111111111109
+    },
+    "break-92": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.583333333333334,
+      "mean_reward": 1.0788888888888888
+    },
+    "break-93": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.4166666666666667,
+      "legal_rate": 0.5,
+      "mean_moved": 7.666666666666667,
+      "mean_reward": -0.9538888888888889
+    },
+    "break-94": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.0,
+      "scratch_rate": 0.9166666666666666,
+      "legal_rate": 0.08333333333333333,
+      "mean_moved": 7.25,
+      "mean_reward": -2.691666666666667
+    },
+    "break-95": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.083333333333334,
+      "mean_reward": 0.6122222222222221
+    },
+    "break-96": {
+      "racks": 12,
+      "complete": 10,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.75,
+      "mean_moved": 7.0,
+      "mean_reward": -0.04166666666666672
+    },
+    "break-97": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.666666666666666,
+      "mean_reward": 0.5877777777777777
+    },
+    "break-98": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.0,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.0,
+      "mean_reward": 0.39833333333333326
+    },
+    "break-99": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.16666666666666666,
+      "legal_rate": 0.8333333333333334,
+      "mean_moved": 10.666666666666666,
+      "mean_reward": 0.47111111111111104
+    },
+    "break-100": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.833333333333334,
+      "mean_reward": 0.8522222222222221
+    },
+    "break-101": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.0,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 7.916666666666667,
+      "mean_reward": 0.7527777777777777
+    },
+    "break-102": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.8333333333333334,
+      "mean_moved": 7.833333333333333,
+      "mean_reward": 0.47555555555555545
+    },
+    "break-103": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.5,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 8.833333333333334,
+      "mean_reward": 1.152222222222222
+    },
+    "break-104": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.333333333333334,
+      "mean_reward": 1.1355555555555554
+    },
+    "break-105": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.0,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.0,
+      "mean_reward": 0.3283333333333333
+    },
+    "break-106": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 9.583333333333334,
+      "mean_reward": 0.797222222222222
+    },
+    "break-107": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.083333333333334,
+      "mean_reward": 0.8105555555555556
+    },
+    "break-108": {
+      "racks": 12,
+      "complete": 9,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.6666666666666666,
+      "mean_moved": 6.083333333333333,
+      "mean_reward": -0.4894444444444445
+    },
+    "break-109": {
+      "racks": 12,
+      "complete": 9,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 0.75,
+      "mean_moved": 6.333333333333333,
+      "mean_reward": -0.1777777777777778
+    },
+    "break-110": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.583333333333334,
+      "mean_reward": 0.8472222222222222
+    },
+    "break-111": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.0,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.416666666666666,
+      "mean_reward": 0.3444444444444444
+    },
+    "break-112": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 11.0,
+      "mean_reward": 1.01
+    },
+    "break-113": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.25,
+      "mean_reward": 1.085
+    },
+    "break-114": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.0,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 8.916666666666666,
+      "mean_reward": 0.4577777777777777
+    },
+    "break-115": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.25,
+      "legal_rate": 0.75,
+      "mean_moved": 9.5,
+      "mean_reward": 0.29666666666666663
+    },
+    "break-116": {
+      "racks": 12,
+      "complete": 10,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.16666666666666666,
+      "legal_rate": 0.6666666666666666,
+      "mean_moved": 7.333333333333333,
+      "mean_reward": -0.07277777777777782
+    },
+    "break-117": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 8.666666666666666,
+      "mean_reward": 0.23944444444444443
+    },
+    "break-118": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 8.75,
+      "mean_reward": 0.7116666666666666
+    },
+    "break-119": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.5,
+      "mean_reward": 1.0183333333333333
+    },
+    "break-120": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.583333333333334,
+      "mean_reward": 0.782222222222222
+    },
+    "break-121": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 9.25,
+      "mean_reward": 0.8199999999999998
+    },
+    "break-122": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.5,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.416666666666666,
+      "mean_reward": 1.221111111111111
+    },
+    "break-123": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 8.0,
+      "mean_reward": 0.585
+    },
+    "break-124": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 7.666666666666667,
+      "mean_reward": 0.5527777777777777
+    },
+    "break-125": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.0,
+      "mean_reward": 0.5433333333333333
+    },
+    "break-126": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.0,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.25,
+      "mean_reward": 0.425
+    },
+    "break-127": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 11.583333333333334,
+      "mean_reward": 1.0272222222222223
+    },
+    "break-128": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.833333333333334,
+      "mean_reward": 0.8505555555555554
+    },
+    "break-129": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 8.0,
+      "mean_reward": 0.595
+    },
+    "break-130": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.5,
+      "scratch_rate": 0.0,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 7.833333333333333,
+      "mean_reward": 0.8505555555555554
+    },
+    "break-131": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.0,
+      "scratch_rate": 0.5,
+      "legal_rate": 0.5,
+      "mean_moved": 8.833333333333334,
+      "mean_reward": -1.2544444444444445
+    },
+    "break-132": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 1.0,
+      "legal_rate": 0.0,
+      "mean_moved": 7.416666666666667,
+      "mean_reward": -2.4722222222222223
+    },
+    "break-133": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.5,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.833333333333334,
+      "mean_reward": 1.317222222222222
+    },
+    "break-134": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 10.25,
+      "mean_reward": 0.6833333333333332
+    },
+    "break-135": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.25,
+      "mean_reward": 0.6799999999999998
+    },
+    "break-136": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 9.25,
+      "mean_reward": 0.6483333333333333
+    },
+    "break-137": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.0,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 8.333333333333334,
+      "mean_reward": 0.8105555555555554
+    },
+    "break-138": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.833333333333334,
+      "mean_reward": 0.8672222222222222
+    },
+    "break-139": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 10.666666666666666,
+      "mean_reward": 0.42944444444444435
+    },
+    "break-140": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.16666666666666666,
+      "legal_rate": 0.8333333333333334,
+      "mean_moved": 9.833333333333334,
+      "mean_reward": 0.4455555555555554
+    },
+    "break-141": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.5,
+      "mean_reward": 0.64
+    },
+    "break-142": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 8.75,
+      "mean_reward": 0.73
+    },
+    "break-143": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 8.916666666666666,
+      "mean_reward": 0.4877777777777777
+    },
+    "break-144": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 8.25,
+      "mean_reward": 0.5099999999999999
+    },
+    "break-145": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.3333333333333333,
+      "scratch_rate": 0.3333333333333333,
+      "legal_rate": 0.5833333333333334,
+      "mean_moved": 7.583333333333333,
+      "mean_reward": -0.5361111111111112
+    },
+    "break-146": {
+      "racks": 12,
+      "complete": 11,
+      "pot_rate": 0.16666666666666666,
+      "scratch_rate": 0.0,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 6.75,
+      "mean_reward": 0.2116666666666666
+    },
+    "break-147": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 7.083333333333333,
+      "mean_reward": 0.2355555555555555
+    },
+    "break-148": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.08333333333333333,
+      "scratch_rate": 0.08333333333333333,
+      "legal_rate": 0.9166666666666666,
+      "mean_moved": 10.666666666666666,
+      "mean_reward": 0.31777777777777777
+    },
+    "break-149": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 10.916666666666666,
+      "mean_reward": 0.8444444444444444
+    },
+    "break-150": {
+      "racks": 12,
+      "complete": 12,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 8.0,
+      "mean_reward": 0.6949999999999998
+    }
+  },
+  "held_out": {
+    "break-133": {
+      "racks": 24,
+      "complete": 24,
+      "pot_rate": 0.4166666666666667,
+      "scratch_rate": 0.0,
+      "legal_rate": 1.0,
+      "mean_moved": 9.583333333333334,
+      "mean_reward": 1.0488888888888888
+    },
+    "break-76": {
+      "racks": 24,
+      "complete": 24,
+      "pot_rate": 0.25,
+      "scratch_rate": 0.041666666666666664,
+      "legal_rate": 0.9583333333333334,
+      "mean_moved": 11.416666666666666,
+      "mean_reward": 0.7461111111111111
+    }
+  },
+  "limitations": "Synthetic random-gap racks; tiny holdout, no real table probability claim. Cue-head speed stays within existing 5 m/s cap; no physics or speed mapping adjustment."
+}

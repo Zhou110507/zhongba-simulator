@@ -40,12 +40,16 @@ def layout(service, seed, *, max_balls=5, ball_count=None):
                 p=pocket.mouth-pocket.outward*float(rng.uniform(.15,.4))+pocket.tangent*float(rng.uniform(-.1,.1))
             if key=='10' and seed%4==1:
                 p=balls[0].position+Vec2(float(rng.uniform(-.15,.15)),float(rng.uniform(-.15,.15)))
+            if key=='10' and seed%5==2:
+                anchor=next((b for b in balls if b.id=='2'),balls[-1])
+                angle=float(rng.uniform(0,2*np.pi))
+                p=anchor.position+Vec2(float(np.cos(angle)),float(np.sin(angle)))*float(rng.uniform(.061,.078))
             candidate=Ball(key,p,spec=service.ball_spec)
             try:
                 validate_position(candidate,service.table)
             except ValueError:continue
             if unsupported_pocket(candidate,service.table):continue
-            if all((p-b.position).norm()>.09 for b in balls):
+            if all((p-b.position).norm()>(.060 if key=='10' and seed%5==2 else .09) for b in balls):
                 balls.append(candidate);break
         else:raise RuntimeError('failed to generate layout')
     state['scene']=service.snapshot(balls,ShotInput(0,1.1))
@@ -106,14 +110,16 @@ def generate(service, count, output, *, start_seed=17001):
                              'cushions':[s['cue_cushions'] for s in route],
                              'side_tips':[s['shot']['tip_x'] for s in route],
                              'jaw_contacts':[s['jaw_contacts'] for s in route]})
+            branches[-1].update(secondary_contacts=[s['secondary_contacts'] for s in route],
+                                breakout_gain=sum(s['breakout_gain'] for s in route))
         simulations+=search.count
         if index%4==0 or index==count-1:
             print(json.dumps({'start_seed':start_seed,'layouts':index+1,'total':count,'samples':len(rows),
                               'simulations':simulations,'seconds':round(monotonic()-started,1)}),flush=True)
-    data={'version':3,'source':'synthetic_shared_physics_rollouts','layout_count':count,
+    data={'version':4,'source':'synthetic_shared_physics_rollouts','layout_count':count,
           'physics_signature':service.signature,'human_policy':search.policy,'features':FEATURE_NAMES,
           'simulations':simulations,'rows':rows,'branches':branches,
-          'label_definition':'Bounded rollout completion discounted by mean and hardest actual shot quality: pot tolerance, moderate distances, bridge comfort and soft position effort up to five rails and moderate side spin. Small clean-entry preference; useful jaw contact allowed. Small partial-progress credit. Not human probability.'}
+          'label_definition':'Bounded rollout completion discounted by mean and hardest shot quality: pot tolerance, distance, bridge and soft five-rail/side effort; legal secondary position contacts are allowed with a small contact cost and cluster-release credit. Small clean-entry preference; useful jaw contact allowed. Partial progress credit; not human probability.'}
     output.parent.mkdir(parents=True,exist_ok=True)
     output.write_text(json.dumps(data,ensure_ascii=False),encoding='utf-8')
     return data
@@ -215,7 +221,7 @@ def train(service,data,output):
     report_path=service.root/'artifacts'/'ai-training'/'report.json'
     report_path.parent.mkdir(parents=True,exist_ok=True)
     report_path.write_text(json.dumps({'training':model['training'],'trace':trace},ensure_ascii=False,indent=2),encoding='utf-8')
-    reproducible=service.root/'training'/'ai_stage2'
+    reproducible=service.root/'training'/'ai_stage3'
     reproducible.mkdir(parents=True,exist_ok=True)
     (reproducible/'dataset.json').write_text(json.dumps(data,ensure_ascii=False)+'\n',encoding='utf-8')
     (reproducible/'training-report.json').write_text(report_path.read_text(encoding='utf-8'),encoding='utf-8')
@@ -227,8 +233,8 @@ def main():
     parser.add_argument('--workers',type=int,default=4)
     parser.add_argument('--reuse',action='store_true');args=parser.parse_args()
     service=PlayService(table_profile='cbsa_2017')
-    dataset=service.root/'artifacts'/'ai-training'/'rollouts-v3.json'
-    if args.reuse and not dataset.is_file():dataset=service.root/'training'/'ai_stage2'/'dataset.json'
+    dataset=service.root/'artifacts'/'ai-training'/'rollouts-v4.json'
+    if args.reuse and not dataset.is_file():dataset=service.root/'training'/'ai_stage3'/'dataset.json'
     data=(json.loads(dataset.read_text(encoding='utf-8')) if args.reuse and dataset.is_file()
           else generate_parallel(service,args.layouts,dataset,args.workers) if args.workers>1
           else generate(service,args.layouts,dataset))

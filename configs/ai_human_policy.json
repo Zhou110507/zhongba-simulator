@@ -1,5 +1,5 @@
 {
-  "version": "human-balanced-position-v3",
+  "version": "human-position-contacts-v4",
   "status": "conservative_engineering_policy_not_measured_player_statistics",
   "rear_stroke_m": 0.30,
   "shaft_radius_m": 0.006,
@@ -18,7 +18,7 @@
   "comfortable_max_distance_m": 1.20,
   "comfortable_rail_clearance_m": 0.10,
   "max_normal_cushions": 5,
-  "allow_secondary_ball_contacts": false,
+  "allow_secondary_ball_contacts": true,
   "jaw_contact_cost": 0.12,
   "pocket_offset_cost": 0.06,
   "sources": [

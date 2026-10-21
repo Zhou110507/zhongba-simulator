@@ -2,7 +2,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
 
 function harness(){
-  const nodes=new Map(),scheduled=new Set(),calls=[];
+  const nodes=new Map(),scheduled=new Set(),calls=[],responses=new Map();
   const element=()=>({children:[],checked:false,disabled:false,hidden:false,textContent:'',className:'',
     append(...v){this.children.push(...v);},replaceChildren(...v){this.children=v;}});
   const $=id=>{if(!nodes.has(id))nodes.set(id,element());return nodes.get(id);};
@@ -16,12 +16,13 @@ function harness(){
     setTimeout(fn,ms){if(ms===600){const task={fn};scheduled.add(task);return task;}return setImmediate(fn);},
     clearTimeout(task){scheduled.delete(task);},
     api:async(path,data)=>{calls.push({path,data});if(hook)await hook(path,data);
+      if(responses.has(path))return structuredClone(responses.get(path));
       return path.endsWith('/start')?{id:'job',status:'running'}:
         path.endsWith('/status')?{id:'job',status:'found',analysis:structuredClone(analysis)}:{revision:1};},
   };
   vm.createContext(c);vm.runInContext(fs.readFileSync('web/ai-opponent.js','utf8'),c);
   return {flow:c.window.AIOpponent,$,ctx,calls,scheduled,setRules:v=>rules=v,
-    setHook:f=>hook=f,setAnalysis:value=>Object.assign(analysis,value),accepted:()=>accepted};
+    setHook:f=>hook=f,setResponse:(path,value)=>responses.set(path,value),setAnalysis:value=>Object.assign(analysis,value),accepted:()=>accepted};
 }
 
 test('AI is opt-in and does not lock practice or local two-player controls',()=>{
@@ -72,4 +73,49 @@ test('route explains side spin, rail count and actual jaw-assisted entry',async(
   const text=h.$('ai-routes').children[0].children[1].children[0].textContent;
   assert.match(text,/左塞 0.25 R/);assert.match(text,/白球 4 库/);assert.match(text,/碰袋角后入袋/);
   assert.equal(h.calls.some(c=>c.path.endsWith('/execute')),false);
+});
+
+test('prefetched next job waits for replay and is consumed without a second start',async()=>{
+  const h=harness();await h.flow.think();
+  h.setResponse('/api/ai/execute',{result:{},rule_committed:true,
+    prefetch:{id:'next-job',status:'found',game_id:'match',revision:1,cache_hit:true}});
+  h.setHook(async path=>{if(path.endsWith('/execute'))h.ctx.idle=false;});
+  await h.$('ai-execute').onclick();
+  assert.equal(h.calls.find(c=>c.path.endsWith('/execute')).data.prefetch,true);
+  const starts=h.calls.filter(c=>c.path.endsWith('/start')).length;
+  await h.flow.think();assert.equal(h.calls.filter(c=>c.path.endsWith('/start')).length,starts);
+  h.ctx.game.revision=1;h.ctx.idle=true;
+  await h.flow.think();
+  assert.equal(h.calls.filter(c=>c.path.endsWith('/start')).length,starts);
+  assert.equal(h.calls.filter(c=>c.path.endsWith('/status')).at(-1).data.id,'next-job');
+});
+
+test('human-shot replay can precompute AI but cannot execute before ball stop',async()=>{
+  const h=harness();h.ctx.game.turn=0;h.ctx.idle=false;
+  await h.flow.precompute({...h.ctx.game,turn:1,revision:1});
+  assert.equal(h.calls.filter(c=>c.path.endsWith('/start')).length,1);
+  assert.equal(h.calls.some(c=>c.path.endsWith('/execute')),false);
+  await h.flow.think();assert.equal(h.calls.some(c=>c.path.endsWith('/status')),false);
+  h.ctx.game.turn=1;h.ctx.game.revision=1;h.ctx.idle=true;
+  await h.flow.think();
+  assert.equal(h.calls.filter(c=>c.path.endsWith('/start')).length,1);
+});
+
+test('late human-shot prefetch is cancelled when the user leaves the match',async()=>{
+  const h=harness();h.ctx.idle=false;
+  h.setHook(async path=>{if(path.endsWith('/start')){h.flow.cancelForChange();h.setRules(false);}});
+  await h.flow.precompute({...h.ctx.game,revision:1});
+  assert.equal(h.calls.filter(c=>c.path.endsWith('/cancel')).length,1);
+  assert.equal(h.calls.some(c=>c.path.endsWith('/execute')),false);
+});
+
+test('late prefetch does not cancel the same job already adopted by a normal think',async()=>{
+  const h=harness();h.ctx.game.turn=0;h.ctx.idle=false;
+  let release,entered=0;const gate=new Promise(resolve=>release=resolve);
+  h.setHook(async path=>{if(path.endsWith('/start')&&++entered===1)await gate;});
+  const pending=h.flow.precompute({...h.ctx.game,turn:1,revision:1});
+  await new Promise(resolve=>setImmediate(resolve));
+  h.ctx.game.turn=1;h.ctx.game.revision=1;h.ctx.idle=true;
+  await h.flow.think();release();await pending;
+  assert.equal(h.calls.some(c=>c.path.endsWith('/cancel')),false);
 });

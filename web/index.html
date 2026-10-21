@@ -51,11 +51,11 @@
     <aside>
       <section id="ai-panel" class="card ai-panel" hidden>
         <div class="section-title"><h2>AI 清台思路</h2><span id="ai-model" class="pill">模拟训练 · 进球与走位平衡</span></div>
-        <p class="hint">兼顾进球好打度、架杆舒适与走位代价，允许五库内及适度加塞换取更好的下一球；稍偏好空心入袋，也保留有利的借袋角。三球以内尝试规划到黑八，多球时先看三杆，每杆按实际球位重算。</p>
+        <p class="hint">进攻优先，允许合法借碰与K球；没有合适进攻时尝试多库解球和防守。开球调用随机微缝离线策略，冲散后再分析台面。球运动时预先规划，停点符合预期则复用已验证路线。</p>
         <label class="plan-check"><input id="ai-auto" type="checkbox"> 自动对打（思考后执行；取消勾选可暂停）</label>
         <div class="plan-actions"><button id="ai-think" class="primary">查看 AI 思路</button><button id="ai-execute" disabled>执行当前这一杆</button><button id="ai-cancel" disabled>暂停／取消</button><button id="ai-export" disabled>导出 AI 分析</button></div>
         <p id="ai-status" class="plan-status" role="status" aria-live="polite">选择 AI 对手后开始。</p><div id="ai-routes"></div>
-        <p class="hint">模型学习自本软件生成的残局与普通杆法评价，尚未经职业比赛或实桌验证。近库击点与出杆空间采用保守工程限制；抬杆、跳球、扎杆和复杂解堆暂不推荐。微扰检查不代表真人成功率。</p>
+        <p class="hint">模型来自本软件的模拟训练，尚未经职业比赛或实桌验证。保留后斯诺和近库击点约束，不支持抬杆、跳球和扎杆。找不到已验证合法解法时仍完成有界出杆尝试，并明确标注可能犯规；不保证每杆都合法或能清台。微扰不代表真人成功率。</p>
       </section>
       <section id="planner-panel" class="card planner">
         <div class="section-title"><h2>走位反算</h2><span class="pill">扩展走位</span></div>

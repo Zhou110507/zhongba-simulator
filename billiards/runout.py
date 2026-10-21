@@ -26,7 +26,15 @@ FEATURE_NAMES = ['remaining', 'best_distance', 'best_object_distance', 'best_cut
                  'second_cost', 'third_cost', 'rear_restricted_fraction', 'best_cost',
                  'best_pot_difficulty', 'best_aim_window', 'best_pocket_alignment',
                  'comfortable_options', 'best_bridge_cost', 'best_long_object_cost']
-MODEL_VERSION = 'short-runout-value-v3'
+MODEL_VERSION = 'short-runout-value-v4'
+
+
+def cluster_pressure(state, exclude=None):
+    own=set(legal_ids(state))-{exclude}
+    balls=[b for b in state['scene']['balls'] if b['pocket'] is None and b['id'] not in ('cue',exclude)]
+    return sum((a['id'] in own or b['id'] in own) and
+               ((Vec2(**a['position'])-Vec2(**b['position'])).norm()<.115)
+               for i,a in enumerate(balls) for b in balls[i+1:])
 
 
 def stroke_settings():
@@ -146,6 +154,7 @@ class Search:
         self.cap = evaluations; self.count = 0; self.cancelled = cancelled; self.progress = progress
         self.search_cap = self.cap-min(24, self.cap//4)
         self.rejected = {}; self.expanded = 0
+        self.forecasts={}
 
     def stopped(self):
         return self.cancelled() or monotonic() >= self.deadline or self.count >= self.cap
@@ -212,9 +221,14 @@ class Search:
                         'pocket_entry_cost':round(pocket_cost,5),
                         'position_effort':round(.035*speed+.08*abs(tip_y)+.16*abs(tip_x)+.025*banks,5),
                         'cost': option['cost']+.035*speed+.08*abs(tip_y)+.16*abs(tip_x)+.025*banks+pocket_cost}
+                contacts=[list(e.actors) for e in result.events if e.kind=='ball_ball' and e is not event and e.time>=event.time]
+                gain=max(0,cluster_pressure(state,option['target'])-cluster_pressure(after,option['target'])) if contacts else 0
+                step.update(secondary_contacts=contacts,breakout_gain=gain)
+                step['cost']+=.06*len(contacts)-.25*min(3,gain)
                 next_options=shot_options(self.service,after,self.policy) if after['winner'] is None else []
                 step['next_shot']=({k:next_options[0][k] for k in ('target','pocket','cost','distance','object_distance','cut','rear_restricted')}
                                    if next_options else None)
+                key=len(self.forecasts);self.forecasts[key]=(state,after);step['_forecast_key']=key
                 best = (after, step)
             outgoing = next(b for b in event.after if b.id == option['target']).velocity
             if outgoing.norm() < 1e-8: break
@@ -316,7 +330,7 @@ class Search:
         candidates = complete or paths
         candidates.sort(key=lambda n: (not n[0]['winner'] == owner, -len(n[1]),
                                       self.route_cost(n)))
-        routes = []; keys = set()
+        routes = []; keys = set();forecasts=[]
         for after, path, cost in candidates:
             key = tuple((s['target'],s['pocket']) for s in path)
             if key in keys: continue
@@ -326,8 +340,10 @@ class Search:
             reasons.append('综合当前进球、下一球好打度与走位代价；允许五库内及适度加塞换取更舒服的续接')
             if clear and len(path)>1: reasons.append(f'保留 {path[-2]["target"]} 号作为黑八连接球')
             if any(s['human']['notes'] for s in path): reasons.append('近库杆采用高杆限制；未用低杆强拉')
+            if any(s['secondary_contacts'] for s in path):reasons.append('允许走位中的合法借碰和K球；首碰与提前进黑八仍按中八规则检查')
             if not clear: reasons.append('这是预算内找到的部分路线，后续需根据实际落点重算')
-            routes.append({'steps': path, 'clear_verified': clear, 'reasons': reasons,
+            forecasts.append([self.forecasts[s['_forecast_key']] for s in path])
+            routes.append({'steps': [{k:v for k,v in s.items() if k!='_forecast_key'} for s in path], 'clear_verified': clear, 'reasons': reasons,
                            'mean_cost': round(cost/len(path), 4),
                            'max_shot_cost':round(max(s['cost']-s['position_effort'] for s in path),4),
                            'mean_position_effort':round(sum(s['position_effort'] for s in path)/len(path),4)})
@@ -347,8 +363,10 @@ class Search:
                     result,after,_=trial
                     target=next(b for b in result.final if b.id==step['target'])
                     valid=not after['last_decision']['fouls'] and target.pocket==step['pocket']
-                    valid &= sum(e.kind=='ball_ball' and 'cue' in e.actors for e in result.events)==1
-                    valid &= sum(e.kind=='ball_ball' and step['target'] in e.actors for e in result.events)==1
+                    if not self.policy['allow_secondary_ball_contacts']:
+                        valid &= sum(e.kind=='ball_ball' and 'cue' in e.actors for e in result.events)==1
+                        valid &= sum(e.kind=='ball_ball' and step['target'] in e.actors for e in result.events)==1
+                    valid &= after['winner'] in (None,state['turn'])
                     valid &= sum(e.kind=='ball_cushion' and 'cue' in e.actors for e in result.events)<=self.policy['max_normal_cushions']
                     if index+1<len(route['steps']):
                         options=shot_options(self.service,after,self.policy)
@@ -371,4 +389,5 @@ class Search:
                 'model': self.model.data['version'] if self.model and self.model.data else 'heuristic-baseline',
                 'evaluations': self.count, 'elapsed': round(monotonic()-self.started, 2),
                 'human_policy': self.policy['version'], 'rejected_strokes': self.rejected,
+                '_forecasts':forecasts,
                 'scope': 'simulation-trained ranking; ordinary horizontal strokes; no professional success claim'}

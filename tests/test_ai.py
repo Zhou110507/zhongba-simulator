@@ -100,8 +100,8 @@ def test_endgame_search_replays_a_real_rule_valid_clear_with_human_constraints(s
         assert response['rule_committed'] and response['complete']
         current=response['game_after']
         assert not current['last_decision']['fouls']
-        assert sum(e['kind']=='ball_ball' and 'cue' in e['actors'] for e in response['result']['events'])==1
-        assert step['cue_ball_contacts']==1 and step['cue_cushions']<=load_policy(service)['max_normal_cushions']
+        assert current['last_decision']['first_contacts'][0] in {step['target']}
+        assert step['cue_ball_contacts']>=1 and step['cue_cushions']<=load_policy(service)['max_normal_cushions']
         assert 'clean_pot' in step and 'pocket_entry_cost' in step
     assert current['phase']=='finished' and current['winner']==state['ai_player']
     assert current['scores'][state['ai_player']]==1
@@ -254,8 +254,12 @@ def test_verified_jaw_assisted_pot_is_kept_with_a_soft_entry_penalty(service):
 def test_deployed_ai_can_open_a_normal_fifteen_ball_rule_match(service):
     games=GameStore(service);state=games.new({'seed':0,'breaker':0,'ai_player':0})
     result=decide(service,state)
-    assert result['status']=='found' and result['model']==MODEL_VERSION
-    assert result['action']['action']=='shoot' and result['action']['shot']['cue_speed']==4.
-    value=games.action({'id':state['id'],'revision':0,**result['action']})
+    assert result['status']=='found' and result['model']=='random-gap-break-book-v1'
+    assert result['evaluations']==0 and not result['rack_read']
+    if result['action']['action']=='place':
+        state=games.action({'id':state['id'],'revision':state['revision'],**result['action']})
+        result=decide(service,state)
+    assert result['action']['action']=='shoot' and 4.5<=result['action']['shot']['cue_speed']<=5.
+    value=games.action({'id':state['id'],'revision':state['revision'],**result['action']})
     assert value['complete'] and value['rule_committed']
-    assert value['game_after']['revision']==1 and value['game_after']['history']
+    assert value['game_after']['revision']==state['revision']+1 and value['game_after']['history']
