@@ -1,5 +1,5 @@
 {
-  "version": "human-pot-first-v2",
+  "version": "human-balanced-position-v3",
   "status": "conservative_engineering_policy_not_measured_player_statistics",
   "rear_stroke_m": 0.30,
   "shaft_radius_m": 0.006,
@@ -12,20 +12,25 @@
   "normal_cut_degrees": 65,
   "near_pocket_cut_exception_m": 0.45,
   "max_cue_object_distance_m": 1.8,
-  "max_normal_cue_speed_mps": 2.5,
+  "max_normal_cue_speed_mps": 3.2,
   "preferred_cue_object_distance_m": 0.55,
   "comfortable_min_distance_m": 0.18,
   "comfortable_max_distance_m": 1.20,
   "comfortable_rail_clearance_m": 0.10,
-  "max_normal_cushions": 2,
+  "max_normal_cushions": 5,
   "allow_secondary_ball_contacts": false,
+  "jaw_contact_cost": 0.12,
+  "pocket_offset_cost": 0.06,
   "sources": [
     "https://drdavepoolinfo.com/faq/draw/cue-elevation/",
     "https://drdavepoolinfo.com/faq/foul/double-hit/",
     "https://drdavepoolinfo.com/bd_articles/2014/feb14.pdf",
     "https://drdavepoolinfo.com/technical_proofs/TP_3-4.pdf",
     "https://drdavepoolinfo.com/faq/pocket/size-and-center/",
-    "https://ai.stanford.edu/~shoham/www%20papers/CompPool%20AIMag%202010.pdf"
+    "https://ai.stanford.edu/~shoham/www%20papers/CompPool%20AIMag%202010.pdf",
+    "https://drdavepoolinfo.com/resource_files/position_play_principles.pdf",
+    "https://drdavepoolinfo.com/technical_proofs/new/TP_B-8.pdf",
+    "https://drdavepoolinfo.com/faq/sidespin/aim/"
   ],
-  "definition": "AI-only ordinary horizontal strokes. Rear ball interference requires unsupported cue elevation and is rejected. When the rear stroke crosses a nearby rail, use only gentle high-tip strokes. Rail thresholds, shaft envelope, distance/cut limits and close-ball exclusion are conservative engineering choices, not measured professional limits. They do not alter forward physics or manual controls."
+  "definition": "AI-only horizontal strokes with up to five cue-ball cushions, high/low and moderate side tips within the existing cue disk. A 3.2 m/s cue-head exploration cap is an engineering choice within the existing 5 m/s manual limit, not a measured player limit or cue-ball speed. Rear-ball interference, near-rail high-tip access and double-hit exclusions remain. Complexity is a soft cost balanced against next-shot quality and landing-zone stability. No forward physics or manual controls are changed."
 }

@@ -14,14 +14,16 @@ from tools.train_runout import layout
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--layouts',type=int,default=12)
-    parser.add_argument('--seed',type=int,default=28001)
+    parser.add_argument('--seed',type=int,default=78001)
+    parser.add_argument('--evaluations',type=int,default=1800)
+    parser.add_argument('--seconds',type=float,default=30)
     args=parser.parse_args();service=PlayService(table_profile='cbsa_2017');policy=load_policy(service)
     rows=[];started=monotonic()
     for seed in range(args.seed,args.seed+args.layouts):
         initial=layout(service,seed)
         row={'seed':seed}
         for name,trained in (('baseline',False),('trained',True)):
-            result=Search(service,seconds=30,evaluations=360,trained=trained).solve(initial)
+            result=Search(service,seconds=args.seconds,evaluations=args.evaluations,trained=trained).solve(initial)
             route=result['routes'][0] if result['routes'] else None
             valid=True;current=deepcopy(initial);costs=[]
             games=GameStore(service)
@@ -52,12 +54,12 @@ def main():
         summary[name]={'layouts':len(rows),'routes':len(found),'clears':sum(r['clear'] for r in found),
                        'mean_difficulty':sum(r['mean_difficulty'] for r in found)/len(found) if found else None,
                        'all_replays_valid':all(r[name]['replay_valid'] for r in rows)}
-    output={'scope':'Independent synthetic layouts, equal 360-simulation/30-second budgets; ordinary strokes only; no human success claim',
+    output={'scope':f'Independent synthetic layouts, equal {args.evaluations}-simulation/{args.seconds}-second budgets; up to five rails and moderate side; no human success claim',
             'seconds':round(monotonic()-started,1),'summary':summary,'rows':rows}
     path=service.root/'artifacts'/'ai-training'/'independent-audit.json'
     path.parent.mkdir(parents=True,exist_ok=True)
     path.write_text(json.dumps(output,ensure_ascii=False,indent=2),encoding='utf-8')
-    package=service.root/'training'/'ai_stage1'
+    package=service.root/'training'/'ai_stage2'
     package.mkdir(parents=True,exist_ok=True)
     (package/'independent-audit.json').write_text(path.read_text(encoding='utf-8'),encoding='utf-8')
     print(json.dumps(summary,ensure_ascii=False,indent=2),flush=True)

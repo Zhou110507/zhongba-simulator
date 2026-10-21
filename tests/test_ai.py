@@ -85,7 +85,7 @@ def test_trained_model_has_layout_separated_provenance_and_finite_values(service
 def test_endgame_search_replays_a_real_rule_valid_clear_with_human_constraints(service):
     games=GameStore(service);state=games.new({'scenario':'ai_endgame','seed':0})
     original=deepcopy(state)
-    search=Search(service,seconds=25,evaluations=900)
+    search=Search(service,seconds=45,evaluations=2400)
     result=search.solve(state)
     assert state==original and result['model']==MODEL_VERSION
     assert result['status']=='found' and result['endgame']
@@ -101,7 +101,8 @@ def test_endgame_search_replays_a_real_rule_valid_clear_with_human_constraints(s
         current=response['game_after']
         assert not current['last_decision']['fouls']
         assert sum(e['kind']=='ball_ball' and 'cue' in e['actors'] for e in response['result']['events'])==1
-        assert step['cue_ball_contacts']==1 and step['cue_cushions']<=2
+        assert step['cue_ball_contacts']==1 and step['cue_cushions']<=load_policy(service)['max_normal_cushions']
+        assert 'clean_pot' in step and 'pocket_entry_cost' in step
     assert current['phase']=='finished' and current['winner']==state['ai_player']
     assert current['scores'][state['ai_player']]==1
 
@@ -193,3 +194,68 @@ def test_formal_game_cannot_be_rewritten_by_the_layout_commit_action(service):
     with pytest.raises(ValueError):
         games.action({'id':state['id'],'revision':0,'action':'finish_setup','scene':state['scene']})
     assert games.get({'id':state['id']})==state
+
+
+def feedback_state(service):
+    import json
+    data=json.loads((service.root/'training'/'ai_stage2'/'feedback-reference.json').read_text(encoding='utf8'))
+    state=GameStore(service).new({'scenario':'ai_endgame'})
+    state.update(scene=data['source_scene'],groups=data['source_groups'],turn=data['source_turn'])
+    return state
+
+
+def test_three_rail_position_is_allowed_and_leaves_better_shots_than_cheap_rail_stop(service):
+    state=feedback_state(service);search=Search(service,trained=False,seconds=10,evaluations=100)
+    options=shot_options(service,state,search.policy)
+    three=search.aimed(state,next(o for o in options if o['target']=='3' and o['pocket']=='bottom-right'),3.2,.5)
+    cheap=search.aimed(state,next(o for o in options if o['target']=='2' and o['pocket']=='top-right'),.75,0.)
+    assert three and cheap
+    assert three[1]['cue_cushions']>=3 and cheap[1]['cue_cushions']<three[1]['cue_cushions']
+    assert three[1]['next_shot']['cost']<cheap[1]['next_shot']['cost']
+    assert not three[1]['next_shot']['rear_restricted']
+    assert check_stroke(service.decode(state['scene'])[0],ShotInput(**three[1]['shot']),service.table,search.policy)['allowed']
+
+
+def test_route_balance_accepts_more_position_effort_for_easier_shots_but_keeps_effort_cost(service):
+    search=Search(service,trained=False)
+    done={'phase':'finished','winner':1,'turn':1}
+    def route(pot,effort):
+        step={'cost':pot+effort,'position_effort':effort,'next_shot':None}
+        return done,[step],step['cost']
+    assert search.route_cost(route(1.,.4))<search.route_cost(route(3.,.1))
+    assert search.route_cost(route(1.,.1))<search.route_cost(route(1.,.4))
+
+
+def test_moderate_side_and_firm_strokes_do_not_bypass_rail_or_rear_ball_limits(service):
+    policy=load_policy(service)
+    balls=service.decode(feedback_state(service)['scene'])[0]
+    assert check_stroke(balls,ShotInput(0,3.2,.25,.4),service.table,policy)['allowed']
+    rear=tuple(Ball(k,Vec2(x,y),spec=service.ball_spec) for k,x,y in [('cue',.05,.6),('1',.8,.6)])
+    assert not check_stroke(rear,ShotInput(0,3.2,.25,-.3),service.table,policy)['allowed']
+
+
+def test_verified_jaw_assisted_pot_is_kept_with_a_soft_entry_penalty(service):
+    search=Search(service,trained=False,seconds=10,evaluations=30)
+    first=ShotInput(25.454592179596894,1.1,-.25,0.)
+    trial=search.forward(feedback_state(service),first);assert trial
+    state=trial[1]
+    option=next(o for o in shot_options(service,state,search.policy) if o['target']=='3' and o['pocket']=='bottom-right')
+    shot=ShotInput(264.92098756494704,2.5,-.3,.3)
+    physics=search.forward(state,shot)[0]
+    collision=next(e for e in physics.events if e.kind=='ball_ball' and 'cue' in e.actors)
+    outgoing=next(b for b in collision.after if b.id=='3').velocity
+    option={**option,'angle':shot.angle_deg,'desired':outgoing*(1/outgoing.norm())}
+    result=search.aimed(state,option,shot.cue_speed,shot.tip_y,shot.tip_x)
+    assert result and result[1]['jaw_contacts']>=1 and not result[1]['clean_pot']
+    assert 0<result[1]['pocket_entry_cost']<.4
+    assert result[1]['verified'] and not result[0]['last_decision']['fouls']
+
+
+def test_deployed_ai_can_open_a_normal_fifteen_ball_rule_match(service):
+    games=GameStore(service);state=games.new({'seed':0,'breaker':0,'ai_player':0})
+    result=decide(service,state)
+    assert result['status']=='found' and result['model']==MODEL_VERSION
+    assert result['action']['action']=='shoot' and result['action']['shot']['cue_speed']==4.
+    value=games.action({'id':state['id'],'revision':0,**result['action']})
+    assert value['complete'] and value['rule_committed']
+    assert value['game_after']['revision']==1 and value['game_after']['history']

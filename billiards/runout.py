@@ -24,8 +24,19 @@ FEATURE_NAMES = ['remaining', 'best_distance', 'best_object_distance', 'best_cut
                  'cue_near_rail', 'cue_x', 'cue_y', 'mean_target_distance',
                  'max_target_distance', 'cluster_pairs', 'black_options', 'black_distance',
                  'second_cost', 'third_cost', 'rear_restricted_fraction', 'best_cost',
-                 'best_pot_difficulty', 'best_aim_window', 'best_pocket_alignment']
-MODEL_VERSION = 'short-runout-value-v2'
+                 'best_pot_difficulty', 'best_aim_window', 'best_pocket_alignment',
+                 'comfortable_options', 'best_bridge_cost', 'best_long_object_cost']
+MODEL_VERSION = 'short-runout-value-v3'
+
+
+def stroke_settings():
+    # Interleave firm, soft, high/low and side strokes so a bounded search does
+    # not spend its entire budget on gentle centre-ball attempts.
+    return [(1.1,0.,0.),(2.2,0.,.5),(2.2,0.,-.45),(1.6,.25,.3),
+            (.75,0.,0.),(3.2,0.,.5),(1.6,-.25,-.3),(2.5,0.,0.),
+            (1.6,0.,.3),(1.6,0.,-.3),(2.5,.3,.3),(2.5,-.3,.3),
+            (1.1,0.,.5),(3.2,.25,.4),(3.2,-.25,.4),(2.5,0.,-.5),
+            (1.1,.25,0.),(1.1,-.25,0.)]
 
 
 def shot_options(service, state, policy):
@@ -64,13 +75,15 @@ def shot_options(service, state, policy):
                        cue.position.y, service.table.width-cue.position.y)
             # Potting accuracy dominates: a near-pocket cut can be easier than
             # a straighter shot sending the object ball across the table.
-            cost = 1.8*pot['pot_difficulty']+.30*distance_cost+.15*(1-cosine)+.014/max(.014, clearance)
-            cost += 2.*max(0., policy['comfortable_rail_clearance_m']-edge)
-            cost += .12*bool(access['notes'])
+            bridge_cost=5.*max(0.,policy['comfortable_rail_clearance_m']-edge)+.65*bool(access['notes'])
+            long_object_cost=.9*max(0.,delta.norm()-.85)
+            cost = 1.8*pot['pot_difficulty']+.65*distance_cost+.25*(1-cosine)+.014/max(.014, clearance)
+            cost += bridge_cost+long_object_cost
             options.append({'target': target.id, 'pocket': pocket.id, 'angle': angle,
                             'desired': unit, 'distance': ray.norm(), 'object_distance': delta.norm(),
                             'cut': cut, 'clearance': clearance, 'cost': cost,
-                            'rear_restricted': bool(access['notes']),**pot})
+                            'rear_restricted': bool(access['notes']),'bridge_cost':bridge_cost,
+                            'long_object_cost':long_object_cost,**pot})
     return sorted(options, key=lambda v: (v['cost'], v['target'], v['pocket']))
 
 
@@ -99,7 +112,9 @@ def features(service, state, policy, options=None):
               costs[1]/3 if len(costs)>1 else 1, costs[2]/3 if len(costs)>2 else 1,
               sum(o['rear_restricted'] for o in options)/max(1, len(options)), best.get('cost', 3)/3,
               best.get('pot_difficulty',3)/3,min(1.,best.get('aim_half_window_deg',0.)/.3),
-              best.get('pocket_entry_cosine',0.)]
+              best.get('pocket_entry_cosine',0.),
+              sum(o['cost']<2.5 and not o['rear_restricted'] and .18<=o['distance']<=1.2 for o in options)/max(1,len(options)),
+              best.get('bridge_cost',1.),best.get('long_object_cost',1.)]
     return np.asarray(values, dtype=float)
 
 
@@ -122,7 +137,7 @@ class ValueModel:
 
 
 class Search:
-    def __init__(self, service, *, seconds=18, evaluations=720, cancelled=lambda: False,
+    def __init__(self, service, *, seconds=30, evaluations=1800, cancelled=lambda: False,
                  progress=lambda value: None, trained=True):
         self.service = service; self.policy = load_policy(service)
         self.model = ValueModel(service) if trained else None
@@ -159,10 +174,10 @@ class Search:
         after['scene'] = self.service.snapshot(final, shot)
         return result, after, access
 
-    def aimed(self, state, option, speed, tip_y):
+    def aimed(self, state, option, speed, tip_y, tip_x=0.):
         angle = option['angle']; previous = None; best = None
         for _ in range(3):
-            shot = ShotInput(angle % 360, speed, 0., tip_y)
+            shot = ShotInput(angle % 360, speed, tip_x, tip_y)
             trial = self.forward(state, shot)
             if trial is None: break
             result, after, access = trial
@@ -179,6 +194,12 @@ class Search:
             if simple and target.pocket == option['pocket'] and not d['fouls'] and (
                     after['turn'] == state['turn'] and after['phase'] == 'playing'
                     or after['winner'] == state['turn']):
+                pocket=next(p for p in outline(self.service.table).pockets if p.id==target.pocket)
+                jaw_hits=sum(e.kind=='ball_cushion' and option['target'] in e.actors and e.detail.startswith('jaw:') for e in result.events)
+                entry=next(e for e in result.events if e.kind=='ball_pocket' and option['target'] in e.actors)
+                entry_ball=next(b for b in entry.before if b.id==option['target'])
+                offset=abs((entry_ball.position-pocket.mouth).dot(pocket.tangent))
+                pocket_cost=self.policy['jaw_contact_cost']*min(2,jaw_hits)+self.policy['pocket_offset_cost']*min(1.,offset/pocket.half_width)
                 step = {'target': option['target'], 'pocket': target.pocket, 'shot': asdict(shot),
                         'cue_final': asdict(cue.position), 'cut_degrees': round(option['cut'], 1),
                         'distance_mm': round(option['distance']*1000), 'human': access,
@@ -187,7 +208,13 @@ class Search:
                         'pot_difficulty':round(option['pot_difficulty'],5),
                         'potted': d['potted'], 'verified': True,
                         'cue_cushions':banks,'cue_ball_contacts':len(cue_hits),
-                        'cost': option['cost']+.10*speed+.20*abs(tip_y)+.08*banks}
+                        'jaw_contacts':jaw_hits,'clean_pot':jaw_hits==0,'pocket_offset_mm':round(offset*1000,2),
+                        'pocket_entry_cost':round(pocket_cost,5),
+                        'position_effort':round(.035*speed+.08*abs(tip_y)+.16*abs(tip_x)+.025*banks,5),
+                        'cost': option['cost']+.035*speed+.08*abs(tip_y)+.16*abs(tip_x)+.025*banks+pocket_cost}
+                next_options=shot_options(self.service,after,self.policy) if after['winner'] is None else []
+                step['next_shot']=({k:next_options[0][k] for k in ('target','pocket','cost','distance','object_distance','cut','rear_restricted')}
+                                   if next_options else None)
                 best = (after, step)
             outgoing = next(b for b in event.after if b.id == option['target']).velocity
             if outgoing.norm() < 1e-8: break
@@ -203,7 +230,7 @@ class Search:
                 angle += max(-.4, min(.4, -error/derivative)) if abs(derivative)>1e-6 else .035
         return best
 
-    def candidates(self, state, *, attempts=24):
+    def candidates(self, state, *, attempts=48):
         options = shot_options(self.service, state, self.policy)
         # Reserve an option for each legal target, then add alternative pockets.
         chosen = []; seen = set()
@@ -211,14 +238,23 @@ class Search:
             if o['target'] not in seen: chosen.append(o); seen.add(o['target'])
         for o in options:
             if o not in chosen: chosen.append(o)
-        chosen = chosen[:6]
-        settings = [(1.1, 0.), (1.1, .5), (.75, 0.), (1.6, .3), (1.6, -.3), (2.2, -.45)]
+        chosen = chosen[:max(6,len(seen))]
+        # Compare a small off-centre pocket line too. A useful jaw-assisted pot
+        # may outweigh the deliberately small clean-entry preference.
+        biased=[]
+        for base in options[:2]:
+            pocket=next(p for p in outline(self.service.table).pockets if p.id==base['pocket'])
+            target=next(b for b in self.service.decode(state['scene'])[0] if b.id==base['target'])
+            for offset in (-.012,.012):
+                delta=(pocket.fall_center or pocket.gate)+pocket.tangent*offset-target.position
+                biased.append({**base,'desired':delta*(1/delta.norm()),'pocket_bias_m':offset})
+        settings = stroke_settings()
         pool = []; tried = 0
-        for speed, tip_y in settings:
-            for o in chosen:
+        for index,(speed,tip_x,tip_y) in enumerate(settings):
+            for o in chosen+(biased if index==5 else []):
                 if self.stopped() or self.count >= self.search_cap or tried >= attempts: return pool
                 tried += 1
-                value = self.aimed(state, o, speed, tip_y)
+                value = self.aimed(state, o, speed, tip_y,tip_x)
                 if value is not None: pool.append(value)
         return pool
 
@@ -233,20 +269,23 @@ class Search:
 
     def route_cost(self, entry):
         state,path,total=entry
-        hardest=max((s['pot_difficulty'] for s in path),default=0.)
-        return total/max(1,len(path))+.4*hardest-.55*self.position_value(state)
+        hardest=max((s['cost']-s['position_effort'] for s in path),default=0.)
+        leaves=[s['next_shot']['cost'] for s in path if s['next_shot']]
+        # A cheap current stroke must pay for the awkward next shot it leaves.
+        # Extra rails/spin remain a small tie-breaker, not a hard preference.
+        return total/max(1,len(path))+.65*hardest+.25*sum(leaves)/max(1,len(leaves))-.65*self.position_value(state)
 
     def solve(self, state):
         owner = state['turn']; own = legal_ids(state)
         endgame = state['groups'][owner] is not None and len(own) <= 3
-        depth = (1 if own == ['8'] else len(own)+1) if endgame else 2
+        depth = (1 if own == ['8'] else len(own)+1) if endgame else 3
         frontier = [(state, [], 0.)]; paths = []; complete = []
         for level in range(depth):
             expanded = []
             for node, path, cost in frontier:
                 if self.stopped() or monotonic() >= self.search_deadline: break
                 self.expanded += 1
-                candidates = self.candidates(node, attempts=30 if level == 0 else 18)
+                candidates = self.candidates(node, attempts=72 if level == 0 else 36)
                 for after, step in candidates:
                     route = path+[step]; total = cost+step['cost']
                     entry = (after, route, total)
@@ -263,8 +302,10 @@ class Search:
                 # Keep distinct ball orders and stroke choices; don't fill the beam
                 # with almost identical first-stroke variants.
                 route = entry[1]
-                signature = (tuple((s['target'],s['pocket']) for s in route), round(route[0]['shot']['tip_y'], 1),
-                             round(route[0]['shot']['cue_speed'], 1))
+                endpoint=next(b['position'] for b in entry[0]['scene']['balls'] if b['id']=='cue')
+                signature = (tuple((s['target'],s['pocket']) for s in route),
+                             tuple(round(route[0]['shot'][k],1) for k in ('tip_x','tip_y','cue_speed')),
+                             round(endpoint['x'],1),round(endpoint['y'],1))
                 if signature in signatures: continue
                 first_line=(route[0]['target'],route[0]['pocket'])
                 if first_lines.get(first_line,0)>=2:continue
@@ -282,12 +323,14 @@ class Search:
             keys.add(key)
             clear = after['winner'] == owner
             reasons = ['每杆通过当前物理模型与中八规则检查；使用普通水平杆法限制']
-            reasons.append('优先考虑进球几何容错，再权衡走位；较大的切角不自动等于较难进球')
+            reasons.append('综合当前进球、下一球好打度与走位代价；允许五库内及适度加塞换取更舒服的续接')
             if clear and len(path)>1: reasons.append(f'保留 {path[-2]["target"]} 号作为黑八连接球')
             if any(s['human']['notes'] for s in path): reasons.append('近库杆采用高杆限制；未用低杆强拉')
             if not clear: reasons.append('这是预算内找到的部分路线，后续需根据实际落点重算')
             routes.append({'steps': path, 'clear_verified': clear, 'reasons': reasons,
-                           'mean_cost': round(cost/len(path), 4)})
+                           'mean_cost': round(cost/len(path), 4),
+                           'max_shot_cost':round(max(s['cost']-s['position_effort'] for s in path),4),
+                           'mean_position_effort':round(sum(s['position_effort'] for s in path)/len(path),4)})
             if len(routes) == 3: break
         # Joint legality/continuation checks are discrete engineering probes,
         # never a calibrated human success probability. Check every stroke in

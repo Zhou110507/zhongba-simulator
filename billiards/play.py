@@ -16,7 +16,7 @@ from .pockets import geometry_dict, outline
 from .shot_analysis import first_contact_analysis, cue_motion_report
 
 ROOT = Path(__file__).resolve().parents[1]
-APP_VERSION = 'pot-tolerance-ai-editor-v2'
+APP_VERSION = 'balanced-position-runout-v3'
 
 
 def _number(value, name):

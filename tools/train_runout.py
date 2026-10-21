@@ -21,12 +21,15 @@ from billiards.pockets import unsupported_pocket, validate_position, outline
 from billiards.runout import FEATURE_NAMES, MODEL_VERSION, Search, features, shot_options
 
 
-def layout(service, seed):
+def layout(service, seed, *, max_balls=5, ball_count=None):
     rng=np.random.default_rng(seed)
     state=GameStore(service).new({'seed':seed,'ai_player':1})
     state.update(turn=1,groups=['stripe','solid'],is_break=False,ball_in_hand=None,needs_placement=False)
     balls=[]
-    count=int(rng.integers(1,4))
+    count=int(rng.integers(1,min(max_balls,3)+1)) if seed%3 else int(rng.integers(1,max_balls+1))
+    if ball_count is not None:
+        if not 1<=ball_count<=7:raise ValueError('ball_count must be 1..7')
+        count=ball_count
     ids=['cue',*[str(i) for i in range(1,count+1)],'8','9','10']
     for key in ids:
         for _ in range(1000):
@@ -46,6 +49,11 @@ def layout(service, seed):
                 balls.append(candidate);break
         else:raise RuntimeError('failed to generate layout')
     state['scene']=service.snapshot(balls,ShotInput(0,1.1))
+    if seed%2==0:
+        for b in state['scene']['balls']:
+            if b['id'] not in ('cue','8'):
+                key=int(b['id']);b['id']=str(key+8 if key<=7 else key-8)
+        state['groups']=['solid','stripe']
     return state
 
 
@@ -55,37 +63,38 @@ def baseline_value(service,state,policy):
     return -options[0]['cost']+.12*min(3,len({o['target'] for o in options})) if options else -4.
 
 
-def generate(service, count, output):
+def generate(service, count, output, *, start_seed=17001):
     rows=[]; branches=[]; started=monotonic(); simulations=0
     for index in range(count):
-        seed=17001+index
+        seed=start_seed+index
         state=layout(service,seed)
-        search=Search(service,seconds=90,evaluations=1200,trained=False)
-        root=search.candidates(state,attempts=16)
+        search=Search(service,seconds=60,evaluations=1500,trained=False)
+        root=search.candidates(state,attempts=48)
         root.sort(key=lambda n:n[1]['cost']-.8*baseline_value(service,n[0],search.policy))
         variants=[];seen=set()
         for after,step in root:
-            key=(step['target'],step['pocket'],step['shot']['tip_y'])
+            key=(step['target'],step['pocket'],step['shot']['tip_y'],step['shot']['tip_x'],step['cue_cushions'])
             if key in seen:continue
             seen.add(key);variants.append((after,step))
-            if len(variants)==4:break
+            if len(variants)==3:break
         if not variants:
             rows.append({'layout_seed':seed,'x':features(service,state,search.policy).tolist(),'y':0.})
         for after,step in variants:
             initial=deepcopy(after);states=[];route=[step]
             while after['phase']=='playing' and after['turn']==1 and not search.stopped():
                 states.append(features(service,after,search.policy).tolist())
-                pool=search.candidates(after,attempts=10)
+                pool=search.candidates(after,attempts=24)
                 if not pool:break
                 pool.sort(key=lambda n:n[1]['cost']-.8*baseline_value(service,n[0],search.policy))
                 after,next_step=pool[0];route.append(next_step)
-                if len(route)>=4:break
+                if len(route)>=8:break
             if search.stopped():continue
             clear=int(after['winner']==1)
             def quality(start):
                 future=route[start:]
                 effort=sum(s['cost'] for s in future)/max(1,len(future))
-                return float((1. if clear else .10*min(1.,len(future)/3))*np.exp(-.55*effort))
+                hardest=max((s['cost']-s['position_effort'] for s in future),default=0.)
+                return float((1. if clear else .18*min(1.,len(future)/3))*np.exp(-.35*effort-.15*hardest))
             # Include the post-first-shot feature even if it was already terminal.
             x=features(service,initial,search.policy).tolist()
             rows.append({'layout_seed':seed,'x':x,'y':quality(1)})
@@ -93,16 +102,39 @@ def generate(service, count, output):
             branches.append({'layout_seed':seed,'x':x,'clear':clear,
                              'quality':quality(1),'mean_cost':sum(s['cost'] for s in route)/len(route),
                              'baseline':step['cost']-.8*baseline_value(service,initial,search.policy),
-                             'steps':[s['target'] for s in route]})
+                             'steps':[s['target'] for s in route],
+                             'cushions':[s['cue_cushions'] for s in route],
+                             'side_tips':[s['shot']['tip_x'] for s in route],
+                             'jaw_contacts':[s['jaw_contacts'] for s in route]})
         simulations+=search.count
         if index%4==0 or index==count-1:
-            print(json.dumps({'layouts':index+1,'total':count,'samples':len(rows),
+            print(json.dumps({'start_seed':start_seed,'layouts':index+1,'total':count,'samples':len(rows),
                               'simulations':simulations,'seconds':round(monotonic()-started,1)}),flush=True)
-    data={'version':1,'source':'synthetic_shared_physics_rollouts','layout_count':count,
+    data={'version':3,'source':'synthetic_shared_physics_rollouts','layout_count':count,
           'physics_signature':service.signature,'human_policy':search.policy,'features':FEATURE_NAMES,
           'simulations':simulations,'rows':rows,'branches':branches,
-          'label_definition':'Bounded rollout completion discounted by potting geometric tolerance first (both travel distances, cut angle and pocket entry), then ordinary position effort and cue access; small partial-progress credit. Not measured human probabilities or proof of impossibility.'}
+          'label_definition':'Bounded rollout completion discounted by mean and hardest actual shot quality: pot tolerance, moderate distances, bridge comfort and soft position effort up to five rails and moderate side spin. Small clean-entry preference; useful jaw contact allowed. Small partial-progress credit. Not human probability.'}
     output.parent.mkdir(parents=True,exist_ok=True)
+    output.write_text(json.dumps(data,ensure_ascii=False),encoding='utf-8')
+    return data
+
+
+def generate_chunk(count, start_seed, output):
+    return generate(PlayService(table_profile='cbsa_2017'),count,Path(output),start_seed=start_seed)
+
+
+def generate_parallel(service, count, output, workers):
+    from concurrent.futures import ProcessPoolExecutor
+    workers=max(1,min(workers,count));sizes=[count//workers+(i<count%workers) for i in range(workers)]
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        jobs=[];seed=17001
+        for i,size in enumerate(sizes):
+            jobs.append(executor.submit(generate_chunk,size,seed,str(output.with_name(f'rollouts-v3-part-{i}.json'))))
+            seed+=size
+        pieces=[job.result() for job in jobs]
+    data={**pieces[0],'layout_count':count,'simulations':sum(p['simulations'] for p in pieces),
+          'rows':[r for p in pieces for r in p['rows']],
+          'branches':[b for p in pieces for b in p['branches']]}
     output.write_text(json.dumps(data,ensure_ascii=False),encoding='utf-8')
     return data
 
@@ -183,7 +215,7 @@ def train(service,data,output):
     report_path=service.root/'artifacts'/'ai-training'/'report.json'
     report_path.parent.mkdir(parents=True,exist_ok=True)
     report_path.write_text(json.dumps({'training':model['training'],'trace':trace},ensure_ascii=False,indent=2),encoding='utf-8')
-    reproducible=service.root/'training'/'ai_stage1'
+    reproducible=service.root/'training'/'ai_stage2'
     reproducible.mkdir(parents=True,exist_ok=True)
     (reproducible/'dataset.json').write_text(json.dumps(data,ensure_ascii=False)+'\n',encoding='utf-8')
     (reproducible/'training-report.json').write_text(report_path.read_text(encoding='utf-8'),encoding='utf-8')
@@ -191,14 +223,17 @@ def train(service,data,output):
 
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--layouts',type=int,default=180)
+    parser=argparse.ArgumentParser();parser.add_argument('--layouts',type=int,default=240)
+    parser.add_argument('--workers',type=int,default=4)
     parser.add_argument('--reuse',action='store_true');args=parser.parse_args()
     service=PlayService(table_profile='cbsa_2017')
-    dataset=service.root/'artifacts'/'ai-training'/'rollouts.json'
-    if args.reuse and not dataset.is_file():dataset=service.root/'training'/'ai_stage1'/'dataset.json'
-    data=json.loads(dataset.read_text(encoding='utf-8')) if args.reuse and dataset.is_file() else generate(service,args.layouts,dataset)
+    dataset=service.root/'artifacts'/'ai-training'/'rollouts-v3.json'
+    if args.reuse and not dataset.is_file():dataset=service.root/'training'/'ai_stage2'/'dataset.json'
+    data=(json.loads(dataset.read_text(encoding='utf-8')) if args.reuse and dataset.is_file()
+          else generate_parallel(service,args.layouts,dataset,args.workers) if args.workers>1
+          else generate(service,args.layouts,dataset))
     from billiards.human_stroke import load_policy
-    if data['physics_signature']!=service.signature or data['human_policy']!=load_policy(service):
+    if data['physics_signature']!=service.signature or data['human_policy']!=load_policy(service) or data['features']!=FEATURE_NAMES:
         raise ValueError('训练数据物理或普通杆法限制不一致')
     train(service,data,service.root/'configs'/'ai_value_model.json')
 

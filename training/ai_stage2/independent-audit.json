@@ -1,0 +1,304 @@
+{
+  "scope": "Independent synthetic layouts, equal 1800-simulation/30.0-second budgets; up to five rails and moderate side; no human success claim",
+  "seconds": 221.2,
+  "summary": {
+    "baseline": {
+      "layouts": 8,
+      "routes": 7,
+      "clears": 6,
+      "mean_difficulty": 2.889185385368716,
+      "all_replays_valid": true
+    },
+    "trained": {
+      "layouts": 8,
+      "routes": 7,
+      "clears": 6,
+      "mean_difficulty": 2.889185385368716,
+      "all_replays_valid": true
+    }
+  },
+  "rows": [
+    {
+      "seed": 78001,
+      "baseline": {
+        "clear": true,
+        "steps": 3,
+        "mean_difficulty": 2.4442756891277546,
+        "evaluations": 525,
+        "replay_valid": true,
+        "first_distance_mm": 1595,
+        "first_cut": 38.0,
+        "perturbations": {
+          "passed": 10,
+          "checked": 12,
+          "expected": 12,
+          "complete": true,
+          "not_human_probability": true,
+          "definition": "Individual angle +/-0.05 degrees and cue speed +/-2%; actual legal pot plus an accessible moderate continuation. Not a joint full-route probability."
+        }
+      },
+      "trained": {
+        "clear": true,
+        "steps": 3,
+        "mean_difficulty": 2.4442756891277546,
+        "evaluations": 631,
+        "replay_valid": true,
+        "first_distance_mm": 1595,
+        "first_cut": 38.0,
+        "perturbations": {
+          "passed": 10,
+          "checked": 12,
+          "expected": 12,
+          "complete": true,
+          "not_human_probability": true,
+          "definition": "Individual angle +/-0.05 degrees and cue speed +/-2%; actual legal pot plus an accessible moderate continuation. Not a joint full-route probability."
+        }
+      }
+    },
+    {
+      "seed": 78002,
+      "baseline": {
+        "clear": true,
+        "steps": 3,
+        "mean_difficulty": 1.9583331033799318,
+        "evaluations": 981,
+        "replay_valid": true,
+        "first_distance_mm": 959,
+        "first_cut": 1.5,
+        "perturbations": {
+          "passed": 11,
+          "checked": 12,
+          "expected": 12,
+          "complete": true,
+          "not_human_probability": true,
+          "definition": "Individual angle +/-0.05 degrees and cue speed +/-2%; actual legal pot plus an accessible moderate continuation. Not a joint full-route probability."
+        }
+      },
+      "trained": {
+        "clear": true,
+        "steps": 3,
+        "mean_difficulty": 1.9583331033799318,
+        "evaluations": 1041,
+        "replay_valid": true,
+        "first_distance_mm": 959,
+        "first_cut": 1.5,
+        "perturbations": {
+          "passed": 11,
+          "checked": 12,
+          "expected": 12,
+          "complete": true,
+          "not_human_probability": true,
+          "definition": "Individual angle +/-0.05 degrees and cue speed +/-2%; actual legal pot plus an accessible moderate continuation. Not a joint full-route probability."
+        }
+      }
+    },
+    {
+      "seed": 78003,
+      "baseline": {
+        "clear": true,
+        "steps": 2,
+        "mean_difficulty": 2.575198476546434,
+        "evaluations": 237,
+        "replay_valid": true,
+        "first_distance_mm": 1688,
+        "first_cut": 40.4,
+        "perturbations": {
+          "passed": 6,
+          "checked": 8,
+          "expected": 8,
+          "complete": true,
+          "not_human_probability": true,
+          "definition": "Individual angle +/-0.05 degrees and cue speed +/-2%; actual legal pot plus an accessible moderate continuation. Not a joint full-route probability."
+        }
+      },
+      "trained": {
+        "clear": true,
+        "steps": 2,
+        "mean_difficulty": 2.575198476546434,
+        "evaluations": 237,
+        "replay_valid": true,
+        "first_distance_mm": 1688,
+        "first_cut": 40.4,
+        "perturbations": {
+          "passed": 6,
+          "checked": 8,
+          "expected": 8,
+          "complete": true,
+          "not_human_probability": true,
+          "definition": "Individual angle +/-0.05 degrees and cue speed +/-2%; actual legal pot plus an accessible moderate continuation. Not a joint full-route probability."
+        }
+      }
+    },
+    {
+      "seed": 78004,
+      "baseline": {
+        "clear": true,
+        "steps": 4,
+        "mean_difficulty": 2.6967246066003785,
+        "evaluations": 833,
+        "replay_valid": true,
+        "first_distance_mm": 128,
+        "first_cut": 9.5,
+        "perturbations": {
+          "passed": 10,
+          "checked": 16,
+          "expected": 16,
+          "complete": true,
+          "not_human_probability": true,
+          "definition": "Individual angle +/-0.05 degrees and cue speed +/-2%; actual legal pot plus an accessible moderate continuation. Not a joint full-route probability."
+        }
+      },
+      "trained": {
+        "clear": true,
+        "steps": 4,
+        "mean_difficulty": 2.6967246066003785,
+        "evaluations": 833,
+        "replay_valid": true,
+        "first_distance_mm": 128,
+        "first_cut": 9.5,
+        "perturbations": {
+          "passed": 10,
+          "checked": 16,
+          "expected": 16,
+          "complete": true,
+          "not_human_probability": true,
+          "definition": "Individual angle +/-0.05 degrees and cue speed +/-2%; actual legal pot plus an accessible moderate continuation. Not a joint full-route probability."
+        }
+      }
+    },
+    {
+      "seed": 78005,
+      "baseline": {
+        "clear": false,
+        "steps": 0,
+        "mean_difficulty": null,
+        "evaluations": 60,
+        "replay_valid": true,
+        "first_distance_mm": null,
+        "first_cut": null,
+        "perturbations": null
+      },
+      "trained": {
+        "clear": false,
+        "steps": 0,
+        "mean_difficulty": null,
+        "evaluations": 60,
+        "replay_valid": true,
+        "first_distance_mm": null,
+        "first_cut": null,
+        "perturbations": null
+      }
+    },
+    {
+      "seed": 78006,
+      "baseline": {
+        "clear": false,
+        "steps": 3,
+        "mean_difficulty": 1.848489884394372,
+        "evaluations": 1107,
+        "replay_valid": true,
+        "first_distance_mm": 649,
+        "first_cut": 49.1,
+        "perturbations": {
+          "passed": 7,
+          "checked": 12,
+          "expected": 12,
+          "complete": true,
+          "not_human_probability": true,
+          "definition": "Individual angle +/-0.05 degrees and cue speed +/-2%; actual legal pot plus an accessible moderate continuation. Not a joint full-route probability."
+        }
+      },
+      "trained": {
+        "clear": false,
+        "steps": 3,
+        "mean_difficulty": 1.848489884394372,
+        "evaluations": 1107,
+        "replay_valid": true,
+        "first_distance_mm": 649,
+        "first_cut": 49.1,
+        "perturbations": {
+          "passed": 7,
+          "checked": 12,
+          "expected": 12,
+          "complete": true,
+          "not_human_probability": true,
+          "definition": "Individual angle +/-0.05 degrees and cue speed +/-2%; actual legal pot plus an accessible moderate continuation. Not a joint full-route probability."
+        }
+      }
+    },
+    {
+      "seed": 78007,
+      "baseline": {
+        "clear": true,
+        "steps": 2,
+        "mean_difficulty": 3.9184905712211515,
+        "evaluations": 250,
+        "replay_valid": true,
+        "first_distance_mm": 257,
+        "first_cut": 48.5,
+        "perturbations": {
+          "passed": 4,
+          "checked": 8,
+          "expected": 8,
+          "complete": true,
+          "not_human_probability": true,
+          "definition": "Individual angle +/-0.05 degrees and cue speed +/-2%; actual legal pot plus an accessible moderate continuation. Not a joint full-route probability."
+        }
+      },
+      "trained": {
+        "clear": true,
+        "steps": 2,
+        "mean_difficulty": 3.9184905712211515,
+        "evaluations": 250,
+        "replay_valid": true,
+        "first_distance_mm": 257,
+        "first_cut": 48.5,
+        "perturbations": {
+          "passed": 4,
+          "checked": 8,
+          "expected": 8,
+          "complete": true,
+          "not_human_probability": true,
+          "definition": "Individual angle +/-0.05 degrees and cue speed +/-2%; actual legal pot plus an accessible moderate continuation. Not a joint full-route probability."
+        }
+      }
+    },
+    {
+      "seed": 78008,
+      "baseline": {
+        "clear": true,
+        "steps": 2,
+        "mean_difficulty": 4.782785366310988,
+        "evaluations": 192,
+        "replay_valid": true,
+        "first_distance_mm": 878,
+        "first_cut": 61.0,
+        "perturbations": {
+          "passed": 4,
+          "checked": 8,
+          "expected": 8,
+          "complete": true,
+          "not_human_probability": true,
+          "definition": "Individual angle +/-0.05 degrees and cue speed +/-2%; actual legal pot plus an accessible moderate continuation. Not a joint full-route probability."
+        }
+      },
+      "trained": {
+        "clear": true,
+        "steps": 2,
+        "mean_difficulty": 4.782785366310988,
+        "evaluations": 192,
+        "replay_valid": true,
+        "first_distance_mm": 878,
+        "first_cut": 61.0,
+        "perturbations": {
+          "passed": 4,
+          "checked": 8,
+          "expected": 8,
+          "complete": true,
+          "not_human_probability": true,
+          "definition": "Individual angle +/-0.05 degrees and cue speed +/-2%; actual legal pot plus an accessible moderate continuation. Not a joint full-route probability."
+        }
+      }
+    }
+  ]
+}

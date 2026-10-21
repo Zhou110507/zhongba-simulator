@@ -299,3 +299,31 @@ def test_compact_playback_and_gzip_transport_keep_exact_final_balls(server,servi
     assert len(compact['result']['segments'])==len(full['result']['segments'])
     assert compact['result']['segments'][0][:2]==[full['result']['segments'][0][key] for key in ('start','end')]
     assert len(packed)<len(raw)*.3
+
+
+def test_trained_ai_http_plan_execute_and_revision_protection(server):
+    from time import monotonic,sleep
+    from billiards.runout import MODEL_VERSION
+    rules=PlayService(table_profile='cbsa_2017')
+    scene=deepcopy(rules.presets()[0]['scene']);scene['balls'][1]['id']='8'
+    def post(endpoint,data):
+        status,_,raw=request(server,'POST',endpoint,json.dumps(data).encode())
+        return status,json.loads(raw)
+    status,game=post('/api/game/new',{'scenario':'ai_custom','scene':scene,'ai_player':1})
+    assert status==200 and game['phase']=='setup'
+    status,game=post('/api/game/action',{'id':game['id'],'revision':0,'action':'finish_setup','scene':scene})
+    assert status==200
+    status,job=post('/api/ai/start',{'id':game['id'],'revision':game['revision']})
+    assert status==200
+    deadline=monotonic()+35
+    while monotonic()<deadline:
+        status,value=post('/api/ai/status',{'id':job['id']})
+        if value['status']!='running':break
+        sleep(.02)
+    assert status==200 and value['status']=='found'
+    assert value['analysis']['model']==MODEL_VERSION
+    assert value['analysis']['routes'][0]['clear_verified']
+    status,shot=post('/api/ai/execute',{'id':job['id']})
+    assert status==200 and shot['complete'] and shot['rule_committed']
+    assert shot['game_after']['phase']=='finished' and shot['game_after']['winner']==1
+    assert post('/api/ai/execute',{'id':job['id']})[0]==400

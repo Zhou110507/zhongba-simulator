@@ -21,7 +21,7 @@ function harness(){
   };
   vm.createContext(c);vm.runInContext(fs.readFileSync('web/ai-opponent.js','utf8'),c);
   return {flow:c.window.AIOpponent,$,ctx,calls,scheduled,setRules:v=>rules=v,
-    setHook:f=>hook=f,accepted:()=>accepted};
+    setHook:f=>hook=f,setAnalysis:value=>Object.assign(analysis,value),accepted:()=>accepted};
 }
 
 test('AI is opt-in and does not lock practice or local two-player controls',()=>{
@@ -60,4 +60,16 @@ test('automatic play schedules once per revision and can be paused before a stro
   const h=harness();h.$('ai-auto').checked=true;
   h.flow.refresh();h.flow.refresh();h.flow.refresh();assert.equal(h.scheduled.size,1);
   h.flow.pause();assert.equal(h.scheduled.size,0);assert.equal(h.$('ai-auto').checked,false);
+});
+
+test('route explains side spin, rail count and actual jaw-assisted entry',async()=>{
+  const h=harness();h.setAnalysis({model:'short-runout-value-v3',evaluations:100,elapsed:1,
+    routes:[{clear_verified:false,reasons:['比较进球与走位代价'],steps:[{
+      target:'1',pocket:'top-right',cue_final:{x:1,y:.6},
+      shot:{cue_speed:2.5,tip_x:-.25,tip_y:.3},cue_cushions:4,clean_pot:false,
+      cut_degrees:25,distance_mm:600,object_distance_mm:400,human:{notes:[]}}]}]});
+  await h.flow.think();
+  const text=h.$('ai-routes').children[0].children[1].children[0].textContent;
+  assert.match(text,/左塞 0.25 R/);assert.match(text,/白球 4 库/);assert.match(text,/碰袋角后入袋/);
+  assert.equal(h.calls.some(c=>c.path.endsWith('/execute')),false);
 });

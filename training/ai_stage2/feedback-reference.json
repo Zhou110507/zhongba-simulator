@@ -1,0 +1,546 @@
+{
+  "kind": "ai-feedback-case",
+  "description": "User-supplied layout and v2 recommendation, held out of training; comparison only.",
+  "source_scene": {
+    "schema_version": 1,
+    "kind": "zhongba-practice",
+    "model_signature": "f4c258857aae789a",
+    "table": {
+      "length": 2.54,
+      "width": 1.27,
+      "profile": "cbsa_2017",
+      "pockets": {
+        "corner_mouth": 0.084,
+        "side_mouth": 0.086,
+        "jaw_radius": 0.03,
+        "shelf_depth": 0.01,
+        "jaw_extension": 0.09,
+        "version": "curved-support-v5",
+        "calibration_status": "GB2008_mouth_reference_engineering_side_registration_v1",
+        "side_jaw_radius": 0.04,
+        "corner_fall_radius": 0.045,
+        "side_fall_radius": 0.047,
+        "side_fall_front_offset": -0.015
+      }
+    },
+    "physics": {
+      "gravity": 9.81,
+      "sliding_friction": 0.18,
+      "rolling_friction": 0.007,
+      "spin_deceleration": 10,
+      "ball_restitution": 0.95,
+      "cushion_restitution": 0.98,
+      "cushion_model": "coupled_impulse",
+      "cushion_friction": 0.14,
+      "cushion_contact_height_ratio": 1.4,
+      "cushion_steps": 512,
+      "version": "general-pool-spin-v3-hertz",
+      "ball_contact_model": "projected_throw",
+      "ball_friction_model": "alciatore",
+      "ball_friction": 0.06,
+      "ball_friction_a": 0.009951,
+      "ball_friction_b": 0.108,
+      "ball_friction_c": 1.088,
+      "contact_solver": "hybrid_hertz",
+      "ball_young_modulus": 3800000000,
+      "ball_poisson_ratio": 0.375,
+      "elastic_step": 2e-06
+    },
+    "cue": {
+      "effective_mass": 0.5,
+      "restitution": 0.75,
+      "max_speed": 5,
+      "max_tip_offset": 0.55,
+      "version": "horizontal-impulse-v2-playing-range"
+    },
+    "balls": [
+      {
+        "id": "cue",
+        "position": {
+          "x": 0.75,
+          "y": 0.65
+        },
+        "velocity": {
+          "x": 0,
+          "y": 0
+        },
+        "omega": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "spec": {
+          "radius": 0.028575,
+          "mass": 0.163
+        },
+        "pocket": null
+      },
+      {
+        "id": "1",
+        "position": {
+          "x": 1.7218446601941748,
+          "y": 1.0985785800970873
+        },
+        "velocity": {
+          "x": 0,
+          "y": 0
+        },
+        "omega": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "spec": {
+          "radius": 0.028575,
+          "mass": 0.163
+        },
+        "pocket": null
+      },
+      {
+        "id": "2",
+        "position": {
+          "x": 2.08,
+          "y": 0.96
+        },
+        "velocity": {
+          "x": 0,
+          "y": 0
+        },
+        "omega": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "spec": {
+          "radius": 0.028575,
+          "mass": 0.163
+        },
+        "pocket": null
+      },
+      {
+        "id": "3",
+        "position": {
+          "x": 1.928834951456311,
+          "y": 0.4511028519417474
+        },
+        "velocity": {
+          "x": 0,
+          "y": 0
+        },
+        "omega": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "spec": {
+          "radius": 0.028575,
+          "mass": 0.163
+        },
+        "pocket": null
+      },
+      {
+        "id": "8",
+        "position": {
+          "x": 1.942718446601942,
+          "y": 0.26304459951456305
+        },
+        "velocity": {
+          "x": 0,
+          "y": 0
+        },
+        "omega": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "spec": {
+          "radius": 0.028575,
+          "mass": 0.163
+        },
+        "pocket": null
+      },
+      {
+        "id": "9",
+        "position": {
+          "x": 0.35,
+          "y": 0.4
+        },
+        "velocity": {
+          "x": 0,
+          "y": 0
+        },
+        "omega": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "spec": {
+          "radius": 0.028575,
+          "mass": 0.163
+        },
+        "pocket": null
+      },
+      {
+        "id": "10",
+        "position": {
+          "x": 2.28,
+          "y": 0.65
+        },
+        "velocity": {
+          "x": 0,
+          "y": 0
+        },
+        "omega": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "spec": {
+          "radius": 0.028575,
+          "mass": 0.163
+        },
+        "pocket": null
+      }
+    ],
+    "shot": {
+      "angle_deg": 0,
+      "cue_speed": 1.1,
+      "tip_x": 0,
+      "tip_y": 0
+    }
+  },
+  "source_groups": [
+    "stripe",
+    "solid"
+  ],
+  "source_turn": 1,
+  "source_ai_player": 1,
+  "previous_analysis": {
+    "game_id": "889b0197da83439899afb36e5e30c232",
+    "revision": 1,
+    "routes": [
+      {
+        "steps": [
+          {
+            "target": "2",
+            "pocket": "top-right",
+            "shot": {
+              "angle_deg": 12.173976585604942,
+              "cue_speed": 0.75,
+              "tip_x": 0,
+              "tip_y": 0
+            },
+            "cue_final": {
+              "x": 2.491770851826506,
+              "y": 0.758570156982373
+            },
+            "cut_degrees": 21.6,
+            "distance_mm": 1312,
+            "human": {
+              "allowed": true,
+              "reasons": [],
+              "notes": [],
+              "rear_rail_distance_mm": 767.3,
+              "policy_version": "human-pot-first-v2"
+            },
+            "object_distance_mm": 550,
+            "aim_half_window_deg": 0.0533,
+            "pot_difficulty": 0.91718,
+            "potted": [
+              "2"
+            ],
+            "verified": true,
+            "cue_cushions": 1,
+            "cue_ball_contacts": 1,
+            "cost": 1.9919697053271817
+          },
+          {
+            "target": "1",
+            "pocket": "top-left",
+            "shot": {
+              "angle_deg": 154.80854853143563,
+              "cue_speed": 1.1,
+              "tip_x": 0,
+              "tip_y": 0.5
+            },
+            "cue_final": {
+              "x": 1.3639206948056681,
+              "y": 0.8150774690168162
+            },
+            "cut_degrees": 19.5,
+            "distance_mm": 788,
+            "human": {
+              "allowed": true,
+              "reasons": [],
+              "notes": [
+                "后方近库：保守限制为轻柔高杆，禁止普通低杆和中杆"
+              ],
+              "rear_rail_distance_mm": 53.3,
+              "policy_version": "human-pot-first-v2"
+            },
+            "object_distance_mm": 1727,
+            "aim_half_window_deg": 0.0088,
+            "pot_difficulty": 2.31245,
+            "potted": [
+              "1"
+            ],
+            "verified": true,
+            "cue_cushions": 1,
+            "cue_ball_contacts": 1,
+            "cost": 4.812784815973646
+          },
+          {
+            "target": "3",
+            "pocket": "bottom-right",
+            "shot": {
+              "angle_deg": 327.5759908092145,
+              "cue_speed": 2.2,
+              "tip_x": 0,
+              "tip_y": -0.45
+            },
+            "cue_final": {
+              "x": 1.6502772150503295,
+              "y": 0.7867135541516227
+            },
+            "cut_degrees": 3.9,
+            "distance_mm": 615,
+            "human": {
+              "allowed": true,
+              "reasons": [],
+              "notes": [],
+              "rear_rail_distance_mm": 848.5,
+              "policy_version": "human-pot-first-v2"
+            },
+            "object_distance_mm": 755,
+            "aim_half_window_deg": 0.0911,
+            "pot_difficulty": 0.63031,
+            "potted": [
+              "3"
+            ],
+            "verified": true,
+            "cue_cushions": 0,
+            "cue_ball_contacts": 1,
+            "cost": 1.6123297609354197
+          },
+          {
+            "target": "8",
+            "pocket": "bottom-right",
+            "shot": {
+              "angle_deg": 295.4219479570446,
+              "cue_speed": 0.75,
+              "tip_x": 0,
+              "tip_y": 0
+            },
+            "cue_final": {
+              "x": 1.8478124427430458,
+              "y": 0.5124221352185719
+            },
+            "cut_degrees": 40.8,
+            "distance_mm": 555,
+            "human": {
+              "allowed": true,
+              "reasons": [],
+              "notes": [],
+              "rear_rail_distance_mm": 535.1,
+              "policy_version": "human-pot-first-v2"
+            },
+            "object_distance_mm": 648,
+            "aim_half_window_deg": 0.0726,
+            "pot_difficulty": 0.74315,
+            "potted": [
+              "8"
+            ],
+            "verified": true,
+            "cue_cushions": 1,
+            "cue_ball_contacts": 1,
+            "cost": 1.5620813006930092
+          }
+        ],
+        "clear_verified": true,
+        "reasons": [
+          "每杆通过当前物理模型与中八规则检查；使用普通水平杆法限制",
+          "优先考虑进球几何容错，再权衡走位；较大的切角不自动等于较难进球",
+          "保留 3 号作为黑八连接球",
+          "近库杆采用高杆限制；未用低杆强拉"
+        ],
+        "mean_cost": 2.4948,
+        "perturbations": {
+          "passed": 11,
+          "checked": 16,
+          "expected": 16,
+          "complete": true,
+          "not_human_probability": true,
+          "definition": "Individual angle +/-0.05 degrees and cue speed +/-2%; actual legal pot plus an accessible moderate continuation. Not a joint full-route probability."
+        }
+      },
+      {
+        "steps": [
+          {
+            "target": "1",
+            "pocket": "top-right",
+            "shot": {
+              "angle_deg": 25.561359187381253,
+              "cue_speed": 0.75,
+              "tip_x": 0,
+              "tip_y": 0
+            },
+            "cue_final": {
+              "x": 1.8508734785799168,
+              "y": 1.1718919653221778
+            },
+            "cut_degrees": 13.8,
+            "distance_mm": 1015,
+            "human": {
+              "allowed": true,
+              "reasons": [],
+              "notes": [],
+              "rear_rail_distance_mm": 831.4,
+              "policy_version": "human-pot-first-v2"
+            },
+            "object_distance_mm": 832,
+            "aim_half_window_deg": 0.0245,
+            "pot_difficulty": 1.44981,
+            "potted": [
+              "1"
+            ],
+            "verified": true,
+            "cue_cushions": 1,
+            "cue_ball_contacts": 1,
+            "cost": 2.9070853110102326
+          },
+          {
+            "target": "3",
+            "pocket": "bottom-right",
+            "shot": {
+              "angle_deg": 272.5522703436232,
+              "cue_speed": 1.1,
+              "tip_x": 0,
+              "tip_y": 0.5
+            },
+            "cue_final": {
+              "x": 1.2728917360031367,
+              "y": 1.1529922342196264
+            },
+            "cut_degrees": 51,
+            "distance_mm": 688,
+            "human": {
+              "allowed": true,
+              "reasons": [],
+              "notes": [
+                "后方近库：保守限制为轻柔高杆，禁止普通低杆和中杆"
+              ],
+              "rear_rail_distance_mm": 98.2,
+              "policy_version": "human-pot-first-v2"
+            },
+            "object_distance_mm": 755,
+            "aim_half_window_deg": 0.0514,
+            "pot_difficulty": 0.93814,
+            "potted": [
+              "3"
+            ],
+            "verified": true,
+            "cue_cushions": 2,
+            "cue_ball_contacts": 1,
+            "cost": 2.4119143137815082
+          },
+          {
+            "target": "2",
+            "pocket": "top-right",
+            "shot": {
+              "angle_deg": 343.546627156937,
+              "cue_speed": 2.2,
+              "tip_x": 0,
+              "tip_y": -0.45
+            },
+            "cue_final": {
+              "x": 2.4808221632369087,
+              "y": 0.42195090473885494
+            },
+            "cut_degrees": 50.4,
+            "distance_mm": 792,
+            "human": {
+              "allowed": true,
+              "reasons": [],
+              "notes": [],
+              "rear_rail_distance_mm": 413.1,
+              "policy_version": "human-pot-first-v2"
+            },
+            "object_distance_mm": 550,
+            "aim_half_window_deg": 0.0605,
+            "pot_difficulty": 0.84226,
+            "potted": [
+              "2"
+            ],
+            "verified": true,
+            "cue_cushions": 2,
+            "cue_ball_contacts": 1,
+            "cost": 2.107106605825596
+          },
+          {
+            "target": "8",
+            "pocket": "bottom-left",
+            "shot": {
+              "angle_deg": 197.49937879219695,
+              "cue_speed": 1.1,
+              "tip_x": 0,
+              "tip_y": 0.5
+            },
+            "cue_final": {
+              "x": 1.4412396943022667,
+              "y": 0.17878108974989204
+            },
+            "cut_degrees": 9.8,
+            "distance_mm": 505,
+            "human": {
+              "allowed": true,
+              "reasons": [],
+              "notes": [
+                "后方近库：保守限制为轻柔高杆，禁止普通低杆和中杆"
+              ],
+              "rear_rail_distance_mm": 62,
+              "policy_version": "human-pot-first-v2"
+            },
+            "object_distance_mm": 1957,
+            "aim_half_window_deg": 0.0157,
+            "pot_difficulty": 1.80786,
+            "potted": [
+              "8"
+            ],
+            "verified": true,
+            "cue_cushions": 1,
+            "cue_ball_contacts": 1,
+            "cost": 3.815524410403293
+          }
+        ],
+        "clear_verified": true,
+        "reasons": [
+          "每杆通过当前物理模型与中八规则检查；使用普通水平杆法限制",
+          "优先考虑进球几何容错，再权衡走位；较大的切角不自动等于较难进球",
+          "保留 2 号作为黑八连接球",
+          "近库杆采用高杆限制；未用低杆强拉"
+        ],
+        "mean_cost": 2.8104
+      }
+    ],
+    "model": "short-runout-value-v2",
+    "status": "found",
+    "endgame": true,
+    "evaluations": 158,
+    "elapsed": 6.32,
+    "human_policy": "human-pot-first-v2",
+    "rejected_strokes": {
+      "后方库边限制击点，仅接受保守高杆": 50,
+      "后方近库，不推荐强力出杆": 10
+    },
+    "scope": "simulation-trained ranking; ordinary horizontal strokes; no professional success claim",
+    "action": {
+      "action": "shoot",
+      "shot": {
+        "angle_deg": 12.173976585604942,
+        "cue_speed": 0.75,
+        "tip_x": 0,
+        "tip_y": 0
+      }
+    }
+  }
+}

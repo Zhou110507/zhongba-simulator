@@ -19,7 +19,7 @@ window.AIOpponent=(()=>{
   function cancel(){pause();cancelForChange();message('AI 已暂停；可重新思考，或切换本地双人接管。');refreshUI();}
   function render(value){
     $('ai-routes').replaceChildren();
-    $('ai-model').textContent=value.model?.startsWith('short-runout-value-')?'已训练 · 进球优先评价':'基础策略';
+    $('ai-model').textContent=value.model?.startsWith('short-runout-value-')?'已训练 · 进球与走位平衡':'基础策略';
     if(!value.routes?.length){message(value.message||'本次未找到符合限制的方案。');return;}
     message(`${value.routes[0].clear_verified?'已验证清台路线':'找到部分续接'} · ${value.evaluations} 次模拟 · ${value.elapsed} 秒`);
     for(const [index,route]of value.routes.entries()){
@@ -28,7 +28,8 @@ window.AIOpponent=(()=>{
       const list=document.createElement('ol');
       for(const step of route.steps){
         const item=document.createElement('li'),s=step.shot;
-        item.textContent=`${step.target} 号 → ${pocketNames[step.pocket]||step.pocket}；白球停点 ${Math.round(step.cue_final.x*1000)}, ${Math.round(step.cue_final.y*1000)} mm。${s.tip_y>.1?'高杆':s.tip_y<-.1?'低杆':'中杆'}，杆头 ${s.cue_speed.toFixed(2)} m/s；切角 ${step.cut_degrees}°，白球到接触位 ${step.distance_mm} mm，目标球距袋 ${step.object_distance_mm??'未记录'} mm。`;
+        const side=Math.abs(s.tip_x)>.02?`＋${s.tip_x>0?'右':'左'}塞 ${Math.abs(s.tip_x).toFixed(2)} R`:'';
+        item.textContent=`${step.target} 号 → ${pocketNames[step.pocket]||step.pocket}；白球停点 ${Math.round(step.cue_final.x*1000)}, ${Math.round(step.cue_final.y*1000)} mm。${s.tip_y>.1?'高杆':s.tip_y<-.1?'低杆':'中杆'}${side}，杆头 ${s.cue_speed.toFixed(2)} m/s；白球 ${step.cue_cushions??0} 库，${step.clean_pot===false?'目标球碰袋角后入袋':step.clean_pot===true?'目标球未碰袋角入袋':'旧记录未注明袋角接触'}；切角 ${step.cut_degrees}°，白球到接触位 ${step.distance_mm} mm，目标球距袋 ${step.object_distance_mm??'未记录'} mm。`;
         if(step.human.notes.length)item.textContent+=' '+step.human.notes.join('；');
         list.append(item);
       }
