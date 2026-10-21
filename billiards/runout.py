@@ -175,7 +175,10 @@ class Search:
                           self.service.physics, max_time=60, max_events=6000, record_segments=False,
                           cancel=lambda: self.cancelled() or monotonic() >= self.deadline)
         self.count += 1
-        if result.status != 'stopped': return None
+        if result.status != 'stopped':
+            reason = 'simulation:'+result.status
+            self.rejected[reason] = self.rejected.get(reason, 0)+1
+            return None
         final = tuple(replace(b, velocity=Vec2(), omega=Vec3()) for b in result.final)
         response = {'complete': True, 'snapshot': self.service.snapshot(balls, shot),
                     'result': result.to_dict(None, compact=True)}

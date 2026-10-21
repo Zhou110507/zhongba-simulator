@@ -1,0 +1,875 @@
+{
+  "description": "Frozen 2026-10-22 real AI search candidate. Legacy stopped result left balls 12/13 overlapping by 0.3890487 mm; do not normalize or reposition.",
+  "original": {
+    "id": "fa113e00000000000000000000000002",
+    "revision": 35,
+    "rule_version": "cbsa-2017-01",
+    "scores": [
+      0,
+      1
+    ],
+    "rack_number": 2,
+    "history": [],
+    "last_decision": null,
+    "seed": 2537730301,
+    "gap_mm": 0.2,
+    "rack_version": "bounded-micro-gaps-v1",
+    "turn": 0,
+    "breaker": 1,
+    "phase": "playing",
+    "winner": null,
+    "groups": [
+      "solid",
+      "stripe"
+    ],
+    "is_break": false,
+    "ball_in_hand": "all",
+    "needs_placement": false,
+    "choices": [],
+    "chooser": null,
+    "scene": {
+      "schema_version": 1,
+      "kind": "zhongba-practice",
+      "model_signature": "f4c258857aae789a",
+      "table": {
+        "length": 2.54,
+        "width": 1.27,
+        "profile": "cbsa_2017",
+        "pockets": {
+          "corner_mouth": 0.084,
+          "side_mouth": 0.086,
+          "jaw_radius": 0.03,
+          "shelf_depth": 0.01,
+          "jaw_extension": 0.09,
+          "version": "curved-support-v5",
+          "calibration_status": "GB2008_mouth_reference_engineering_side_registration_v1",
+          "side_jaw_radius": 0.04,
+          "corner_fall_radius": 0.045,
+          "side_fall_radius": 0.047,
+          "side_fall_front_offset": -0.015
+        }
+      },
+      "physics": {
+        "gravity": 9.81,
+        "sliding_friction": 0.18,
+        "rolling_friction": 0.007,
+        "spin_deceleration": 10.0,
+        "ball_restitution": 0.95,
+        "cushion_restitution": 0.98,
+        "cushion_model": "coupled_impulse",
+        "cushion_friction": 0.14,
+        "cushion_contact_height_ratio": 1.4,
+        "cushion_steps": 512,
+        "version": "general-pool-spin-v3-hertz",
+        "ball_contact_model": "projected_throw",
+        "ball_friction_model": "alciatore",
+        "ball_friction": 0.06,
+        "ball_friction_a": 0.009951,
+        "ball_friction_b": 0.108,
+        "ball_friction_c": 1.088,
+        "contact_solver": "hybrid_hertz",
+        "ball_young_modulus": 3800000000.0,
+        "ball_poisson_ratio": 0.375,
+        "elastic_step": 2e-06
+      },
+      "cue": {
+        "effective_mass": 0.5,
+        "restitution": 0.75,
+        "max_speed": 5.0,
+        "max_tip_offset": 0.55,
+        "version": "horizontal-impulse-v2-playing-range"
+      },
+      "balls": [
+        {
+          "id": "cue",
+          "position": {
+            "x": 2.25,
+            "y": 0.635
+          },
+          "velocity": {
+            "x": 0,
+            "y": 0
+          },
+          "omega": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "1",
+          "position": {
+            "x": 1.2618883291404739,
+            "y": 0.014294716716561892
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": "bottom-middle"
+        },
+        {
+          "id": "10",
+          "position": {
+            "x": 0.043625785716108215,
+            "y": 1.2469290168342413
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": "top-left"
+        },
+        {
+          "id": "11",
+          "position": {
+            "x": 1.9469754881030348,
+            "y": 0.6694777843451506
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "12",
+          "position": {
+            "x": 0.9631577041323152,
+            "y": 0.2742178231775399
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "8",
+          "position": {
+            "x": 1.9635159774195208,
+            "y": 0.5953100930966138
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "13",
+          "position": {
+            "x": 1.9991567632849754,
+            "y": 0.7085647118865585
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "6",
+          "position": {
+            "x": 1.5292236515911075,
+            "y": 0.42068630967983256
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "14",
+          "position": {
+            "x": 2.0675821312589027,
+            "y": 0.5479971015696041
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "4",
+          "position": {
+            "x": 2.047747222093447,
+            "y": 0.6406138913064227
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "3",
+          "position": {
+            "x": 2.0388771103572227,
+            "y": 0.7505739880920427
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "7",
+          "position": {
+            "x": 0.6850225985437797,
+            "y": 1.0672228772372283
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "9",
+          "position": {
+            "x": 0.034386822076370734,
+            "y": 1.2342928717507182
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": "top-left"
+        },
+        {
+          "id": "5",
+          "position": {
+            "x": 2.0849835350409354,
+            "y": 0.7025394082943813
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "2",
+          "position": {
+            "x": 2.484201411574626,
+            "y": 1.1401535031162717
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "15",
+          "position": {
+            "x": 0.03057709608822619,
+            "y": 1.2310258620929961
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": "top-left"
+        }
+      ],
+      "shot": {
+        "angle_deg": 316.4172586912706,
+        "cue_speed": 1.55,
+        "tip_x": 0.0292000779987151,
+        "tip_y": -0.5492243216071817
+      }
+    },
+    "break_warnings": [
+      0,
+      0
+    ],
+    "ai_player": 0,
+    "ai_level": "intermediate",
+    "ai_noise_seed": "regression",
+    "scenario": "rack"
+  },
+  "candidate": {
+    "id": "fa113e00000000000000000000000001",
+    "revision": 35,
+    "rule_version": "cbsa-2017-01",
+    "scores": [
+      0,
+      1
+    ],
+    "rack_number": 2,
+    "history": [],
+    "last_decision": null,
+    "seed": 2537730301,
+    "gap_mm": 0.2,
+    "rack_version": "bounded-micro-gaps-v1",
+    "turn": 0,
+    "breaker": 1,
+    "phase": "playing",
+    "winner": null,
+    "groups": [
+      "solid",
+      "stripe"
+    ],
+    "is_break": false,
+    "ball_in_hand": null,
+    "needs_placement": false,
+    "choices": [],
+    "chooser": null,
+    "scene": {
+      "schema_version": 1,
+      "kind": "zhongba-practice",
+      "model_signature": "f4c258857aae789a",
+      "table": {
+        "length": 2.54,
+        "width": 1.27,
+        "profile": "cbsa_2017",
+        "pockets": {
+          "corner_mouth": 0.084,
+          "side_mouth": 0.086,
+          "jaw_radius": 0.03,
+          "shelf_depth": 0.01,
+          "jaw_extension": 0.09,
+          "version": "curved-support-v5",
+          "calibration_status": "GB2008_mouth_reference_engineering_side_registration_v1",
+          "side_jaw_radius": 0.04,
+          "corner_fall_radius": 0.045,
+          "side_fall_radius": 0.047,
+          "side_fall_front_offset": -0.015
+        }
+      },
+      "physics": {
+        "gravity": 9.81,
+        "sliding_friction": 0.18,
+        "rolling_friction": 0.007,
+        "spin_deceleration": 10.0,
+        "ball_restitution": 0.95,
+        "cushion_restitution": 0.98,
+        "cushion_model": "coupled_impulse",
+        "cushion_friction": 0.14,
+        "cushion_contact_height_ratio": 1.4,
+        "cushion_steps": 512,
+        "version": "general-pool-spin-v3-hertz",
+        "ball_contact_model": "projected_throw",
+        "ball_friction_model": "alciatore",
+        "ball_friction": 0.06,
+        "ball_friction_a": 0.009951,
+        "ball_friction_b": 0.108,
+        "ball_friction_c": 1.088,
+        "contact_solver": "hybrid_hertz",
+        "ball_young_modulus": 3800000000.0,
+        "ball_poisson_ratio": 0.375,
+        "elastic_step": 2e-06
+      },
+      "cue": {
+        "effective_mass": 0.5,
+        "restitution": 0.75,
+        "max_speed": 5.0,
+        "max_tip_offset": 0.55,
+        "version": "horizontal-impulse-v2-playing-range"
+      },
+      "balls": [
+        {
+          "id": "cue",
+          "position": {
+            "x": 2.189416198704252,
+            "y": 0.16754148621368758
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "1",
+          "position": {
+            "x": 1.2618883291404739,
+            "y": 0.014294716716561892
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": "bottom-middle"
+        },
+        {
+          "id": "10",
+          "position": {
+            "x": 0.043625785716108215,
+            "y": 1.2469290168342413
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": "top-left"
+        },
+        {
+          "id": "11",
+          "position": {
+            "x": 1.9469754881030348,
+            "y": 0.6694777843451506
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "12",
+          "position": {
+            "x": 0.9631577041323152,
+            "y": 0.2742178231775399
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "8",
+          "position": {
+            "x": 1.9635159774195208,
+            "y": 0.5953100930966138
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "13",
+          "position": {
+            "x": 1.9991567632849754,
+            "y": 0.7085647118865585
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "6",
+          "position": {
+            "x": 1.5292236515911075,
+            "y": 0.42068630967983256
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "14",
+          "position": {
+            "x": 2.0675821312589027,
+            "y": 0.5479971015696041
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "4",
+          "position": {
+            "x": 2.047747222093447,
+            "y": 0.6406138913064227
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "3",
+          "position": {
+            "x": 2.0388771103572227,
+            "y": 0.7505739880920427
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "7",
+          "position": {
+            "x": 0.6850225985437797,
+            "y": 1.0672228772372283
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "9",
+          "position": {
+            "x": 0.034386822076370734,
+            "y": 1.2342928717507182
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": "top-left"
+        },
+        {
+          "id": "5",
+          "position": {
+            "x": 2.0849835350409354,
+            "y": 0.7025394082943813
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": null
+        },
+        {
+          "id": "2",
+          "position": {
+            "x": 2.510110638097182,
+            "y": 1.2305100482583047
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": "top-right"
+        },
+        {
+          "id": "15",
+          "position": {
+            "x": 0.03057709608822619,
+            "y": 1.2310258620929961
+          },
+          "velocity": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "omega": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "spec": {
+            "radius": 0.028575,
+            "mass": 0.163
+          },
+          "pocket": "top-left"
+        }
+      ],
+      "shot": {
+        "angle_deg": 64.816061365013,
+        "cue_speed": 3.2,
+        "tip_x": -0.25,
+        "tip_y": 0.4
+      }
+    },
+    "break_warnings": [
+      0,
+      0
+    ],
+    "ai_player": 0,
+    "ai_level": "intermediate",
+    "ai_noise_seed": "regression",
+    "scenario": "rack"
+  },
+  "shot": {
+    "angle_deg": 162.9206364161898,
+    "cue_speed": 3.2,
+    "tip_x": 0.0,
+    "tip_y": 0.5
+  }
+}

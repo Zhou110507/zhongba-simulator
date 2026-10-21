@@ -420,6 +420,16 @@ def simulate(balls, table=Table(), physics=Physics(), *, max_time=60.0, max_even
         if dt == 0 and not group:
             status = "numerical_failure"
             break
+    # A stationary result is not necessarily a reusable scene: simultaneous
+    # contacts can leave residual overlap or an invalid rail endpoint. Apply
+    # the same validation used by the next stroke before certifying completion.
+    # Keep the rejected geometry for diagnosis; do not move balls or relax the
+    # input tolerance to make an invalid candidate appear successful.
+    if status == 'stopped':
+        try:
+            validate_scene(balls, table, physics)
+        except ValueError:
+            status = 'invalid_final_state'
     return Result(initial, balls, table, physics, time, status, tuple(events), tuple(segments))
 
 

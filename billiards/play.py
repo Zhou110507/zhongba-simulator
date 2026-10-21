@@ -16,7 +16,7 @@ from .pockets import geometry_dict, outline
 from .shot_analysis import first_contact_analysis, cue_motion_report
 
 ROOT = Path(__file__).resolve().parents[1]
-APP_VERSION = 'four-skill-execution-v6'
+APP_VERSION = 'validated-ai-candidates-v7'
 
 
 def _number(value, name):

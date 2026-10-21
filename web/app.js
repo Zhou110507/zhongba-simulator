@@ -169,6 +169,7 @@ async function calculate(commit) {
 }
 
 function statusText(status) {
+  if (status === 'invalid_final_state') return '模拟停球位置未通过有效性检查，本杆未推进对局。请调整出杆后重试。';
   const names = {elastic_model_failure:'当前弹性球堆接触未能可靠求解，本杆不推进对局。',cluster_model_failure:'当前多球接触未能可靠求解，本杆不推进对局。',unsupported_coupled_contact:'这一杆出现当前模型尚不支持的同时多点接触。请回到出杆前调整球位。',unsupported_persistent_contact:'这一杆出现持续贴库或贴球接触，当前模型尚不能可靠处理。',cushion_model_failure:'此杆碰库超出当前平面模型的求解范围。',max_events:'这一杆达到事件计算上限。',max_time:'这一杆在 60 秒内尚未完全停止。'};
   return names[status] || `计算未完成：${status}`;
 }
