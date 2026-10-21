@@ -1,0 +1,27 @@
+{
+  "version": "human-horizontal-v1",
+  "status": "conservative_engineering_policy_not_measured_player_statistics",
+  "rear_stroke_m": 0.30,
+  "shaft_radius_m": 0.006,
+  "clearance_m": 0.002,
+  "rail_bridge_distance_m": 0.18,
+  "rail_min_tip_y": 0.45,
+  "rail_max_cue_speed_mps": 1.8,
+  "close_ball_gap_m": 0.012,
+  "max_cut_degrees": 65,
+  "max_cue_object_distance_m": 1.8,
+  "max_normal_cue_speed_mps": 2.5,
+  "preferred_cue_object_distance_m": 0.55,
+  "comfortable_min_distance_m": 0.18,
+  "comfortable_max_distance_m": 1.20,
+  "comfortable_rail_clearance_m": 0.10,
+  "max_normal_cushions": 2,
+  "allow_secondary_ball_contacts": false,
+  "sources": [
+    "https://drdavepoolinfo.com/faq/draw/cue-elevation/",
+    "https://drdavepoolinfo.com/faq/foul/double-hit/",
+    "https://drdavepoolinfo.com/bd_articles/2014/feb14.pdf",
+    "https://ai.stanford.edu/~shoham/www%20papers/CompPool%20AIMag%202010.pdf"
+  ],
+  "definition": "AI-only ordinary horizontal strokes. Rear ball interference requires unsupported cue elevation and is rejected. When the rear stroke crosses a nearby rail, use only gentle high-tip strokes. Rail thresholds, shaft envelope, distance/cut limits and close-ball exclusion are conservative engineering choices, not measured professional limits. They do not alter forward physics or manual controls."
+}

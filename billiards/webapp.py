@@ -24,6 +24,8 @@ def make_handler(service):
     rules_service=PlayService(service.root,table_profile='cbsa_2017')
     from .game import GameStore, free_table
     games=GameStore(rules_service,service.root/'artifacts'/'rules'/'matches',compact=True)
+    from .ai_jobs import AIJobs
+    opponents=AIJobs(games,jobs)
 
     def scene_service(data):
         if isinstance(data,dict) and data.get('model_signature')==rules_service.signature:
@@ -106,6 +108,7 @@ def make_handler(service):
             path = urlsplit(self.path).path
             if path not in ('/api/validate','/api/shot','/api/lab','/api/calibration','/api/free-table',
                             '/api/game/new','/api/game/get','/api/game/action','/api/game/preview',
+                            '/api/ai/start','/api/ai/status','/api/ai/cancel','/api/ai/execute',
                             '/api/plan/start','/api/plan/status','/api/plan/cancel','/api/plan/example'):
                 self.send_json(404,{'error':'未知接口'})
                 return
@@ -127,11 +130,17 @@ def make_handler(service):
                         response = planners.start(data) if path.endswith('/start') else planners.status(data, cancel=path.endswith('/cancel'))
                     self.send_json(200, response)
                     return
+                if path.startswith('/api/ai/') and not path.endswith('/execute'):
+                    response=opponents.start(data) if path.endswith('/start') else opponents.status(data,cancel=path.endswith('/cancel'))
+                    self.send_json(200,response)
+                    return
                 if not jobs.acquire(blocking=False):
                     self.send_json(503,{'error':'计算繁忙，请稍后重试'})
                     return
                 try:
-                    if path.startswith('/api/game/'):
+                    if path=='/api/ai/execute':
+                        response=opponents.execute(data)
+                    elif path.startswith('/api/game/'):
                         response={'/api/game/new':games.new,'/api/game/get':games.get,
                                   '/api/game/action':games.action,'/api/game/preview':games.preview}[path](data)
                     elif path=='/api/free-table':

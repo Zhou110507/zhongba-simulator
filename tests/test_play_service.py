@@ -166,6 +166,26 @@ def test_local_api_serves_ui_config_and_a_real_shot(server,service):
     assert json.loads(body)['summary']['potted'] == ['1']
 
 
+def test_ai_http_is_opt_in_cancellable_and_revision_bound(server):
+    status,_,body=request(server,'POST','/api/game/new',b'{"seed":0}')
+    game=json.loads(body);assert status==200 and game['ai_player'] is None
+    data=json.dumps({'id':game['id'],'revision':game['revision']}).encode()
+    assert request(server,'POST','/api/ai/start',data)[0]==400
+    status,_,body=request(server,'POST','/api/game/new',b'{"scenario":"ai_endgame","seed":0}')
+    game=json.loads(body);assert status==200 and game['ai_player']==1 and not game['is_break']
+    data=json.dumps({'id':game['id'],'revision':game['revision']}).encode()
+    status,_,body=request(server,'POST','/api/ai/start',data)
+    assert status==200
+    job=json.dumps({'id':json.loads(body)['id']}).encode()
+    assert request(server,'POST','/api/ai/cancel',job)[0]==200
+    assert request(server,'POST','/api/ai/execute',job)[0]==400
+    assert request(server,'POST','/api/ai/status',b'{"id":[]}')[0]==400
+    assert request(server,'POST','/api/ai/start',data,{'Origin':'https://example.com'})[0]==403
+    status,_,body=request(server,'POST','/api/game/get',json.dumps({'id':game['id']}).encode())
+    assert status==200 and json.loads(body)['revision']==0
+    assert request(server,'GET','/assets/ai-opponent.js')[0]==200
+
+
 def test_lab_and_calibration_endpoints_keep_profile_state_immutable(server,service):
     original=deepcopy(service.model)
     status,_,body=request(server,'GET','/lab')

@@ -95,10 +95,25 @@ class GameStore:
         from .play import _number
         gap=_number(data.get('gap_mm',.2),'摆球微隙')
         if not 0<=gap<=.5:raise ValueError('摆球微隙必须在 0–0.5 mm 内')
+        ai_player=data.get('ai_player')
+        if ai_player is not None:integer(ai_player,'AI 所在方',0,1)
+        scenario=data.get('scenario','rack')
+        if scenario not in ('rack','ai_endgame'):raise ValueError('未知对局场景')
         with self.lock:
             state={'id':uuid4().hex,'revision':0,'rule_version':RULE_VERSION,'scores':[0,0],
                    'rack_number':1,'history':[],'last_decision':None,'seed':seed,'gap_mm':gap,'rack_version':'bounded-micro-gaps-v1'}
             self._rack(state,breaker,seed)
+            state['ai_player']=ai_player
+            state['scenario']=scenario
+            if scenario=='ai_endgame':
+                # Explicit practice start, separate from the normal fifteen-ball rack.
+                ai_player=1 if ai_player is None else ai_player
+                state.update(ai_player=ai_player,turn=ai_player,is_break=False,ball_in_hand=None,
+                             groups=['solid' if i==ai_player else 'stripe' for i in range(2)])
+                layout=[('cue',.75,.65),('1',1.27,.28),('2',2.08,.96),('3',.43,1.03),
+                        ('8',1.98,.32),('9',.35,.40),('10',2.28,.65)]
+                state['scene']=self.service.snapshot([Ball(key,Vec2(x,y),spec=self.service.ball_spec)
+                                                      for key,x,y in layout],ShotInput(0,1.1))
             self.games[state['id']]=state;self._save(state)
             while len(self.games)>8:
                 old,_=self.games.popitem(last=False);self.cache.pop(old,None)
@@ -107,6 +122,14 @@ class GameStore:
     def get(self,data):
         if not isinstance(data,dict):raise ValueError('对局参数无效')
         with self.lock:return self.public(self._load(data.get('id')))
+
+    def ai_snapshot(self,data):
+        with self.lock:
+            state=self._checked(data)
+            who=state['chooser'] if state['phase']=='choice' else state['turn']
+            if state.get('ai_player') is None or who!=state['ai_player'] or state['phase']=='finished':
+                raise ValueError('当前不是 AI 的回合')
+            return deepcopy(state)
 
     def _checked(self,data):
         if not isinstance(data,dict):raise ValueError('对局参数无效')
@@ -178,6 +201,11 @@ class GameStore:
                 if state['phase']!='finished':raise ValueError('本局尚未结束')
                 state=deepcopy(state);state['rack_number']+=1;state['seed']=(state['seed']+1)%2**32
                 self._rack(state,1-state['breaker'],state['seed']);state['last_decision']=None
+                state['scenario']='rack'
+            elif action=='set_ai':
+                ai_player=data.get('ai_player')
+                if ai_player is not None:integer(ai_player,'AI 所在方',0,1)
+                state=deepcopy(state);state['ai_player']=ai_player
             else:raise ValueError('未知对局操作')
             state['revision']=before['revision']+1
             self.service.decode(state['scene'])
