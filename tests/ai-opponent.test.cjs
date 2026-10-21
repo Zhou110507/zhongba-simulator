@@ -160,3 +160,12 @@ test('tactical fallback does not keep polling for a nonexistent offensive queue'
   assert.equal(h.$('ai-execute').disabled,false);
   assert.equal([...h.scheduled].some(t=>t.ms===750),false);
 });
+
+test('execution record distinguishes ideal plan from actual motor error',()=>{
+  const h=harness();
+  assert.match(h.flow.executionText({level:'expert'}),/无额外出杆误差/);
+  const text=h.flow.executionText({level:'novice',label:'入门',
+    planned_shot:{angle_deg:10,cue_speed:2},actual_shot:{angle_deg:10.2,cue_speed:1.9},
+    angle_error_deg:.2,speed_error_fraction:-.05});
+  assert.match(text,/计划方向 10.000/);assert.match(text,/实际方向 10.200/);assert.match(text,/-5.00%/);
+});

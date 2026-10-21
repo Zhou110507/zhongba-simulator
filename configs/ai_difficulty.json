@@ -1,0 +1,12 @@
+{
+  "version": "execution-gaussian-v1",
+  "default_level": "expert",
+  "levels": {
+    "novice": {"label": "入门", "angle_sigma_deg": 0.35, "speed_sigma_fraction": 0.10},
+    "intermediate": {"label": "进阶", "angle_sigma_deg": 0.15, "speed_sigma_fraction": 0.05},
+    "advanced": {"label": "高手", "angle_sigma_deg": 0.05, "speed_sigma_fraction": 0.02},
+    "expert": {"label": "最强（训练原版）", "angle_sigma_deg": 0.0, "speed_sigma_fraction": 0.0}
+  },
+  "source": "Engineering execution-noise settings, not measured human skill levels. All levels use the same trained planner. Speed is cue-head speed, not cue-ball speed.",
+  "bounds": "Angle wraps at 360 degrees. Speed uses a normal distribution conditioned on positive speed and existing cue/normal/rail limits. Rear-space restrictions can project angle error toward the original feasible direction. No outcome-based resampling."
+}

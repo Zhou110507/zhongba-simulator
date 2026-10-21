@@ -5,7 +5,7 @@ import hashlib
 
 def model_stamp(service):
     value=hashlib.sha256(service.signature.encode())
-    for name in ('ai_human_policy.json','ai_value_model.json','ai_tactics_model.json','ai_break_model.json'):
+    for name in ('ai_human_policy.json','ai_value_model.json','ai_tactics_model.json','ai_break_model.json','ai_difficulty.json'):
         path=service.root/'configs'/name
         if path.is_file():value.update(path.read_bytes())
     return value.hexdigest()
@@ -17,6 +17,8 @@ def matches(expected,actual,tolerance=1e-6):
     keys=('id','turn','phase','groups','winner','is_break','ball_in_hand','needs_placement',
           'ai_player','rule_version','rack_number','break_warnings')
     if any(expected.get(k)!=actual.get(k) for k in keys):return False
+    if expected.get('ai_level','expert')!=actual.get('ai_level','expert'):return False
+    if expected.get('ai_noise_seed')!=actual.get('ai_noise_seed'):return False
     if expected['scene']['model_signature']!=actual['scene']['model_signature']:return False
     left={b['id']:b for b in expected['scene']['balls']};right={b['id']:b for b in actual['scene']['balls']}
     if left.keys()!=right.keys():return False
@@ -37,7 +39,7 @@ def continuation(analysis,actual):
     route['reasons'].append('所有球位及规则状态与预测相符，复用已验证后续路线')
     route.pop('perturbations',None)
     route['mean_cost']=sum(s['cost'] for s in route['steps'])/len(route['steps'])
-    next_analysis={k:deepcopy(v) for k,v in analysis.items() if k not in ('routes','_forecasts','action')}
+    next_analysis={k:deepcopy(v) for k,v in analysis.items() if k not in ('routes','_forecasts','action','execution')}
     next_analysis.update(game_id=actual['id'],revision=actual['revision'],routes=[route],
                          action={'action':'shoot','shot':deepcopy(route['steps'][0]['shot'])},
                          evaluations=0,elapsed=0.,cache_hit=True,

@@ -16,7 +16,7 @@ from .pockets import geometry_dict, outline
 from .shot_analysis import first_contact_analysis, cue_motion_report
 
 ROOT = Path(__file__).resolve().parents[1]
-APP_VERSION = 'rolling-runout-lookahead-v5'
+APP_VERSION = 'four-skill-execution-v6'
 
 
 def _number(value, name):
@@ -137,7 +137,9 @@ class PlayService:
         return [{'id':name,'name':label,'scene':self.snapshot(balls,shot)} for name,label,balls,shot in descriptions]
 
     def config(self):
+        from .ai_difficulty import configuration
         return {'app_version':APP_VERSION,'model_signature':self.signature,
+                'ai_difficulty':configuration(self),
                 'model':deepcopy(self.model),'ball_spec':asdict(self.ball_spec),
                 'geometry':geometry_dict(self.table),'presets':self.presets(),
                 'limits':{'max_balls':16,'max_tip_offset':self.cue.max_tip_offset,

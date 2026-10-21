@@ -66,6 +66,7 @@ def test_entire_verified_tail_reuses_without_search_and_can_finish_match(service
         future=value['prefetch'];assert future['status']=='found' and future['cache_hit']
         status=jobs.status({'id':future['id']})
         assert status['analysis']['evaluations']==0 and status['analysis']['cache_hit']
+        assert 'execution' not in status['analysis']  # previous shot is history, not this queued shot
         assert '_forecasts' not in status['analysis'] and 'source' not in status
         key=future['id']
     assert count>=3 and jobs.metrics['cache_hits']==count-1

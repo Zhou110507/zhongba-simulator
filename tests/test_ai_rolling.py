@@ -42,7 +42,7 @@ def pipeline(monkeypatch):
                           'game_id':initial['id'],'revision':0,'source':deepcopy(initial),
                           'stamp':model_stamp(service),'analysis':analysis}
     committed=[]
-    def action(data):
+    def action(data,**kwargs):
         current=games._checked(data);index=current['revision']
         assert data['shot']==steps[index]['shot']
         games.games[initial['id']]=deepcopy(states[index+1]);committed.append(index+1)

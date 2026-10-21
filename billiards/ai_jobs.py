@@ -16,6 +16,7 @@ from .rules import HEAD, legal_ids
 from .runout import Search, shot_options
 from .ai_cache import model_stamp,matches,continuation,public_analysis
 from .ai_rolling import HORIZON,endpoint,extend,append
+from .ai_difficulty import realize
 
 
 def decide(service, state, *, cancelled=lambda: False, progress=lambda value: None):
@@ -279,7 +280,11 @@ class AIJobs:
                 current=self.games.ai_snapshot({'id':entry['game_id'],'revision':entry['revision']})
                 if entry.get('source') is not None and (not matches(entry['source'],current) or entry.get('stamp')!=model_stamp(self.games.service)):
                     raise ValueError('台面或模型与 AI 快照不一致，请重新计算')
-                value=self.games.action({'id':entry['game_id'],'revision':entry['revision'],**analysis['action']})
+                action=deepcopy(analysis['action']);execution=None
+                if action['action']=='shoot':
+                    action['shot'],execution=realize(self.games.service,current,action['shot'])
+                    analysis['execution']=execution
+                value=self.games.action({'id':entry['game_id'],'revision':entry['revision'],**action},ai_execution=execution)
             if value.get('rule_committed'):
                 actual=value['game_after'];tail=continuation(analysis,actual)
                 if tail:
@@ -298,6 +303,7 @@ class AIJobs:
                     old=self.continuations.pop(actual['id'],None)
                     if old:old['cancel'].set()
         response={**value,'ai_analysis':public_analysis(analysis)}
+        if execution is not None:response['ai_execution']=execution
         if data.get('prefetch') and value.get('rule_committed'):
             actual=value['game_after']
             who=actual['chooser'] if actual['phase']=='choice' else actual['turn']

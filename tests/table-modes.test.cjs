@@ -87,3 +87,17 @@ test('custom AI layout creates a new setup and enables editing without unlocking
   assert.equal($('shoot').disabled,true);assert.equal($('ai-finish-setup').hidden,false);
   assert.equal(flow.exportRules(),false);
 });
+
+test('difficulty selection is revisioned, restored and carried into a new AI demo',async()=>{
+  const {c,$,game,flow,requests}=await harness();let cancelled=0;
+  c.window.AIOpponent={cancelForChange(){cancelled++;},refresh(){},ownsTurn(){return false;}};
+  c.api=async(path,data)=>{
+    requests.push({path,data});
+    return {...game,revision:1,ai_player:1,ai_level:data.ai_level||'novice'};
+  };
+  $('ai-level').value='novice';await $('ai-level').onchange();
+  assert.equal(cancelled,1);assert.equal(requests.at(-1).data.action,'set_ai_level');
+  assert.equal(flow.aiContext().game.ai_level,'novice');assert.equal($('ai-level').value,'novice');
+  await $('ai-demo').onclick();assert.equal(requests.at(-1).data.ai_level,'novice');
+  c.fired=true;flow.refresh();assert.equal($('ai-level').disabled,true);
+});

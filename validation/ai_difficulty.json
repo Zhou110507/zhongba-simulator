@@ -1,0 +1,2620 @@
+{
+  "scope": "All levels receive exactly the same frozen planned shot. Engineering noise validation, not measured human ratings or full-match win rates.",
+  "physics_signature": "f4c258857aae789a",
+  "config": {
+    "version": "execution-gaussian-v1",
+    "default_level": "expert",
+    "levels": {
+      "novice": {
+        "label": "入门",
+        "angle_sigma_deg": 0.35,
+        "speed_sigma_fraction": 0.1
+      },
+      "intermediate": {
+        "label": "进阶",
+        "angle_sigma_deg": 0.15,
+        "speed_sigma_fraction": 0.05
+      },
+      "advanced": {
+        "label": "高手",
+        "angle_sigma_deg": 0.05,
+        "speed_sigma_fraction": 0.02
+      },
+      "expert": {
+        "label": "最强（训练原版）",
+        "angle_sigma_deg": 0.0,
+        "speed_sigma_fraction": 0.0
+      }
+    },
+    "source": "Engineering execution-noise settings, not measured human skill levels. All levels use the same trained planner. Speed is cue-head speed, not cue-ball speed.",
+    "bounds": "Angle wraps at 360 degrees. Speed uses a normal distribution conditioned on positive speed and existing cue/normal/rail limits. Rear-space restrictions can project angle error toward the original feasible direction. No outcome-based resampling."
+  },
+  "planned_shot": {
+    "angle_deg": 127.26622172285906,
+    "cue_speed": 2.5,
+    "tip_x": 0.0,
+    "tip_y": 0.0
+  },
+  "levels": {
+    "novice": {
+      "sample_count": 4000,
+      "angle_mean_deg": -0.0020589297836582916,
+      "angle_std_deg": 0.3474275740704458,
+      "speed_mean_fraction": -0.0012563401885151374,
+      "speed_std_fraction": 0.10002355797716204,
+      "angle_abs_p95_deg": 0.6946888097386125,
+      "speed_abs_p95_fraction": 0.19768607987510278,
+      "angle_projections": 0,
+      "speed_bound_redraws": 11,
+      "cohort": {
+        "shots": 16,
+        "target_pots": 9,
+        "fouls": 1,
+        "cue_position_rmse_m": 0.3759164841270091
+      },
+      "actual_trials": [
+        {
+          "seed": 0,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "novice",
+            "label": "入门",
+            "angle_sigma_deg": 0.35,
+            "speed_sigma_fraction": 0.1,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.01662823247342,
+              "cue_speed": 2.551577725216814,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.24959349038563058,
+            "speed_error_fraction": 0.0206310900867257,
+            "speed_error_mps": 0.05157772521681414,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "22b7faceb421c56946c7256724a4c475fcc4bd3736af931f7e004db76726acea",
+            "raw_angle_error_deg": -0.24959349038563058,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1530264872348825,
+            "y": 0.6796056231096441
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.22060963964141864
+        },
+        {
+          "seed": 1,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "novice",
+            "label": "入门",
+            "angle_sigma_deg": 0.35,
+            "speed_sigma_fraction": 0.1,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 126.7019191406031,
+              "cue_speed": 2.750879260899924,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.5643025822559599,
+            "speed_error_fraction": 0.10035170435996976,
+            "speed_error_mps": 0.2508792608999242,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "9f118319d7f730381d08c178c73bfb540d54bcdcdbf8112b322ee9c0ac9d2397",
+            "raw_angle_error_deg": -0.5643025822559599,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "cue"
+          ],
+          "fouls": [
+            "白球落袋"
+          ],
+          "cue_final": {
+            "x": 1.2487346102630585,
+            "y": 1.2600860023460423
+          },
+          "cue_pocket": "top-middle",
+          "position_error_m": 0.8089271415974164
+        },
+        {
+          "seed": 2,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "novice",
+            "label": "入门",
+            "angle_sigma_deg": 0.35,
+            "speed_sigma_fraction": 0.1,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.23274387572714,
+              "cue_speed": 2.655409050394028,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.03347784713191325,
+            "speed_error_fraction": 0.06216362015761123,
+            "speed_error_mps": 0.1554090503940282,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "6fe300768ecc959e90b0fd2e14390242af1c4d47e7afbff4f03fa74b341a870e",
+            "raw_angle_error_deg": -0.03347784713191325,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.2004043264221662,
+            "y": 0.5977114351884061
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.15922671731093568
+        },
+        {
+          "seed": 3,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "novice",
+            "label": "入门",
+            "angle_sigma_deg": 0.35,
+            "speed_sigma_fraction": 0.1,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.29687086731795,
+              "cue_speed": 2.275437228255877,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.030649144458888604,
+            "speed_error_fraction": -0.08982510869764915,
+            "speed_error_mps": -0.22456277174412298,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "7fefe35e8c38193d164ab966ec634fa49f12f5faf9a8aa0f0109c63dcc478bfb",
+            "raw_angle_error_deg": 0.030649144458888604,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 0.9947825472722066,
+            "y": 0.3020811475304651
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.20136639338473822
+        },
+        {
+          "seed": 4,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "novice",
+            "label": "入门",
+            "angle_sigma_deg": 0.35,
+            "speed_sigma_fraction": 0.1,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 126.42491366550517,
+              "cue_speed": 2.736619207619977,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.8413080573538823,
+            "speed_error_fraction": 0.09464768304799076,
+            "speed_error_mps": 0.2366192076199769,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "04768006b0cb39fe65697c983c8dd6ee7cabf61457c08c35d7179af5c8477775",
+            "raw_angle_error_deg": -0.8413080573538823,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.16716244432227,
+            "y": 1.0729044195167698
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.6130247041486292
+        },
+        {
+          "seed": 5,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "novice",
+            "label": "入门",
+            "angle_sigma_deg": 0.35,
+            "speed_sigma_fraction": 0.1,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.02466805447216,
+              "cue_speed": 2.810913471816328,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.24155366838689413,
+            "speed_error_fraction": 0.12436538872653125,
+            "speed_error_mps": 0.310913471816328,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "f040fbe3583bd52ad33710cca03febbbf0d266bdebf17e58b62804e6671858c1",
+            "raw_angle_error_deg": -0.24155366838689413,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.2939710089266954,
+            "y": 0.9688707641216543
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.5368709150599883
+        },
+        {
+          "seed": 6,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "novice",
+            "label": "入门",
+            "angle_sigma_deg": 0.35,
+            "speed_sigma_fraction": 0.1,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 126.90042779885925,
+              "cue_speed": 2.6253380045836656,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.3657939239998092,
+            "speed_error_fraction": 0.0501352018334662,
+            "speed_error_mps": 0.12533800458366562,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "2bd2d3c6b292da71d784e8565e8c794b207a4029e2737bcffa9e8563526d78e7",
+            "raw_angle_error_deg": -0.3657939239998092,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1941254574055786,
+            "y": 0.8716730775737598
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.4169054983288589
+        },
+        {
+          "seed": 7,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "novice",
+            "label": "入门",
+            "angle_sigma_deg": 0.35,
+            "speed_sigma_fraction": 0.1,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.4406353520131,
+              "cue_speed": 2.1588631655314297,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.17441362915404002,
+            "speed_error_fraction": -0.13645473378742812,
+            "speed_error_mps": -0.34113683446857035,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "8e56166c5d420bfe444cd2301b009519e63fabc6034e9c505756304e7db993a4",
+            "raw_angle_error_deg": 0.17441362915404002,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [],
+          "fouls": [],
+          "cue_final": {
+            "x": 0.9196932507065599,
+            "y": 0.17036204785698292
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.3521888907682001
+        },
+        {
+          "seed": 8,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "novice",
+            "label": "入门",
+            "angle_sigma_deg": 0.35,
+            "speed_sigma_fraction": 0.1,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.31015631115282,
+              "cue_speed": 2.670994009359386,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.043934588293766355,
+            "speed_error_fraction": 0.06839760374375436,
+            "speed_error_mps": 0.17099400935938602,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "09f0a1a19840d5bdccfb052ee3e7f216be804c7ad7651ddd0a41a68aafd8cec7",
+            "raw_angle_error_deg": 0.043934588293766355,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.2035201310986525,
+            "y": 0.5504387840431473
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.12359863774172163
+        },
+        {
+          "seed": 9,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "novice",
+            "label": "入门",
+            "angle_sigma_deg": 0.35,
+            "speed_sigma_fraction": 0.1,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.3601376600106,
+              "cue_speed": 2.542109702068991,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.09391593715154171,
+            "speed_error_fraction": 0.016843880827596358,
+            "speed_error_mps": 0.042109702068990895,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "668c93793a494b2b8ad4c3f1b1f60d869510690ada874ce66f7f2598f606df17",
+            "raw_angle_error_deg": 0.09391593715154171,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1334249341201594,
+            "y": 0.4272936833209608
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.03820598131661755
+        },
+        {
+          "seed": 10,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "novice",
+            "label": "入门",
+            "angle_sigma_deg": 0.35,
+            "speed_sigma_fraction": 0.1,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 126.67415762060872,
+              "cue_speed": 2.370973015492879,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.5920641022503357,
+            "speed_error_fraction": -0.051610793802848276,
+            "speed_error_mps": -0.1290269845071208,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "56c2fcc6a045c70b7c48a39bf8e007972225f4b509b2b3e753e63be2e3ae7484",
+            "raw_angle_error_deg": -0.5920641022503357,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.046733440132196,
+            "y": 0.7748642762851357
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.3208000860999363
+        },
+        {
+          "seed": 11,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "novice",
+            "label": "入门",
+            "angle_sigma_deg": 0.35,
+            "speed_sigma_fraction": 0.1,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.54529935873943,
+              "cue_speed": 2.312497599490574,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.2790776358803641,
+            "speed_error_fraction": -0.07500096020377034,
+            "speed_error_mps": -0.1875024005094259,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "e8e22bedc29579c5519a7292e8c1e2908e83185eadc73d1b02e11aaf8a29f1c3",
+            "raw_angle_error_deg": 0.2790776358803641,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [],
+          "fouls": [],
+          "cue_final": {
+            "x": 0.9971240866369921,
+            "y": 0.19227909867128629
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.2951892762783272
+        },
+        {
+          "seed": 12,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "novice",
+            "label": "入门",
+            "angle_sigma_deg": 0.35,
+            "speed_sigma_fraction": 0.1,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.81728280511835,
+              "cue_speed": 2.424743965533046,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.5510610822592883,
+            "speed_error_fraction": -0.03010241378678169,
+            "speed_error_mps": -0.07525603446695417,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "06fb74be0b46319dbbe2c7fe83516e95b2f25e409cad1b4d10a35d072a718b46",
+            "raw_angle_error_deg": 0.5510610822592883,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.024901638214462,
+            "y": 0.10526227381484807
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.36841729253881805
+        },
+        {
+          "seed": 13,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "novice",
+            "label": "入门",
+            "angle_sigma_deg": 0.35,
+            "speed_sigma_fraction": 0.1,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.65122685749424,
+              "cue_speed": 2.297083745592837,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.38500513463518216,
+            "speed_error_fraction": -0.08116650176286522,
+            "speed_error_mps": -0.202916254407163,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "3cd8ec8cdd69679e9280efd89cd99e921edd77f92971c3b7bc2e1dd166751997",
+            "raw_angle_error_deg": 0.38500513463518216,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [],
+          "fouls": [],
+          "cue_final": {
+            "x": 0.9779139101146029,
+            "y": 0.13401722566479013
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.35627922630001263
+        },
+        {
+          "seed": 14,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "novice",
+            "label": "入门",
+            "angle_sigma_deg": 0.35,
+            "speed_sigma_fraction": 0.1,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.22725305937905,
+              "cue_speed": 2.271692873762192,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.03896866348000185,
+            "speed_error_fraction": -0.09132285049512312,
+            "speed_error_mps": -0.2283071262378078,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "c151e4ba0ce690de316f0b303a04ba7cc03a7b4b500e6f2772401f5ff5357762",
+            "raw_angle_error_deg": -0.03896866348000185,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 0.9959140125018685,
+            "y": 0.33779120771977555
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.17358708512475074
+        },
+        {
+          "seed": 15,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "novice",
+            "label": "入门",
+            "angle_sigma_deg": 0.35,
+            "speed_sigma_fraction": 0.1,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 126.98908501554905,
+              "cue_speed": 2.1818296907495265,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.27713670731001194,
+            "speed_error_fraction": -0.12726812370018936,
+            "speed_error_mps": -0.3181703092504735,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "7126818626ef5ec70523e3f86732890579a139e66b57c017b7f8270bfac8a974",
+            "raw_angle_error_deg": -0.27713670731001194,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 0.9500137890745515,
+            "y": 0.41049671419149797
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.17497622001054985
+        }
+      ]
+    },
+    "intermediate": {
+      "sample_count": 4000,
+      "angle_mean_deg": -0.0011704742645945391,
+      "angle_std_deg": 0.15185416695948398,
+      "speed_mean_fraction": 0.0003315976305937922,
+      "speed_std_fraction": 0.04867988387167659,
+      "angle_abs_p95_deg": 0.2991861484097901,
+      "speed_abs_p95_fraction": 0.09658601206157114,
+      "angle_projections": 0,
+      "speed_bound_redraws": 0,
+      "cohort": {
+        "shots": 16,
+        "target_pots": 14,
+        "fouls": 0,
+        "cue_position_rmse_m": 0.4268163559324115
+      },
+      "actual_trials": [
+        {
+          "seed": 0,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "intermediate",
+            "label": "进阶",
+            "angle_sigma_deg": 0.15,
+            "speed_sigma_fraction": 0.05,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.28185743338155,
+              "cue_speed": 2.6061718829735097,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.0156357105224842,
+            "speed_error_fraction": 0.04246875318940391,
+            "speed_error_mps": 0.10617188297350966,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "b579a69bdbef2863b414fa7bafc19e335ae3bf4b0f61de1bbcbe29c53fc0265f",
+            "raw_angle_error_deg": 0.0156357105224842,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.171871154693013,
+            "y": 0.5249786236443097
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.08342065582463107
+        },
+        {
+          "seed": 1,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "intermediate",
+            "label": "进阶",
+            "angle_sigma_deg": 0.15,
+            "speed_sigma_fraction": 0.05,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.08128316528529,
+              "cue_speed": 2.5637284689535655,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.18493855757377228,
+            "speed_error_fraction": 0.025491387581426217,
+            "speed_error_mps": 0.06372846895356554,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "4adfadae780ceda77574dcc9e9c44be99deb66372dd33b43fc9107534fb9249e",
+            "raw_angle_error_deg": -0.18493855757377228,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.158303938136896,
+            "y": 0.6406854563785602
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.18342164399304028
+        },
+        {
+          "seed": 2,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "intermediate",
+            "label": "进阶",
+            "angle_sigma_deg": 0.15,
+            "speed_sigma_fraction": 0.05,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.24990457098376,
+              "cue_speed": 2.485451083330658,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.016317151875305535,
+            "speed_error_fraction": -0.005819566667736864,
+            "speed_error_mps": -0.014548916669342216,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "08d06d8475ac71cfe4309dd1eea8ddc390eb2df0472ec9cf44e9cdec5c3f6180",
+            "raw_angle_error_deg": -0.016317151875305535,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1104352048953103,
+            "y": 0.4628198115697044
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.00688960472814866
+        },
+        {
+          "seed": 3,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "intermediate",
+            "label": "进阶",
+            "angle_sigma_deg": 0.15,
+            "speed_sigma_fraction": 0.05,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.32852028317416,
+              "cue_speed": 2.463547880594867,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.062298560315098214,
+            "speed_error_fraction": -0.014580847762053262,
+            "speed_error_mps": -0.03645211940513304,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "9f00a62134ca184ebf2126e244a29807b3230290e50e34cb59f0bd487f52c809",
+            "raw_angle_error_deg": 0.062298560315098214,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.0944562871747725,
+            "y": 0.3976012552264948
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.06823738328611652
+        },
+        {
+          "seed": 4,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "intermediate",
+            "label": "进阶",
+            "angle_sigma_deg": 0.15,
+            "speed_sigma_fraction": 0.05,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.50410648937901,
+              "cue_speed": 2.262452220214495,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.23788476651995577,
+            "speed_error_fraction": -0.09501911191420187,
+            "speed_error_mps": -0.2375477797855048,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "550ce2995031cd755019b3e7df106fc77e6baa903d9f0fa7657091ee5d05a434",
+            "raw_angle_error_deg": 0.23788476651995577,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1451847950079839,
+            "y": 0.3317631136304894
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.13311167745855046
+        },
+        {
+          "seed": 5,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "intermediate",
+            "label": "进阶",
+            "angle_sigma_deg": 0.15,
+            "speed_sigma_fraction": 0.05,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.0981257013337,
+              "cue_speed": 2.5481593726679943,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.16809602152535072,
+            "speed_error_fraction": 0.019263749067197633,
+            "speed_error_mps": 0.048159372667994305,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "5e16f18a079a8dae20091f04aa800cefe42e858d9f5ba00ba0922c7f9656f277",
+            "raw_angle_error_deg": -0.16809602152535072,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1495759475955223,
+            "y": 0.6155630776872705
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.15700986487878896
+        },
+        {
+          "seed": 6,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "intermediate",
+            "label": "进阶",
+            "angle_sigma_deg": 0.15,
+            "speed_sigma_fraction": 0.05,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.35685940697977,
+              "cue_speed": 2.4889550748235996,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.09063768412070605,
+            "speed_error_fraction": -0.004417970070560218,
+            "speed_error_mps": -0.011044925176400433,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "2122a14ee0bb34f34cd263123972c559c7956792f9f11b40519136da9d546026",
+            "raw_angle_error_deg": 0.09063768412070605,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1059600166966557,
+            "y": 0.39565601256078675
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.06721530512738232
+        },
+        {
+          "seed": 7,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "intermediate",
+            "label": "进阶",
+            "angle_sigma_deg": 0.15,
+            "speed_sigma_fraction": 0.05,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.48820218590971,
+              "cue_speed": 2.651022515190744,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.2219804630506561,
+            "speed_error_fraction": 0.06040900607629762,
+            "speed_error_mps": 0.15102251519074406,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "7773920c960aeac42df17517c6245a01a05cf91d361d90741cb594ffc3e509b9",
+            "raw_angle_error_deg": 0.2219804630506561,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [],
+          "fouls": [],
+          "cue_final": {
+            "x": 2.0073961443898476,
+            "y": 0.23950662521961544
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.917495747357412
+        },
+        {
+          "seed": 8,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "intermediate",
+            "label": "进阶",
+            "angle_sigma_deg": 0.15,
+            "speed_sigma_fraction": 0.05,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.22720490871367,
+              "cue_speed": 2.3280368465064734,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.03901681414538404,
+            "speed_error_fraction": -0.0687852613974107,
+            "speed_error_mps": -0.17196315349352664,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "15303a7b658664dd855c7d5220bb371c47b783cf6d5ccee369f32300f38bb8c4",
+            "raw_angle_error_deg": -0.03901681414538404,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.0269580248588093,
+            "y": 0.37298158537052234
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.12674496272478675
+        },
+        {
+          "seed": 9,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "intermediate",
+            "label": "进阶",
+            "angle_sigma_deg": 0.15,
+            "speed_sigma_fraction": 0.05,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.48645034454755,
+              "cue_speed": 2.4675264121315394,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.22022862168849247,
+            "speed_error_fraction": -0.012989435147384265,
+            "speed_error_mps": -0.03247358786846055,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "daf9665f2d856d581a3ebf71a731655a71e61e102de60fcd2e195684a531bfaa",
+            "raw_angle_error_deg": 0.22022862168849247,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 2.437761750742276,
+            "y": 0.2465916877768511
+          },
+          "cue_pocket": null,
+          "position_error_m": 1.3379369716420402
+        },
+        {
+          "seed": 10,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "intermediate",
+            "label": "进阶",
+            "angle_sigma_deg": 0.15,
+            "speed_sigma_fraction": 0.05,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.35009032657923,
+              "cue_speed": 2.2515265434370333,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.08386860372017545,
+            "speed_error_fraction": -0.0993893826251867,
+            "speed_error_mps": -0.2484734565629667,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "d92568114d991c69c37f45999b5278d5dfd0eec3c10472c59d4b012d8f701ecb",
+            "raw_angle_error_deg": 0.08386860372017545,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 0.978504333435835,
+            "y": 0.26066926010852204
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.24444607485255423
+        },
+        {
+          "seed": 11,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "intermediate",
+            "label": "进阶",
+            "angle_sigma_deg": 0.15,
+            "speed_sigma_fraction": 0.05,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 126.92495162324606,
+              "cue_speed": 2.482230306236891,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.34127009961300014,
+            "speed_error_fraction": -0.007107877505243665,
+            "speed_error_mps": -0.017769693763109107,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "2feaaf5f769dad8ae991c4b560825a4a666f273b400f8673e63ce9fd65e3a9ea",
+            "raw_angle_error_deg": -0.34127009961300014,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1158781287982171,
+            "y": 0.6888666451795785
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.22695707728218528
+        },
+        {
+          "seed": 12,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "intermediate",
+            "label": "进阶",
+            "angle_sigma_deg": 0.15,
+            "speed_sigma_fraction": 0.05,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.24551617425357,
+              "cue_speed": 2.625812066349196,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.02070554860549681,
+            "speed_error_fraction": 0.05032482653967851,
+            "speed_error_mps": 0.12581206634919617,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "811a69fc7a555a80f46b70399552e5cd73dd66189ed4397a5e0fc260948f3525",
+            "raw_angle_error_deg": -0.02070554860549681,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.184255220102208,
+            "y": 0.5658912391996702
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.1236891234868293
+        },
+        {
+          "seed": 13,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "intermediate",
+            "label": "进阶",
+            "angle_sigma_deg": 0.15,
+            "speed_sigma_fraction": 0.05,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.09552129634372,
+              "cue_speed": 2.561837637589522,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.1707004265153443,
+            "speed_error_fraction": 0.024735055035808973,
+            "speed_error_mps": 0.06183763758952221,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "3c62bf6803f47933594bf6d46f383cd6f94c1077d38ce0f5a6648fbbd291c0e2",
+            "raw_angle_error_deg": -0.1707004265153443,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1569243948101118,
+            "y": 0.6284650614033516
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.17120803210259034
+        },
+        {
+          "seed": 14,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "intermediate",
+            "label": "进阶",
+            "angle_sigma_deg": 0.15,
+            "speed_sigma_fraction": 0.05,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.0150639193059,
+              "cue_speed": 2.430998737124777,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.25115780355315326,
+            "speed_error_fraction": -0.02760050515008916,
+            "speed_error_mps": -0.06900126287522301,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "69606cb10d6eff5f1b8a89d13729068510d20cce54ef0ead4df8f66121805ac2",
+            "raw_angle_error_deg": -0.25115780355315326,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.0881188506439448,
+            "y": 0.5813526840153969
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.12294365593763194
+        },
+        {
+          "seed": 15,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "intermediate",
+            "label": "进阶",
+            "angle_sigma_deg": 0.15,
+            "speed_sigma_fraction": 0.05,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.37698913827245,
+              "cue_speed": 2.628434623845608,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.11076741541338664,
+            "speed_error_fraction": 0.0513738495382432,
+            "speed_error_mps": 0.128434623845608,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "261a9d745db89ec2b6ce49b3be17aaee337133f24dffe3aacb22bad751fee1dc",
+            "raw_angle_error_deg": 0.11076741541338664,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1766481442949617,
+            "y": 0.47221128369125004
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.06026938242795066
+        }
+      ]
+    },
+    "advanced": {
+      "sample_count": 4000,
+      "angle_mean_deg": -0.0004323598515675694,
+      "angle_std_deg": 0.050012564356913695,
+      "speed_mean_fraction": -0.00014220582652112125,
+      "speed_std_fraction": 0.02027363793322878,
+      "angle_abs_p95_deg": 0.09795595038366367,
+      "speed_abs_p95_fraction": 0.03916425053027306,
+      "angle_projections": 0,
+      "speed_bound_redraws": 0,
+      "cohort": {
+        "shots": 16,
+        "target_pots": 16,
+        "fouls": 0,
+        "cue_position_rmse_m": 0.048593385728369264
+      },
+      "actual_trials": [
+        {
+          "seed": 0,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "advanced",
+            "label": "高手",
+            "angle_sigma_deg": 0.05,
+            "speed_sigma_fraction": 0.02,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.23926575451178,
+              "cue_speed": 2.523786975061525,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.026955968347276454,
+            "speed_error_fraction": 0.009514790024609976,
+            "speed_error_mps": 0.023786975061525162,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "d5e109dbe3e32e2901561df341c1d2e74e6951b733363a3363fd1b6fc97a954c",
+            "raw_angle_error_deg": -0.026955968347276454,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1311886401216973,
+            "y": 0.49663589818213416
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.03740978612394978
+        },
+        {
+          "seed": 1,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "advanced",
+            "label": "高手",
+            "angle_sigma_deg": 0.05,
+            "speed_sigma_fraction": 0.02,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.27689608690031,
+              "cue_speed": 2.5364694987790255,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.010674364041249933,
+            "speed_error_fraction": 0.014587799511610156,
+            "speed_error_mps": 0.0364694987790255,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "43ea490c5cff21c1eafc2c20cb0bb3545dcb8a660d70e34347a59f0aed6f39b8",
+            "raw_angle_error_deg": 0.010674364041249933,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1358242101645848,
+            "y": 0.47967885398056975
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.025691283405278903
+        },
+        {
+          "seed": 2,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "advanced",
+            "label": "高手",
+            "angle_sigma_deg": 0.05,
+            "speed_sigma_fraction": 0.02,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.32081635339584,
+              "cue_speed": 2.5451907484970313,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.054594630536786405,
+            "speed_error_fraction": 0.018076299398812612,
+            "speed_error_mps": 0.04519074849703131,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "c6473e5dabc3ab2477e408e6741cda4a8448b6ec5b7aaa3a259a39623862a852",
+            "raw_angle_error_deg": 0.054594630536786405,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1376975914760532,
+            "y": 0.45569636467338065
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.02135762732272632
+        },
+        {
+          "seed": 3,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "advanced",
+            "label": "高手",
+            "angle_sigma_deg": 0.05,
+            "speed_sigma_fraction": 0.02,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.30463678926726,
+              "cue_speed": 2.468286835614802,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.03841506640821113,
+            "speed_error_fraction": -0.012685265754079134,
+            "speed_error_mps": -0.03171316438519778,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "91de2470b12d76368bc08aa527ca538be414ed596f78889e519dfb55ac6d48e4",
+            "raw_angle_error_deg": 0.03841506640821113,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.0983958787350447,
+            "y": 0.4157860271198776
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.04983788550264044
+        },
+        {
+          "seed": 4,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "advanced",
+            "label": "高手",
+            "angle_sigma_deg": 0.05,
+            "speed_sigma_fraction": 0.02,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.32145390956575,
+              "cue_speed": 2.447594672207797,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.05523218670669647,
+            "speed_error_fraction": -0.020962131116881166,
+            "speed_error_mps": -0.05240532779220297,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "1a82ebffa777cec451477f8d2832f8b4ce404735ebfea769a1955b458173068a",
+            "raw_angle_error_deg": 0.05523218670669647,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.086464387711782,
+            "y": 0.39194880722026043
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.07644460299332458
+        },
+        {
+          "seed": 5,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "advanced",
+            "label": "高手",
+            "angle_sigma_deg": 0.05,
+            "speed_sigma_fraction": 0.02,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.36674400808253,
+              "cue_speed": 2.5500841452094214,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.10052228522347975,
+            "speed_error_fraction": 0.020033658083768557,
+            "speed_error_mps": 0.050084145209421393,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "107c9df9d464309281949b80ecf59229015b0dd019937948b0945cc9658ce426",
+            "raw_angle_error_deg": 0.10052228522347975,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1370833697997784,
+            "y": 0.428024464483962
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.03925883407098187
+        },
+        {
+          "seed": 6,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "advanced",
+            "label": "高手",
+            "angle_sigma_deg": 0.05,
+            "speed_sigma_fraction": 0.02,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.35930960390442,
+              "cue_speed": 2.48294041555739,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.09308788104536447,
+            "speed_error_fraction": -0.006823833777043986,
+            "speed_error_mps": -0.01705958444261002,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "30555402869dee81faca5e398f75983928204b2c23466c48d44545fe62fa8f4a",
+            "raw_angle_error_deg": 0.09308788104536447,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1026441383885013,
+            "y": 0.39034217838390467
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.07304975514232691
+        },
+        {
+          "seed": 7,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "advanced",
+            "label": "高手",
+            "angle_sigma_deg": 0.05,
+            "speed_sigma_fraction": 0.02,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.34923442559,
+              "cue_speed": 2.41393978356536,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.08301270273093969,
+            "speed_error_fraction": -0.03442408657385587,
+            "speed_error_mps": -0.08606021643463979,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "cdd350fca49bf502c3cad99df8eb8e0df523f64034cf7b100ef084c5cd0fffd9",
+            "raw_angle_error_deg": 0.08301270273093969,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.0668926128967815,
+            "y": 0.35421501154806884
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.11889661625489249
+        },
+        {
+          "seed": 8,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "advanced",
+            "label": "高手",
+            "angle_sigma_deg": 0.05,
+            "speed_sigma_fraction": 0.02,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.24787808675146,
+              "cue_speed": 2.4898099046824234,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.0183436361076027,
+            "speed_error_fraction": -0.004076038127030612,
+            "speed_error_mps": -0.010190095317576642,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "882a50cf69b534b7940ec4188ccc55685025cc6a8e823b7d6bf38ada8bf267b7",
+            "raw_angle_error_deg": -0.0183436361076027,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1128403576228452,
+            "y": 0.4671550733082999
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.0068591661455991645
+        },
+        {
+          "seed": 9,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "advanced",
+            "label": "高手",
+            "angle_sigma_deg": 0.05,
+            "speed_sigma_fraction": 0.02,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.30385990051525,
+              "cue_speed": 2.526998663195814,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.0376381776561935,
+            "speed_error_fraction": 0.010799465278325648,
+            "speed_error_mps": 0.02699866319581412,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "df71358ccdecc5f3931b6ce2602faf3d262541592cd76d1ecf8a4688aab26cd2",
+            "raw_angle_error_deg": 0.0376381776561935,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1292743082450267,
+            "y": 0.45497171948605786
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.013871429557507519
+        },
+        {
+          "seed": 10,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "advanced",
+            "label": "高手",
+            "angle_sigma_deg": 0.05,
+            "speed_sigma_fraction": 0.02,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.21068179593429,
+              "cue_speed": 2.4880539065419724,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.05553992692476936,
+            "speed_error_fraction": -0.004778437383211043,
+            "speed_error_mps": -0.011946093458027551,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "e33014fdf7e8db5819f6cbe1449914076451bdc27bc8ca69abd749a34c0b6bad",
+            "raw_angle_error_deg": -0.05553992692476936,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1136572100310176,
+            "y": 0.49083733481712005
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.02914766814292513
+        },
+        {
+          "seed": 11,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "advanced",
+            "label": "高手",
+            "angle_sigma_deg": 0.05,
+            "speed_sigma_fraction": 0.02,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.32869723527959,
+              "cue_speed": 2.506129894220649,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.06247551242053093,
+            "speed_error_fraction": 0.002451957688259565,
+            "speed_error_mps": 0.006129894220649135,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "0000570bf3cacd9f7ec309a96ef72d11451f7b7f6a7230d04ecd010f195dd76d",
+            "raw_angle_error_deg": 0.06247551242053093,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1168053016921613,
+            "y": 0.4247667460754655
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.037149903148415396
+        },
+        {
+          "seed": 12,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "advanced",
+            "label": "高手",
+            "angle_sigma_deg": 0.05,
+            "speed_sigma_fraction": 0.02,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.24233841211193,
+              "cue_speed": 2.5027968021898443,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.023883310747130355,
+            "speed_error_fraction": 0.0011187208759377842,
+            "speed_error_mps": 0.0027968021898443496,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "43fcd560360a9f8222698598d9b513bb28618071a14cf194f68ede46a1cd563e",
+            "raw_angle_error_deg": -0.023883310747130355,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1199737650443666,
+            "y": 0.479844468974408
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.01813411781071552
+        },
+        {
+          "seed": 13,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "advanced",
+            "label": "高手",
+            "angle_sigma_deg": 0.05,
+            "speed_sigma_fraction": 0.02,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.21880721199112,
+              "cue_speed": 2.501658858094661,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.0474145108679318,
+            "speed_error_fraction": 0.000663543237864328,
+            "speed_error_mps": 0.001658858094661042,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "ae0b4eae739a70a7aa2a3863068648f817664d0c2bfda4eda600a7bbaab13bdc",
+            "raw_angle_error_deg": -0.0474145108679318,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.120497005026413,
+            "y": 0.4949727454501481
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.03321655501449193
+        },
+        {
+          "seed": 14,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "advanced",
+            "label": "高手",
+            "angle_sigma_deg": 0.05,
+            "speed_sigma_fraction": 0.02,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.23906914543093,
+              "cue_speed": 2.4520190994469644,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.027152577428125248,
+            "speed_error_fraction": -0.01919236022121429,
+            "speed_error_mps": -0.04798090055303561,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "cac0677f0107844c8b8c393abc72e7deae4ce93d543d8605cadad4ebe75907cf",
+            "raw_angle_error_deg": -0.027152577428125248,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.0932350701948028,
+            "y": 0.4471349788071706
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.02821081701209609
+        },
+        {
+          "seed": 15,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "advanced",
+            "label": "高手",
+            "angle_sigma_deg": 0.05,
+            "speed_sigma_fraction": 0.02,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.21656573100579,
+              "cue_speed": 2.5020287823760965,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": -0.049655991853265295,
+            "speed_error_fraction": 0.0008115129504386864,
+            "speed_error_mps": 0.002028782376096494,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0,
+            "draw_key": "20193c42bae2e0aa813468b9813b8d17e0f96358061c85e7a8ed0006c96b9564",
+            "raw_angle_error_deg": -0.049655991853265295,
+            "speed_upper_mps": 3.2
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.120794869174361,
+            "y": 0.49675930481003894
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.03502383434801692
+        }
+      ]
+    },
+    "expert": {
+      "sample_count": 4000,
+      "angle_mean_deg": 0.0,
+      "angle_std_deg": 0.0,
+      "speed_mean_fraction": 0.0,
+      "speed_std_fraction": 0.0,
+      "angle_abs_p95_deg": 0.0,
+      "speed_abs_p95_fraction": 0.0,
+      "angle_projections": 0,
+      "speed_bound_redraws": 0,
+      "cohort": {
+        "shots": 16,
+        "target_pots": 16,
+        "fouls": 0,
+        "cue_position_rmse_m": 0.0
+      },
+      "actual_trials": [
+        {
+          "seed": 0,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "expert",
+            "label": "最强（训练原版）",
+            "angle_sigma_deg": 0.0,
+            "speed_sigma_fraction": 0.0,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.0,
+            "speed_error_fraction": 0.0,
+            "speed_error_mps": 0.0,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1172649783732869,
+            "y": 0.4619138051957441
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.0
+        },
+        {
+          "seed": 1,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "expert",
+            "label": "最强（训练原版）",
+            "angle_sigma_deg": 0.0,
+            "speed_sigma_fraction": 0.0,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.0,
+            "speed_error_fraction": 0.0,
+            "speed_error_mps": 0.0,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1172649783732869,
+            "y": 0.4619138051957441
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.0
+        },
+        {
+          "seed": 2,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "expert",
+            "label": "最强（训练原版）",
+            "angle_sigma_deg": 0.0,
+            "speed_sigma_fraction": 0.0,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.0,
+            "speed_error_fraction": 0.0,
+            "speed_error_mps": 0.0,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1172649783732869,
+            "y": 0.4619138051957441
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.0
+        },
+        {
+          "seed": 3,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "expert",
+            "label": "最强（训练原版）",
+            "angle_sigma_deg": 0.0,
+            "speed_sigma_fraction": 0.0,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.0,
+            "speed_error_fraction": 0.0,
+            "speed_error_mps": 0.0,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1172649783732869,
+            "y": 0.4619138051957441
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.0
+        },
+        {
+          "seed": 4,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "expert",
+            "label": "最强（训练原版）",
+            "angle_sigma_deg": 0.0,
+            "speed_sigma_fraction": 0.0,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.0,
+            "speed_error_fraction": 0.0,
+            "speed_error_mps": 0.0,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1172649783732869,
+            "y": 0.4619138051957441
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.0
+        },
+        {
+          "seed": 5,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "expert",
+            "label": "最强（训练原版）",
+            "angle_sigma_deg": 0.0,
+            "speed_sigma_fraction": 0.0,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.0,
+            "speed_error_fraction": 0.0,
+            "speed_error_mps": 0.0,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1172649783732869,
+            "y": 0.4619138051957441
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.0
+        },
+        {
+          "seed": 6,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "expert",
+            "label": "最强（训练原版）",
+            "angle_sigma_deg": 0.0,
+            "speed_sigma_fraction": 0.0,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.0,
+            "speed_error_fraction": 0.0,
+            "speed_error_mps": 0.0,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1172649783732869,
+            "y": 0.4619138051957441
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.0
+        },
+        {
+          "seed": 7,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "expert",
+            "label": "最强（训练原版）",
+            "angle_sigma_deg": 0.0,
+            "speed_sigma_fraction": 0.0,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.0,
+            "speed_error_fraction": 0.0,
+            "speed_error_mps": 0.0,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1172649783732869,
+            "y": 0.4619138051957441
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.0
+        },
+        {
+          "seed": 8,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "expert",
+            "label": "最强（训练原版）",
+            "angle_sigma_deg": 0.0,
+            "speed_sigma_fraction": 0.0,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.0,
+            "speed_error_fraction": 0.0,
+            "speed_error_mps": 0.0,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1172649783732869,
+            "y": 0.4619138051957441
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.0
+        },
+        {
+          "seed": 9,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "expert",
+            "label": "最强（训练原版）",
+            "angle_sigma_deg": 0.0,
+            "speed_sigma_fraction": 0.0,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.0,
+            "speed_error_fraction": 0.0,
+            "speed_error_mps": 0.0,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1172649783732869,
+            "y": 0.4619138051957441
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.0
+        },
+        {
+          "seed": 10,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "expert",
+            "label": "最强（训练原版）",
+            "angle_sigma_deg": 0.0,
+            "speed_sigma_fraction": 0.0,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.0,
+            "speed_error_fraction": 0.0,
+            "speed_error_mps": 0.0,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1172649783732869,
+            "y": 0.4619138051957441
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.0
+        },
+        {
+          "seed": 11,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "expert",
+            "label": "最强（训练原版）",
+            "angle_sigma_deg": 0.0,
+            "speed_sigma_fraction": 0.0,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.0,
+            "speed_error_fraction": 0.0,
+            "speed_error_mps": 0.0,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1172649783732869,
+            "y": 0.4619138051957441
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.0
+        },
+        {
+          "seed": 12,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "expert",
+            "label": "最强（训练原版）",
+            "angle_sigma_deg": 0.0,
+            "speed_sigma_fraction": 0.0,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.0,
+            "speed_error_fraction": 0.0,
+            "speed_error_mps": 0.0,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1172649783732869,
+            "y": 0.4619138051957441
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.0
+        },
+        {
+          "seed": 13,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "expert",
+            "label": "最强（训练原版）",
+            "angle_sigma_deg": 0.0,
+            "speed_sigma_fraction": 0.0,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.0,
+            "speed_error_fraction": 0.0,
+            "speed_error_mps": 0.0,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1172649783732869,
+            "y": 0.4619138051957441
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.0
+        },
+        {
+          "seed": 14,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "expert",
+            "label": "最强（训练原版）",
+            "angle_sigma_deg": 0.0,
+            "speed_sigma_fraction": 0.0,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.0,
+            "speed_error_fraction": 0.0,
+            "speed_error_mps": 0.0,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1172649783732869,
+            "y": 0.4619138051957441
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.0
+        },
+        {
+          "seed": 15,
+          "execution": {
+            "version": "execution-gaussian-v1",
+            "level": "expert",
+            "label": "最强（训练原版）",
+            "angle_sigma_deg": 0.0,
+            "speed_sigma_fraction": 0.0,
+            "planned_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "actual_shot": {
+              "angle_deg": 127.26622172285906,
+              "cue_speed": 2.5,
+              "tip_x": 0.0,
+              "tip_y": 0.0
+            },
+            "angle_error_deg": 0.0,
+            "speed_error_fraction": 0.0,
+            "speed_error_mps": 0.0,
+            "angle_projection_scale": 1.0,
+            "speed_bound_redraws": 0
+          },
+          "potted": [
+            "3"
+          ],
+          "fouls": [],
+          "cue_final": {
+            "x": 1.1172649783732869,
+            "y": 0.4619138051957441
+          },
+          "cue_pocket": null,
+          "position_error_m": 0.0
+        }
+      ]
+    }
+  },
+  "unchanged_model_sha256": {
+    "ai_human_policy.json": "d389e7b441b74b5dabd35d5f811aa96864c1caeb8c86d8c3f92507fa95bdc4cf",
+    "ai_value_model.json": "70482c66118fe849e7c3ee1f81c57192f3595b3f17dcc7f399403acde5e3a339",
+    "ai_tactics_model.json": "f08b80196dbe45fc348f017d9d865cc491d3c8026aef4fb2142acd2e6f433fb7",
+    "ai_break_model.json": "ce1f94915cc6cd058104666a169eb57b203c4a8c106471478181ca79af6d7979"
+  }
+}

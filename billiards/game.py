@@ -14,6 +14,7 @@ from .cue import ShotInput
 from .model import Ball, Vec2
 from .pockets import unsupported_pocket
 from .rules import HEAD, RULE_URL, RULE_VERSION, adjudicate, legal_ids, racked_balls, respot_ball
+from .ai_difficulty import DEFAULT_LEVEL,validate_level
 
 
 def integer(value,name,lower=0,upper=2**32-1):
@@ -69,6 +70,8 @@ class GameStore:
             self.service.decode(state['scene'])
             self.games[key]=state
         self.games.move_to_end(key)
+        self.games[key].setdefault('ai_level',DEFAULT_LEVEL)
+        if 'ai_noise_seed' not in self.games[key]:self.games[key]['ai_noise_seed']=secrets.token_hex(16)
         return self.games[key]
 
     def public(self,state):
@@ -97,6 +100,7 @@ class GameStore:
         if not 0<=gap<=.5:raise ValueError('摆球微隙必须在 0–0.5 mm 内')
         ai_player=data.get('ai_player')
         if ai_player is not None:integer(ai_player,'AI 所在方',0,1)
+        ai_level=validate_level(data.get('ai_level',DEFAULT_LEVEL))
         scenario=data.get('scenario','rack')
         if scenario not in ('rack','ai_endgame','ai_custom'):raise ValueError('未知对局场景')
         ai_group=data.get('ai_group','solid')
@@ -109,6 +113,7 @@ class GameStore:
                    'rack_number':1,'history':[],'last_decision':None,'seed':seed,'gap_mm':gap,'rack_version':'bounded-micro-gaps-v1'}
             self._rack(state,breaker,seed)
             state['ai_player']=ai_player
+            state.update(ai_level=ai_level,ai_noise_seed=secrets.token_hex(16))
             state['scenario']=scenario
             if scenario in ('ai_endgame','ai_custom'):
                 # Explicit practice start, separate from the normal fifteen-ball rack.
@@ -163,7 +168,7 @@ class GameStore:
             state=self._checked(data)
             return self._simulate(state,data.get('shot'))
 
-    def action(self,data):
+    def action(self,data,*,ai_execution=None):
         with self.lock:
             state=self._checked(data);before=deepcopy(state);action=data.get('action')
             if action=='shoot':
@@ -171,6 +176,7 @@ class GameStore:
                 if not response['complete']:
                     return {**response,'game_after':self.public(state),'rule_committed':False}
                 updated=adjudicate(state,response,self.service)
+                if ai_execution is not None:updated['last_decision']['ai_execution']=deepcopy(ai_execution)
                 updated['scene']=deepcopy(response['next_scene'])
                 if updated['last_decision']['respot_eight']:respot_ball(updated['scene'],'8',self.service)
                 updated['history']=(state['history']+[updated['last_decision']])[-100:]
@@ -215,6 +221,8 @@ class GameStore:
                 ai_player=data.get('ai_player')
                 if ai_player is not None:integer(ai_player,'AI 所在方',0,1)
                 state=deepcopy(state);state['ai_player']=ai_player
+            elif action=='set_ai_level':
+                state=deepcopy(state);state['ai_level']=validate_level(data.get('ai_level'))
             elif action=='finish_setup':
                 if state.get('scenario')!='ai_custom' or state['phase']!='setup':raise ValueError('当前不在 AI 残局摆球中')
                 scene=self.service.validate(data.get('scene'))['scene']

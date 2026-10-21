@@ -9,6 +9,11 @@ window.AIOpponent=(()=>{
   function ownsTurn(){const {game:g}=context();return Boolean(window.TableModes?.isRules()&&g&&g.ai_player!=null&&['playing','choice'].includes(g.phase)&&(g.phase==='choice'?g.chooser:g.turn)===g.ai_player);}
   const identity=g=>g?`${g.id}:${g.revision}`:'';
   function message(text){$('ai-status').textContent=text;}
+  function executionText(e){
+    if(e.level==='expert')return '最强（训练原版）：按计划参数执行，无额外出杆误差。';
+    const p=e.planned_shot,a=e.actual_shot;
+    return `${e.label}：计划方向 ${p.angle_deg.toFixed(3)}°、杆头 ${p.cue_speed.toFixed(3)} m/s；实际方向 ${a.angle_deg.toFixed(3)}°、杆头 ${a.cue_speed.toFixed(3)} m/s。方向偏差 ${e.angle_error_deg.toFixed(3)}°，杆头速度偏差 ${(e.speed_error_fraction*100).toFixed(2)}%。`;
+  }
   function pause(){ $('ai-auto').checked=false;clearTimeout(scheduled);scheduled=null;refresh(); }
   function cancelForChange(){
     generation++;layoutEpoch++;clearTimeout(scheduled);scheduled=null;
@@ -88,7 +93,7 @@ window.AIOpponent=(()=>{
   async function think(){
     const {game:g,idle}=context();if(!ownsTurn()||!idle||thinking||executing)return;
     const token=++generation;binding={id:g.id,revision:g.revision};const expected={...binding};
-    source={source_scene:g.scene,source_groups:g.groups,source_turn:g.turn,source_ai_player:g.ai_player};
+    source={source_scene:g.scene,source_groups:g.groups,source_turn:g.turn,source_ai_player:g.ai_player,source_ai_level:g.ai_level||'expert'};
     attempted=identity(g);analysis=null;thinking=true;failed=false;message('AI 正在思考：先检查后斯诺、近库和普通杆法限制…');refreshUI();
     try{
       let started;
@@ -122,6 +127,7 @@ window.AIOpponent=(()=>{
       const value=await api('/api/ai/execute',{id:job,prefetch:true});
       if(token!==generation){if(value.prefetch)api('/api/ai/cancel',{id:value.prefetch.id}).catch(()=>{});return;}
       future=value.prefetch||null;
+      if(value.ai_execution)analysis.execution=value.ai_execution;
       analysis.action=null;job=null;
       window.TableModes.acceptAI(value,expected);
       message(value.result?(future?.extending?`本杆已提交；保留后续 ${future.queued_steps} 杆，回放期间从队尾继续补算。`:future?.cache_hit?'本杆已提交；后续路线与实际停点相符，已复用，无需重算。':future?'本杆已提交；回放同时正在预先计算下一杆。':'本杆已提交；球停后按实际局面继续。'):'AI 已完成规则选择或摆球，可继续查看下一杆思路。');
@@ -148,5 +154,5 @@ window.AIOpponent=(()=>{
     const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
     const link=document.createElement('a');link.href=url;link.download='AI清台思路.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   };
-  return {refresh,ownsTurn,cancelForChange,pause,think,precompute};
+  return {refresh,ownsTurn,cancelForChange,pause,think,precompute,executionText};
 })();
