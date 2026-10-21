@@ -289,10 +289,11 @@ class Search:
         # Extra rails/spin remain a small tie-breaker, not a hard preference.
         return total/max(1,len(path))+.65*hardest+.25*sum(leaves)/max(1,len(leaves))-.65*self.position_value(state)
 
-    def solve(self, state):
+    def solve(self, state, *, max_depth=None):
         owner = state['turn']; own = legal_ids(state)
         endgame = state['groups'][owner] is not None and len(own) <= 3
         depth = (1 if own == ['8'] else len(own)+1) if endgame else 3
+        if max_depth is not None:depth=min(depth,max(1,max_depth))
         frontier = [(state, [], 0.)]; paths = []; complete = []
         for level in range(depth):
             expanded = []

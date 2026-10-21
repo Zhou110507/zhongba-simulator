@@ -11,6 +11,7 @@ from billiards.break_policy import decide_break
 from billiards.game import GameStore
 from billiards.play import PlayService
 from billiards.runout import Search
+from billiards.cue import ShotInput
 from billiards.tactics import choose_contact
 from tools.train_tactics import tactical_layout
 
@@ -22,8 +23,22 @@ def service():return PlayService(table_profile='cbsa_2017')
 @pytest.fixture(scope='module')
 def planned(service):
     state=GameStore(service).new({'scenario':'ai_endgame'})
-    result=Search(service,seconds=45,evaluations=2400).solve(state)
-    assert result['routes'][0]['clear_verified']
+    # Cache tests need a stable certified route, not a wall-clock-dependent
+    # search success. Re-simulate the frozen audit's actual four shots here.
+    audit=json.loads((service.root/'training'/'ai_stage3'/'integrated-audit.json').read_text(encoding='utf8'))
+    actions=next(r for r in audit['rows'] if r['case']=='endgame-cache')['actions']
+    search=Search(service,seconds=30,evaluations=20);node=state;steps=[];forecasts=[]
+    for action in actions:
+        shot=ShotInput(**action['action']['shot']);trial=search.forward(node,shot)
+        assert trial and not trial[1]['last_decision']['fouls']
+        physical,after,_=trial;target=after['last_decision']['first_contacts'][0]
+        ball=next(b for b in physical.final if b.id==target)
+        steps.append({'target':target,'pocket':ball.pocket,'shot':action['action']['shot'],
+                      'cost':1.,'position_effort':.1,'verified':True})
+        forecasts.append((node,after));node=after
+    assert node['winner']==state['turn']
+    result={'status':'found','routes':[{'steps':steps,'clear_verified':True,'reasons':[],'mean_cost':1.}],
+            '_forecasts':[forecasts],'evaluations':search.count,'elapsed':0.}
     return state,result
 
 
@@ -151,3 +166,30 @@ def test_legal_k_releases_own_opponent_cluster_and_still_pots(service):
     actual=games.action({'id':state['id'],'revision':0,'action':'shoot','shot':value[1]['shot']})
     assert actual['complete'] and not actual['game_after']['last_decision']['fouls']
     assert '9' in actual['game_after']['last_decision']['potted']
+
+
+def test_real_physics_queue_adds_black_during_first_shot_and_executes_without_full_research(service,planned,monkeypatch):
+    state,result=deepcopy(planned)
+    result['routes'][0]['steps']=result['routes'][0]['steps'][:3]
+    result['routes'][0]['clear_verified']=False;result['_forecasts'][0]=result['_forecasts'][0][:3]
+    games,jobs=prepared(service,(state,result))
+    monkeypatch.setattr('billiards.ai_jobs.decide',lambda *a,**k:pytest.fail('Re-searched known first shots'))
+    value=jobs.execute({'id':'ready','prefetch':True});key=value['prefetch']['id']
+    assert value['complete'] and not value['game_after']['last_decision']['fouls']
+    assert value['game_after']['revision']==1
+    deadline=monotonic()+20
+    while monotonic()<deadline:
+        status=jobs.status({'id':key})
+        if status['analysis']['routes'][0]['clear_verified']:break
+        sleep(.02)
+    route=status['analysis']['routes'][0]
+    assert route['clear_verified'] and route['steps'][:2]==result['routes'][0]['steps'][1:]
+    assert [s['target'] for s in route['steps']]==['1','2','8']
+    assert games.games[state['id']]['revision']==1  # appended black is still only a plan
+    count=1
+    while True:
+        value=jobs.execute({'id':key,'prefetch':True});count+=1
+        assert value['complete'] and not value['game_after']['last_decision']['fouls']
+        if value['game_after']['phase']=='finished':break
+        key=value['prefetch']['id']
+    assert count==4 and jobs.metrics['searches']==0 and jobs.metrics['extended_steps']==1

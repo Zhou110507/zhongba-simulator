@@ -13,7 +13,7 @@ function harness(){
   const c={window:{TableModes:{aiContext:()=>structuredClone(ctx),isRules:()=>rules,acceptAI:()=>accepted++}},
     $,document:{createElement:element},pocketNames:{},Blob:class{},URL:{},
     refreshUI(){c.window.AIOpponent?.refresh();},
-    setTimeout(fn,ms){if(ms===600){const task={fn};scheduled.add(task);return task;}return setImmediate(fn);},
+    setTimeout(fn,ms){if(ms===600||ms===750){const task={fn,ms};scheduled.add(task);return task;}return setImmediate(fn);},
     clearTimeout(task){scheduled.delete(task);},
     api:async(path,data)=>{calls.push({path,data});if(hook)await hook(path,data);
       if(responses.has(path))return structuredClone(responses.get(path));
@@ -118,4 +118,45 @@ test('late prefetch does not cancel the same job already adopted by a normal thi
   h.ctx.game.turn=1;h.ctx.game.revision=1;h.ctx.idle=true;
   await h.flow.think();release();await pending;
   assert.equal(h.calls.some(c=>c.path.endsWith('/cancel')),false);
+});
+
+function rollingRoute(targets){return {clear_verified:false,reasons:[],steps:targets.map(target=>({
+  target,pocket:'top-right',cue_final:{x:1,y:.6},shot:{cue_speed:1.,tip_x:0,tip_y:0},
+  cut_degrees:20,distance_mm:500,object_distance_mm:400,human:{notes:[]}}))};}
+
+test('ready prefix stays executable while the rolling suffix updates without another start',async()=>{
+  const h=harness();h.setAnalysis({routes:[rollingRoute(['2','3'])],evaluations:0,elapsed:0,
+    rolling:{target:3,remaining:2,extending:true,exhausted:false}});
+  await h.flow.think();assert.equal(h.$('ai-execute').disabled,false);
+  assert.match(h.$('ai-status').textContent,/后台继续补算/);
+  const task=[...h.scheduled].find(t=>t.ms===750);assert.ok(task);
+  h.setAnalysis({routes:[rollingRoute(['2','3','4'])],extended_steps:1,extension_evaluations:50,
+    rolling:{target:3,remaining:3,extending:false,exhausted:false}});
+  await task.fn();
+  assert.equal(h.$('ai-routes').children[0].children[1].children.length,3);
+  assert.match(h.$('ai-status').textContent,/队尾新增 1 杆/);
+  assert.equal(h.$('ai-execute').disabled,false);
+  assert.equal(h.calls.filter(c=>c.path.endsWith('/start')).length,1);
+  assert.equal(h.calls.some(c=>c.path.endsWith('/execute')),false);
+});
+
+test('late rolling status cannot restore a plan after the layout changes',async()=>{
+  const h=harness();h.setAnalysis({routes:[rollingRoute(['2','3'])],evaluations:0,elapsed:0,
+    rolling:{target:3,remaining:2,extending:true}});
+  await h.flow.think();
+  const task=[...h.scheduled].find(t=>t.ms===750);assert.ok(task);
+  let release;const gate=new Promise(resolve=>release=resolve);
+  h.setHook(async path=>{if(path.endsWith('/status'))await gate;});
+  const pending=task.fn();h.flow.cancelForChange();h.ctx.game.revision++;
+  release();await pending;
+  assert.equal(h.$('ai-routes').children.length,0);
+  assert.equal(h.calls.some(c=>c.path.endsWith('/execute')),false);
+});
+
+test('tactical fallback does not keep polling for a nonexistent offensive queue',async()=>{
+  const h=harness();h.setAnalysis({routes:[],tactic:'safety',
+    rolling:{target:3,remaining:0,extending:false,exhausted:false}});
+  await h.flow.think();
+  assert.equal(h.$('ai-execute').disabled,false);
+  assert.equal([...h.scheduled].some(t=>t.ms===750),false);
 });

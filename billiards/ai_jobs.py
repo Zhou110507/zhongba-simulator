@@ -15,6 +15,7 @@ from .pockets import unsupported_pocket
 from .rules import HEAD, legal_ids
 from .runout import Search, shot_options
 from .ai_cache import model_stamp,matches,continuation,public_analysis
+from .ai_rolling import HORIZON,endpoint,extend,append
 
 
 def decide(service, state, *, cancelled=lambda: False, progress=lambda value: None):
@@ -85,36 +86,51 @@ def decide(service, state, *, cancelled=lambda: False, progress=lambda value: No
 class AIJobs:
     def __init__(self,games,slots):
         self.games=games;self.slots=slots;self.lock=Lock();self.jobs={}
-        self.continuations={};self.metrics={'cache_hits':0,'prefetches':0,'searches':0,'invalidations':0}
+        self.continuations={};self.metrics={'cache_hits':0,'prefetches':0,'searches':0,'invalidations':0,
+                                          'extensions':0,'extended_steps':0}
 
     def start(self,data):
+        value=self._start(data)
+        self._extend(data['id'])
+        with self.lock:
+            lane=self.continuations.get(data['id'])
+            if lane:value.update(extending=lane.get('extending',False),queued_steps=self._length(lane))
+        return value
+
+    def _start(self,data):
         state=self.games.ai_snapshot(data)
         with self.lock:
             now=monotonic()
             self.jobs={k:v for k,v in self.jobs.items() if v['status']=='running' or now-v['created']<900}
-            self.continuations={k:v for k,v in self.continuations.items() if now-v['created']<900}
+            for key,lane in list(self.continuations.items()):
+                if now-lane['created']>=900:
+                    lane['cancel'].set();self.continuations.pop(key)
             stamp=model_stamp(self.games.service)
+            saved=self.continuations.get(state['id'])
+            if saved and (saved['cancel'].is_set() or saved['revision']!=state['revision'] or saved['stamp']!=stamp or not matches(saved['expected'],state)):
+                saved['cancel'].set();self.continuations.pop(state['id'])
+                self.metrics['invalidations']+=1;saved=None
             for key,existing in self.jobs.items():
                 if (existing['game_id']==state['id'] and existing['revision']==state['revision'] and
                     existing.get('stamp')==stamp and not existing['cancel'].is_set() and
                     existing['status'] in ('running','found') and matches(existing['source'],state)):
                     return {'id':key,'status':existing['status'],'reused_job':True}
-            saved=self.continuations.pop(state['id'],None)
-            if saved and (saved['revision']!=state['revision'] or saved['stamp']!=stamp or not matches(saved['expected'],state)):
-                self.metrics['invalidations']+=1;saved=None
-            if saved:
+            if saved and (saved['analysis'] or saved.get('extending')):
                 while len(self.jobs)>=20:
                     old=next((k for k,v in self.jobs.items() if v['status']!='running'),None)
                     if old is None:break
                     self.jobs.pop(old)
                 key=uuid4().hex
-                self.jobs[key]={'id':key,'status':'found','created':now,'cancel':Event(),
+                ready=bool(saved['analysis'])
+                self.jobs[key]={'id':key,'status':'found' if ready else 'running','created':now,'cancel':Event(),
                                 'game_id':state['id'],'revision':state['revision'],'stamp':stamp,
                                 'source':deepcopy(state),
-                                'analysis':saved['analysis']}
-                self.metrics['cache_hits']+=1
-                return {'id':key,'status':'found','cache_hit':True}
-            if any(v['status']=='running' for v in self.jobs.values()):raise ValueError('已有 AI 在思考，请先取消或等待完成')
+                                'analysis':deepcopy(saved['analysis']),
+                                'progress':{'stage':'等待队尾补算完成；已验证前序杆已执行','evaluations':0},
+                                '_waiting_extension':not ready}
+                if ready:self.metrics['cache_hits']+=1
+                return {'id':key,'status':'found' if ready else 'running','cache_hit':ready}
+            if any(v['status']=='running' and not v['cancel'].is_set() for v in self.jobs.values()):raise ValueError('已有 AI 在思考，请先取消或等待完成')
             if not self.slots.acquire(blocking=False):raise ValueError('计算繁忙，请稍后重试')
             while len(self.jobs)>=20:self.jobs.pop(next(iter(self.jobs)))
             key=uuid4().hex
@@ -140,15 +156,111 @@ class AIJobs:
         Thread(target=run,daemon=True,name='runout-ai').start()
         return {'id':key,'status':'running'}
 
+    @staticmethod
+    def _length(lane):
+        analysis=lane.get('analysis')
+        return len(analysis['routes'][0]['steps']) if analysis and analysis.get('routes') else 0
+
+    def _live(self,key,lane):
+        if self.continuations.get(key) is not lane or lane['cancel'].is_set():return False
+        if lane['stamp']!=model_stamp(self.games.service):return False
+        try:actual=self.games.ai_snapshot({'id':key,'revision':lane['revision']})
+        except ValueError:return False
+        return matches(lane['expected'],actual)
+
+    def _publish(self,lane):
+        # A search may finish after several prefix strokes have been consumed.
+        # Publish to the current revision only, never resurrect an old job.
+        for entry in self.jobs.values():
+            if (entry['game_id']==lane['expected']['id'] and entry['revision']==lane['revision'] and
+                entry['stamp']==lane['stamp'] and not entry['cancel'].is_set() and matches(entry['source'],lane['expected'])):
+                entry.update(status=lane['analysis']['status'],analysis=deepcopy(lane['analysis']))
+                entry.pop('_waiting_extension',None)
+
+    def _extend(self,key):
+        with self.lock:
+            lane=self.continuations.get(key)
+            if not lane or lane.get('extending') or not lane.get('analysis'):return
+            anchor=endpoint(lane['analysis']);remaining=self._length(lane)
+            if (anchor is None or remaining>=HORIZON or anchor['phase']!='playing' or
+                anchor['winner'] is not None or anchor['turn']!=anchor.get('ai_player')):return
+            if lane.get('failed_anchor') and matches(lane['failed_anchor'],anchor):return
+            if not self._live(key,lane):lane['cancel'].set();return
+            if not self.slots.acquire(blocking=False):return
+            lane['extending']=True;lane['anchor']=deepcopy(anchor)
+            depth=HORIZON-remaining
+            lane['progress']={'stage':f'保留前 {remaining} 杆，向队尾补算 {depth} 杆','evaluations':0}
+            self.metrics['extensions']+=1
+        def progress(value):
+            with self.lock:
+                if self.continuations.get(key) is lane:lane['progress']=value
+        def run():
+            try:
+                result=extend(self.games.service,anchor,depth,cancelled=lane['cancel'].is_set,progress=progress)
+                with self.lock:
+                    if not self._live(key,lane):lane['cancel'].set();return
+                    combined=append(lane['analysis'],result,anchor)
+                    needs_fallback=combined is None and lane['analysis'] is None
+                    if combined:
+                        combined.update(game_id=key,revision=lane['revision'],cache_hit=True,evaluations=0,elapsed=0.)
+                        lane['analysis']=combined
+                        self.metrics['extended_steps']+=len(result['routes'][0]['steps'])
+                        self._publish(lane)
+                    elif not needs_fallback:lane['failed_anchor']=deepcopy(anchor)
+                if needs_fallback:
+                    # The queue was consumed while extending and no offensive
+                    # suffix exists. Finish the actual turn via normal tactics.
+                    result=decide(self.games.service,anchor,cancelled=lane['cancel'].is_set,progress=progress)
+                    with self.lock:
+                        if self._live(key,lane) and lane['analysis'] is None:
+                            result.update(game_id=key,revision=lane['revision'])
+                            lane['analysis']=result;self._publish(lane)
+                        else:lane['cancel'].set()
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                with self.lock:
+                    lane['failed_anchor']=deepcopy(anchor)
+                    for entry in self.jobs.values():
+                        if entry.get('_waiting_extension') and entry['game_id']==key and entry['stamp']==lane['stamp'] and matches(entry['source'],lane['expected']):
+                            entry.update(status='error',error='队尾补算失败，请重新思考')
+            finally:
+                with self.lock:
+                    lane['extending']=False
+                    if lane['cancel'].is_set():
+                        for entry in self.jobs.values():
+                            if (entry.get('_waiting_extension') and entry['game_id']==key and
+                                entry['stamp']==lane['stamp'] and matches(entry['source'],lane['expected'])):
+                                entry.update(status='cancelled',analysis={'status':'cancelled','routes':[]})
+                                entry.pop('_waiting_extension',None)
+                self.slots.release()
+                # If another stroke was played during the search, refill the
+                # newly vacant place too; never redo the retained prefix.
+                self._extend(key)
+        Thread(target=run,daemon=True,name='runout-rolling').start()
+
     def status(self,data,*,cancel=False):
         with self.lock:
             key=data.get('id') if isinstance(data,dict) else None
             if not isinstance(key,str) or key not in self.jobs:raise ValueError('AI 任务不存在或已过期')
             entry=self.jobs[key]
-            if cancel:entry['cancel'].set()
-            public={k:v for k,v in entry.items() if k not in ('created','cancel','stamp','source','analysis')}
-            if 'analysis' in entry:public['analysis']=public_analysis(entry['analysis'])
-            return deepcopy(public)
+            lane=self.continuations.get(entry['game_id'])
+            current=lane and matches(entry['source'],lane['expected']) and entry['revision']==lane['revision']
+            if cancel:
+                entry['cancel'].set()
+                if current:lane['cancel'].set()
+            public={k:v for k,v in entry.items() if k not in ('created','cancel','stamp','source','analysis') and not k.startswith('_')}
+            if entry.get('analysis'):
+                public['analysis']=public_analysis(entry['analysis'])
+                if current:
+                    last=endpoint(lane['analysis'])
+                    public['analysis']['rolling']={'target':HORIZON,'remaining':self._length(lane),
+                                                  'extending':lane.get('extending',False),
+                                                  'exhausted':bool(last and lane.get('failed_anchor') and matches(last,lane['failed_anchor'])),
+                                                  'progress':lane.get('progress',{})}
+            public=deepcopy(public)
+        if not cancel:self._extend(entry['game_id'])
+        return public
 
     def execute(self,data):
         with self.lock:
@@ -157,7 +269,10 @@ class AIJobs:
             entry=self.jobs[key]
             if entry['cancel'].is_set() or entry['status']!='found' or 'action' not in entry.get('analysis',{}):
                 raise ValueError('AI 任务没有可执行方案或已取消')
-            analysis=deepcopy(entry['analysis'])
+            lane=self.continuations.get(entry['game_id'])
+            same_lane=(lane and not lane['cancel'].is_set() and lane['revision']==entry['revision'] and
+                       matches(lane['expected'],entry['source']) and lane['stamp']==entry['stamp'])
+            analysis=deepcopy(lane['analysis'] if same_lane and lane['analysis'] else entry['analysis'])
             # Check and commit under the same game lock. Revision prevents double
             # execution, including retries and a second browser on the same match.
             with self.games.lock:
@@ -168,11 +283,20 @@ class AIJobs:
             if value.get('rule_committed'):
                 actual=value['game_after'];tail=continuation(analysis,actual)
                 if tail:
-                    self.continuations[actual['id']]={'expected':deepcopy(actual),'revision':actual['revision'],
-                                                       'created':monotonic(),
-                                                       'stamp':entry.get('stamp',model_stamp(self.games.service)),
-                                                       'analysis':tail}
-                    while len(self.continuations)>8:self.continuations.pop(next(iter(self.continuations)))
+                    if not same_lane:
+                        if lane:lane['cancel'].set()
+                        lane={'cancel':Event(),'extending':False,'stamp':entry.get('stamp',model_stamp(self.games.service))}
+                        self.continuations[actual['id']]=lane
+                    lane.update(expected=deepcopy(actual),revision=actual['revision'],created=monotonic(),analysis=tail)
+                    while len(self.continuations)>8:self.continuations.pop(next(iter(self.continuations)))['cancel'].set()
+                elif (same_lane and lane.get('extending') and endpoint(analysis) is not None and
+                      matches(endpoint(analysis),actual) and actual['phase']=='playing' and actual['turn']==actual.get('ai_player')):
+                    # Keep ownership of the endpoint worker even when playback
+                    # overtakes it. The next client joins it instead of re-search.
+                    lane.update(expected=deepcopy(actual),revision=actual['revision'],created=monotonic(),analysis=None)
+                else:
+                    old=self.continuations.pop(actual['id'],None)
+                    if old:old['cancel'].set()
         response={**value,'ai_analysis':public_analysis(analysis)}
         if data.get('prefetch') and value.get('rule_committed'):
             actual=value['game_after']

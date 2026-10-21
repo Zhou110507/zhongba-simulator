@@ -85,7 +85,9 @@ def test_trained_model_has_layout_separated_provenance_and_finite_values(service
 def test_endgame_search_replays_a_real_rule_valid_clear_with_human_constraints(service):
     games=GameStore(service);state=games.new({'scenario':'ai_endgame','seed':0})
     original=deepcopy(state)
-    search=Search(service,seconds=45,evaluations=2400)
+    # Verify the evaluation-bounded route, with enough wall-clock headroom
+    # for slower/local machines; this is not a 45-second latency contract.
+    search=Search(service,seconds=90,evaluations=2400)
     result=search.solve(state)
     assert state==original and result['model']==MODEL_VERSION
     assert result['status']=='found' and result['endgame']

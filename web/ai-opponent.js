@@ -4,7 +4,7 @@
 window.AIOpponent=(()=>{
   let generation=0,job=null,thinking=false,executing=false,analysis=null,binding=null;
   let source=null,future=null,layoutEpoch=0;
-  let scheduled=null,attempted='',viewKey='',failed=false;
+  let scheduled=null,rollingTimer=null,attempted='',viewKey='',failed=false;
   const context=()=>window.TableModes?.aiContext()||{game:null,idle:false};
   function ownsTurn(){const {game:g}=context();return Boolean(window.TableModes?.isRules()&&g&&g.ai_player!=null&&['playing','choice'].includes(g.phase)&&(g.phase==='choice'?g.chooser:g.turn)===g.ai_player);}
   const identity=g=>g?`${g.id}:${g.revision}`:'';
@@ -12,6 +12,7 @@ window.AIOpponent=(()=>{
   function pause(){ $('ai-auto').checked=false;clearTimeout(scheduled);scheduled=null;refresh(); }
   function cancelForChange(){
     generation++;layoutEpoch++;clearTimeout(scheduled);scheduled=null;
+    clearTimeout(rollingTimer);rollingTimer=null;
     if(job)api('/api/ai/cancel',{id:job}).catch(()=>{});
     if(future)api('/api/ai/cancel',{id:future.id}).catch(()=>{});
     future=null;
@@ -31,7 +32,8 @@ window.AIOpponent=(()=>{
       if(value.predicted_fouls?.length)text+=' 预计风险：'+value.predicted_fouls.join('、');
       message(text);return;
     }
-    message(`${value.cache_hit?'球位符合预期，复用后续路线 · ':''}${value.routes[0].clear_verified?'已验证清台路线':'找到部分续接'} · ${value.evaluations} 次模拟 · ${value.elapsed} 秒`);
+    const rolling=value.rolling;
+    message(`${value.cache_hit?'球位符合预期，复用后续路线 · ':''}${value.routes[0].clear_verified?'已验证清台路线':'找到部分续接'} · ${value.evaluations} 次模拟 · ${value.elapsed} 秒${rolling?.extending?` · 保留后续 ${rolling.remaining} 杆，后台继续补算`:''}${value.extended_steps?` · 已从队尾新增 ${value.extended_steps} 杆（${value.extension_evaluations} 次模拟）`:''}`);
     for(const [index,route]of value.routes.entries()){
       const card=document.createElement('details'),title=document.createElement('summary');
       card.open=index===0;title.textContent=`${index===0?'推荐':'备选 '+index}：${route.steps.map(s=>s.target).join(' → ')}${route.clear_verified?' · 含黑八清台':' · 后续待规划'}`;card.append(title);
@@ -49,6 +51,20 @@ window.AIOpponent=(()=>{
       if(route.perturbations){const note=document.createElement('p');note.className='hint';note.textContent=`本路线逐杆微扰：${route.perturbations.passed}/${route.perturbations.checked} 项仍合法进球并保留普通续接（工程检查，非真人成功率）。`;card.append(note);}
       $('ai-routes').append(card);
     }
+  }
+  function watchRolling(token,expected,key){
+    clearTimeout(rollingTimer);rollingTimer=null;
+    const r=analysis?.rolling;
+    if(!r||!analysis.routes?.length||analysis.routes[0].clear_verified||r.exhausted||(!r.extending&&r.remaining>=r.target))return;
+    rollingTimer=setTimeout(async()=>{
+      rollingTimer=null;
+      if(token!==generation||executing||job!==key||identity(context().game)!==identity(expected)||!context().idle)return;
+      try{
+        const status=await api('/api/ai/status',{id:key});
+        if(token!==generation||executing||job!==key||identity(context().game)!==identity(expected))return;
+        if(status.status==='found'&&status.analysis){analysis=status.analysis;render(analysis);refreshUI();watchRolling(token,expected,key);}
+      }catch{} // The retained current stroke remains usable if background polling fails.
+    },750);
   }
   function refresh(){
     const {game:g,idle}=context(),rule=Boolean(window.TableModes?.isRules());
@@ -89,7 +105,7 @@ window.AIOpponent=(()=>{
         if(status.status==='error')throw new Error(status.error);
         analysis=status.analysis;
         if(started.reused_job&&started.status==='found')analysis={...analysis,cache_hit:true,cached_from_evaluations:analysis.evaluations,evaluations:0,elapsed:0};
-        thinking=false;render(analysis);refreshUI();
+        thinking=false;render(analysis);refreshUI();watchRolling(token,expected,job);
         if($('ai-auto').checked&&analysis.action){
           await new Promise(resolve=>setTimeout(resolve,1600));
           if(token===generation&&$('ai-auto').checked)await execute();
@@ -101,14 +117,14 @@ window.AIOpponent=(()=>{
   }
   async function execute(){
     const {game:g,idle}=context();if(!job||!analysis?.action||!idle||!ownsTurn()||executing||identity(g)!==identity(binding))return;
-    const expected={...binding},token=generation;executing=true;window.TableModes.setAIExecuting?.(true);message('正在执行 AI 当前这一杆…');refreshUI();
+    const expected={...binding},token=generation;executing=true;clearTimeout(rollingTimer);rollingTimer=null;window.TableModes.setAIExecuting?.(true);message('正在执行 AI 当前这一杆…');refreshUI();
     try{
       const value=await api('/api/ai/execute',{id:job,prefetch:true});
       if(token!==generation){if(value.prefetch)api('/api/ai/cancel',{id:value.prefetch.id}).catch(()=>{});return;}
       future=value.prefetch||null;
       analysis.action=null;job=null;
       window.TableModes.acceptAI(value,expected);
-      message(value.result?(future?.cache_hit?'本杆已提交；后续路线与实际停点相符，已复用，无需重算。':future?'本杆已提交；回放同时正在预先计算下一杆。':'本杆已提交；球停后按实际局面继续。'):'AI 已完成规则选择或摆球，可继续查看下一杆思路。');
+      message(value.result?(future?.extending?`本杆已提交；保留后续 ${future.queued_steps} 杆，回放期间从队尾继续补算。`:future?.cache_hit?'本杆已提交；后续路线与实际停点相符，已复用，无需重算。':future?'本杆已提交；回放同时正在预先计算下一杆。':'本杆已提交；球停后按实际局面继续。'):'AI 已完成规则选择或摆球，可继续查看下一杆思路。');
       if(value.result&&!value.rule_committed){pause();failed=true;message('此杆未完整仿真，未推进对局；请重试或手动接管。');}
     }catch(e){if(token===generation){pause();failed=true;message(e.message);}}
     finally{executing=false;window.TableModes.setAIExecuting?.(false);refreshUI();}

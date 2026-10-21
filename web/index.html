@@ -51,7 +51,7 @@
     <aside>
       <section id="ai-panel" class="card ai-panel" hidden>
         <div class="section-title"><h2>AI 清台思路</h2><span id="ai-model" class="pill">模拟训练 · 进球与走位平衡</span></div>
-        <p class="hint">进攻优先，允许合法借碰与K球；没有合适进攻时尝试多库解球和防守。开球调用随机微缝离线策略，冲散后再分析台面。球运动时预先规划，停点符合预期则复用已验证路线。</p>
+        <p class="hint">进攻优先，允许合法借碰与K球；没有合适进攻时尝试多库解球和防守。开球调用随机微缝离线策略，冲散后再分析台面。执行第1杆时从原第3杆的预测停点补算第4杆，执行第2杆时继续补算第5杆；已验证前序杆保持不变，持续补足后续三杆。</p>
         <label class="plan-check"><input id="ai-auto" type="checkbox"> 自动对打（思考后执行；取消勾选可暂停）</label>
         <div class="plan-actions"><button id="ai-think" class="primary">查看 AI 思路</button><button id="ai-execute" disabled>执行当前这一杆</button><button id="ai-cancel" disabled>暂停／取消</button><button id="ai-export" disabled>导出 AI 分析</button></div>
         <p id="ai-status" class="plan-status" role="status" aria-live="polite">选择 AI 对手后开始。</p><div id="ai-routes"></div>
