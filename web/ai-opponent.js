@@ -3,22 +3,23 @@
 // Analysis is tied to the server game revision. Only /execute advances a match.
 window.AIOpponent=(()=>{
   let generation=0,job=null,thinking=false,executing=false,analysis=null,binding=null;
+  let source=null;
   let scheduled=null,attempted='',viewKey='',failed=false;
   const context=()=>window.TableModes?.aiContext()||{game:null,idle:false};
-  function ownsTurn(){const {game:g}=context();return Boolean(window.TableModes?.isRules()&&g&&g.ai_player!=null&&g.phase!=='finished'&&(g.phase==='choice'?g.chooser:g.turn)===g.ai_player);}
+  function ownsTurn(){const {game:g}=context();return Boolean(window.TableModes?.isRules()&&g&&g.ai_player!=null&&['playing','choice'].includes(g.phase)&&(g.phase==='choice'?g.chooser:g.turn)===g.ai_player);}
   const identity=g=>g?`${g.id}:${g.revision}`:'';
   function message(text){$('ai-status').textContent=text;}
   function pause(){ $('ai-auto').checked=false;clearTimeout(scheduled);scheduled=null;refresh(); }
   function cancelForChange(){
     generation++;clearTimeout(scheduled);scheduled=null;
     if(job)api('/api/ai/cancel',{id:job}).catch(()=>{});
-    job=null;thinking=false;analysis=null;binding=null;attempted='';viewKey='';failed=false;
+    job=null;thinking=false;analysis=null;binding=null;source=null;attempted='';viewKey='';failed=false;
     $('ai-routes').replaceChildren();
   }
   function cancel(){pause();cancelForChange();message('AI 已暂停；可重新思考，或切换本地双人接管。');refreshUI();}
   function render(value){
     $('ai-routes').replaceChildren();
-    $('ai-model').textContent=value.model==='short-runout-value-v1'?'已训练 · 模拟残局评价':'基础策略';
+    $('ai-model').textContent=value.model?.startsWith('short-runout-value-')?'已训练 · 进球优先评价':'基础策略';
     if(!value.routes?.length){message(value.message||'本次未找到符合限制的方案。');return;}
     message(`${value.routes[0].clear_verified?'已验证清台路线':'找到部分续接'} · ${value.evaluations} 次模拟 · ${value.elapsed} 秒`);
     for(const [index,route]of value.routes.entries()){
@@ -27,7 +28,7 @@ window.AIOpponent=(()=>{
       const list=document.createElement('ol');
       for(const step of route.steps){
         const item=document.createElement('li'),s=step.shot;
-        item.textContent=`${step.target} 号 → ${pocketNames[step.pocket]||step.pocket}；白球停点 ${Math.round(step.cue_final.x*1000)}, ${Math.round(step.cue_final.y*1000)} mm。${s.tip_y>.1?'高杆':s.tip_y<-.1?'低杆':'中杆'}，杆头 ${s.cue_speed.toFixed(2)} m/s；切角 ${step.cut_degrees}°，击球距离 ${step.distance_mm} mm。`;
+        item.textContent=`${step.target} 号 → ${pocketNames[step.pocket]||step.pocket}；白球停点 ${Math.round(step.cue_final.x*1000)}, ${Math.round(step.cue_final.y*1000)} mm。${s.tip_y>.1?'高杆':s.tip_y<-.1?'低杆':'中杆'}，杆头 ${s.cue_speed.toFixed(2)} m/s；切角 ${step.cut_degrees}°，白球到接触位 ${step.distance_mm} mm，目标球距袋 ${step.object_distance_mm??'未记录'} mm。`;
         if(step.human.notes.length)item.textContent+=' '+step.human.notes.join('；');
         list.append(item);
       }
@@ -49,6 +50,7 @@ window.AIOpponent=(()=>{
     $('ai-cancel').disabled=executing||(!thinking&&!scheduled&&!$('ai-auto').checked);
     $('ai-export').disabled=!analysis;
     if(g?.ai_player==null){message('选择 AI 对手后开始；也可体验三球＋黑八残局。');return;}
+    if(g?.phase==='setup'){message('摆好你自己的残局，再点击“完成摆球，开始分析”。');return;}
     if(!ownsTurn()){if(!thinking)message(g.phase==='finished'?'本局结束。可回看上一杆或开始下一局。':'轮到你击球，AI 等待中。');return;}
     if(!thinking&&!executing&&!analysis&&!failed)message('AI 回合：可先查看清台思路，或勾选自动对打。');
     if($('ai-auto').checked&&idle&&!thinking&&!executing&&attempted!==key&&!scheduled){
@@ -58,6 +60,7 @@ window.AIOpponent=(()=>{
   async function think(){
     const {game:g,idle}=context();if(!ownsTurn()||!idle||thinking||executing)return;
     const token=++generation;binding={id:g.id,revision:g.revision};const expected={...binding};
+    source={source_scene:g.scene,source_groups:g.groups,source_turn:g.turn,source_ai_player:g.ai_player};
     attempted=identity(g);analysis=null;thinking=true;failed=false;message('AI 正在思考：先检查后斯诺、近库和普通杆法限制…');refreshUI();
     try{
       const started=await api('/api/ai/start',expected);
@@ -97,9 +100,9 @@ window.AIOpponent=(()=>{
   $('ai-auto').onchange=()=>{if(!$('ai-auto').checked)pause();else{attempted='';refresh();}};
   $('ai-export').onclick=()=>{
     if(!analysis)return;
-    const data={kind:'zhongba-ai-analysis',schema_version:1,...binding,analysis};
+    const data={kind:'zhongba-ai-analysis',schema_version:2,...binding,...source,analysis};
     const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
     const link=document.createElement('a');link.href=url;link.download='AI清台思路.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   };
-  return {refresh,ownsTurn,cancelForChange,pause};
+  return {refresh,ownsTurn,cancelForChange,pause,think};
 })();

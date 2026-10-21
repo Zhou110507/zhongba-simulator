@@ -17,7 +17,7 @@ from billiards.cue import ShotInput
 from billiards.game import GameStore
 from billiards.model import Ball, Vec2
 from billiards.play import PlayService
-from billiards.pockets import unsupported_pocket, validate_position
+from billiards.pockets import unsupported_pocket, validate_position, outline
 from billiards.runout import FEATURE_NAMES, MODEL_VERSION, Search, features, shot_options
 
 
@@ -32,6 +32,9 @@ def layout(service, seed):
         for _ in range(1000):
             p=Vec2(float(rng.uniform(.08,2.46)),float(rng.uniform(.08,1.19)))
             if key=='cue' and seed%4==0:p=Vec2(float(rng.uniform(.07,.14)),float(rng.uniform(.18,1.09)))
+            if key=='1' and seed%5==0:
+                pocket=outline(service.table).pockets[int(rng.integers(0,6))]
+                p=pocket.mouth-pocket.outward*float(rng.uniform(.15,.4))+pocket.tangent*float(rng.uniform(-.1,.1))
             if key=='10' and seed%4==1:
                 p=balls[0].position+Vec2(float(rng.uniform(-.15,.15)),float(rng.uniform(-.15,.15)))
             candidate=Ball(key,p,spec=service.ball_spec)
@@ -98,7 +101,7 @@ def generate(service, count, output):
     data={'version':1,'source':'synthetic_shared_physics_rollouts','layout_count':count,
           'physics_signature':service.signature,'human_policy':search.policy,'features':FEATURE_NAMES,
           'simulations':simulations,'rows':rows,'branches':branches,
-          'label_definition':'Bounded rollout completion discounted by ordinary-stroke difficulty (moderate distance, cut angle, rail/rear access and clearance); small partial-progress credit. A low value is not proof that a clear is impossible.'}
+          'label_definition':'Bounded rollout completion discounted by potting geometric tolerance first (both travel distances, cut angle and pocket entry), then ordinary position effort and cue access; small partial-progress credit. Not measured human probabilities or proof of impossibility.'}
     output.parent.mkdir(parents=True,exist_ok=True)
     output.write_text(json.dumps(data,ensure_ascii=False),encoding='utf-8')
     return data
@@ -188,7 +191,7 @@ def train(service,data,output):
 
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--layouts',type=int,default=120)
+    parser=argparse.ArgumentParser();parser.add_argument('--layouts',type=int,default=180)
     parser.add_argument('--reuse',action='store_true');args=parser.parse_args()
     service=PlayService(table_profile='cbsa_2017')
     dataset=service.root/'artifacts'/'ai-training'/'rollouts.json'

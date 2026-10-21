@@ -186,6 +186,16 @@ def test_ai_http_is_opt_in_cancellable_and_revision_bound(server):
     assert request(server,'GET','/assets/ai-opponent.js')[0]==200
 
 
+def test_ai_layout_import_accepts_practice_scenes_without_changing_their_profile(server,service):
+    scene=deepcopy(service.presets()[0]['scene']);before=deepcopy(scene)
+    status,_,raw=request(server,'POST','/api/ai/layout',json.dumps(scene).encode())
+    assert status==200
+    converted=json.loads(raw)['scene']
+    assert converted['table']['width']==1.27 and scene['table']['width']==1.26
+    assert converted['balls']==scene['balls'] and scene==before
+    assert request(server,'POST','/api/ai/layout',b'{"kind":"unknown"}')[0]==400
+
+
 def test_lab_and_calibration_endpoints_keep_profile_state_immutable(server,service):
     original=deepcopy(service.model)
     status,_,body=request(server,'GET','/lab')

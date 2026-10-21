@@ -68,3 +68,22 @@ test('practice and planner tabs preserve the same layout, shot and preview',asyn
   await $('free-mode').onclick();assert.equal(flow.isPlanner(),false);assert.equal($('shot-settings').hidden,false);
   assert.equal(count(),n);assert.deepEqual(c.scene,scene);assert.equal(c.record,preview);
 });
+
+test('custom AI layout creates a new setup and enables editing without unlocking formal games',async()=>{
+  const {c,$,flow,game,requests}=await harness();
+  assert.equal($('selected-ball').disabled,true);
+  let payload;
+  c.api=async(path,data)=>{
+    payload=data;requests.push({path,data});
+    return {...game,id:'custom-match',phase:'setup',scenario:'ai_custom',ai_player:1,groups:['stripe','solid'],is_break:false,ball_in_hand:null};
+  };
+  // The real renderer first restores the generic controls, then applies mode locks.
+  c.refreshUI=()=>{for(const id of ['selected-ball','ball-x','ball-y','add','remove','undo','import'])$(id).disabled=flow.locksAction();flow.refresh();};
+  await $('ai-custom').onclick();
+  assert.equal(payload.scenario,'ai_custom');assert.deepEqual(payload.scene,game.scene);
+  assert.equal(flow.isSetup(),true);assert.equal(flow.locksAction(),false);
+  assert.equal($('selected-ball').disabled,false);assert.equal($('ball-x').disabled,false);
+  assert.equal($('add').disabled,false);assert.equal($('import').disabled,false);
+  assert.equal($('shoot').disabled,true);assert.equal($('ai-finish-setup').hidden,false);
+  assert.equal(flow.exportRules(),false);
+});

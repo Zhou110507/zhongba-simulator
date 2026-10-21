@@ -1,0 +1,90 @@
+[
+  {
+    "pocket": "bottom-middle",
+    "cue_distance": 0.6068567561624407,
+    "object_distance": 0.31200000000000006,
+    "cut_degrees": 58.96742800796652,
+    "geometric_half_window_degrees": 0.1285152636207761,
+    "cost": 0.9826961693117539,
+    "shot": {
+      "angle_deg": 329.07776165797605,
+      "cue_speed": 1.1,
+      "tip_x": 0.0,
+      "tip_y": 0.0
+    },
+    "probes": [
+      {
+        "angle_delta": -0.2,
+        "legal_pot": true
+      },
+      {
+        "angle_delta": -0.1,
+        "legal_pot": true
+      },
+      {
+        "angle_delta": -0.05,
+        "legal_pot": true
+      },
+      {
+        "angle_delta": 0.0,
+        "legal_pot": true
+      },
+      {
+        "angle_delta": 0.05,
+        "legal_pot": true
+      },
+      {
+        "angle_delta": 0.1,
+        "legal_pot": false
+      },
+      {
+        "angle_delta": 0.2,
+        "legal_pot": false
+      }
+    ]
+  },
+  {
+    "pocket": "bottom-right",
+    "cue_distance": 0.5860656533524738,
+    "object_distance": 1.2966477778237344,
+    "cut_degrees": 25.30225209686858,
+    "geometric_half_window_degrees": 0.02640442320753861,
+    "cost": 2.637244620148407,
+    "shot": {
+      "angle_deg": 322.26990324355955,
+      "cue_speed": 1.1,
+      "tip_x": 0.0,
+      "tip_y": 0.0
+    },
+    "probes": [
+      {
+        "angle_delta": -0.2,
+        "legal_pot": false
+      },
+      {
+        "angle_delta": -0.1,
+        "legal_pot": true
+      },
+      {
+        "angle_delta": -0.05,
+        "legal_pot": true
+      },
+      {
+        "angle_delta": 0.0,
+        "legal_pot": true
+      },
+      {
+        "angle_delta": 0.05,
+        "legal_pot": false
+      },
+      {
+        "angle_delta": 0.1,
+        "legal_pot": false
+      },
+      {
+        "angle_delta": 0.2,
+        "legal_pot": false
+      }
+    ]
+  }
+]

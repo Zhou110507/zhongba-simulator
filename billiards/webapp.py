@@ -108,7 +108,7 @@ def make_handler(service):
             path = urlsplit(self.path).path
             if path not in ('/api/validate','/api/shot','/api/lab','/api/calibration','/api/free-table',
                             '/api/game/new','/api/game/get','/api/game/action','/api/game/preview',
-                            '/api/ai/start','/api/ai/status','/api/ai/cancel','/api/ai/execute',
+                            '/api/ai/start','/api/ai/status','/api/ai/cancel','/api/ai/execute','/api/ai/layout',
                             '/api/plan/start','/api/plan/status','/api/plan/cancel','/api/plan/example'):
                 self.send_json(404,{'error':'未知接口'})
                 return
@@ -131,7 +131,11 @@ def make_handler(service):
                     self.send_json(200, response)
                     return
                 if path.startswith('/api/ai/') and not path.endswith('/execute'):
-                    response=opponents.start(data) if path.endswith('/start') else opponents.status(data,cancel=path.endswith('/cancel'))
+                    if path.endswith('/layout'):
+                        balls,shot=scene_service(data).decode(data)
+                        response=rules_service.validate(rules_service.snapshot(balls,shot))
+                    else:
+                        response=opponents.start(data) if path.endswith('/start') else opponents.status(data,cancel=path.endswith('/cancel'))
                     self.send_json(200,response)
                     return
                 if not jobs.acquire(blocking=False):

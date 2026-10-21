@@ -98,14 +98,19 @@ class GameStore:
         ai_player=data.get('ai_player')
         if ai_player is not None:integer(ai_player,'AI 所在方',0,1)
         scenario=data.get('scenario','rack')
-        if scenario not in ('rack','ai_endgame'):raise ValueError('未知对局场景')
+        if scenario not in ('rack','ai_endgame','ai_custom'):raise ValueError('未知对局场景')
+        ai_group=data.get('ai_group','solid')
+        if ai_group not in ('solid','stripe'):raise ValueError('AI 球组必须是全色或花色')
+        custom_scene=None
+        if scenario=='ai_custom' and data.get('scene') is not None:
+            custom_scene=self.service.validate(data['scene'])['scene']
         with self.lock:
             state={'id':uuid4().hex,'revision':0,'rule_version':RULE_VERSION,'scores':[0,0],
                    'rack_number':1,'history':[],'last_decision':None,'seed':seed,'gap_mm':gap,'rack_version':'bounded-micro-gaps-v1'}
             self._rack(state,breaker,seed)
             state['ai_player']=ai_player
             state['scenario']=scenario
-            if scenario=='ai_endgame':
+            if scenario in ('ai_endgame','ai_custom'):
                 # Explicit practice start, separate from the normal fifteen-ball rack.
                 ai_player=1 if ai_player is None else ai_player
                 state.update(ai_player=ai_player,turn=ai_player,is_break=False,ball_in_hand=None,
@@ -114,6 +119,10 @@ class GameStore:
                         ('8',1.98,.32),('9',.35,.40),('10',2.28,.65)]
                 state['scene']=self.service.snapshot([Ball(key,Vec2(x,y),spec=self.service.ball_spec)
                                                       for key,x,y in layout],ShotInput(0,1.1))
+            if scenario=='ai_custom':
+                state['phase']='setup'
+                if custom_scene is not None:state['scene']=custom_scene
+                state['groups']=[ai_group if i==state['ai_player'] else ('stripe' if ai_group=='solid' else 'solid') for i in range(2)]
             self.games[state['id']]=state;self._save(state)
             while len(self.games)>8:
                 old,_=self.games.popitem(last=False);self.cache.pop(old,None)
@@ -127,7 +136,7 @@ class GameStore:
         with self.lock:
             state=self._checked(data)
             who=state['chooser'] if state['phase']=='choice' else state['turn']
-            if state.get('ai_player') is None or who!=state['ai_player'] or state['phase']=='finished':
+            if state.get('ai_player') is None or who!=state['ai_player'] or state['phase'] not in ('playing','choice'):
                 raise ValueError('当前不是 AI 的回合')
             return deepcopy(state)
 
@@ -206,6 +215,22 @@ class GameStore:
                 ai_player=data.get('ai_player')
                 if ai_player is not None:integer(ai_player,'AI 所在方',0,1)
                 state=deepcopy(state);state['ai_player']=ai_player
+            elif action=='finish_setup':
+                if state.get('scenario')!='ai_custom' or state['phase']!='setup':raise ValueError('当前不在 AI 残局摆球中')
+                scene=self.service.validate(data.get('scene'))['scene']
+                balls,_=self.service.decode(scene)
+                if not any(b.id=='8' and b.pocket is None for b in balls):raise ValueError('残局需要一颗在台的 8 号球')
+                if any(b.id=='cue' and b.pocket is not None for b in balls):raise ValueError('请先把白球放回台面')
+                if any(b.pocket is None and unsupported_pocket(b,self.service.table) for b in balls):
+                    raise ValueError('请把在台球移出袋口下球区域')
+                chosen=data.get('ai_group','solid')
+                if chosen not in ('solid','stripe'):raise ValueError('请选择 AI 的球组')
+                player=integer(data.get('ai_player',state.get('ai_player',1)),'AI 所在方',0,1)
+                state=deepcopy(state)
+                state.update(scene=scene,phase='playing',turn=player,ai_player=player,is_break=False,
+                             groups=[chosen if i==player else ('stripe' if chosen=='solid' else 'solid') for i in range(2)],
+                             scores=[0,0],winner=None,history=[],last_decision=None,
+                             ball_in_hand=None,needs_placement=False)
             else:raise ValueError('未知对局操作')
             state['revision']=before['revision']+1
             self.service.decode(state['scene'])

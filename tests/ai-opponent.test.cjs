@@ -32,6 +32,13 @@ test('AI is opt-in and does not lock practice or local two-player controls',()=>
   assert.equal(h.flow.ownsTurn(),false);assert.equal(h.$('ai-panel').hidden,true);
 });
 
+test('setup never schedules AI or locks the layout editor',()=>{
+  const h=harness();h.ctx.game.phase='setup';h.$('ai-auto').checked=true;h.flow.refresh();
+  assert.equal(h.flow.ownsTurn(),false);assert.equal(h.scheduled.size,0);
+  assert.equal(h.$('ai-think').disabled,true);
+  assert.match(h.$('ai-status').textContent,/摆好/);
+});
+
 test('thinking returns a plan without committing; execution is a separate action',async()=>{
   const h=harness();await h.$('ai-think').onclick();
   assert.equal(h.accepted(),0);assert.equal(h.$('ai-execute').disabled,false);

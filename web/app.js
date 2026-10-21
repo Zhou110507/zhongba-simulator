@@ -69,7 +69,7 @@ function refreshLaunch() {
 function setScene(value, preset = 'custom', remember = true) {
   if (remember && scene) pushHistory();
   invalidate(); scene = clone(value); selected = 'cue'; pending = null; drag = null;
-  $('preset').value = preset; mode = active(cueBall()) ? 'aim' : 'edit';
+  $('preset').value = preset; mode = active(cueBall())&&!window.TableModes?.isSetup() ? 'aim' : 'edit';
   pending = active(cueBall()) ? null : 'cue';
   syncShotControls(); refreshSelection(); storeScene(); refreshLaunch(); refreshUI(); draw();
   window.TableModes?.onScene();
@@ -217,13 +217,13 @@ function positionError(id, position) {
 }
 
 function placeBall(id, position, adding=false) {
-  if(window.TableModes?.isRules())return window.TableModes.place(id,position);
+  if(window.TableModes?.isRules()&&!window.TableModes.isSetup())return window.TableModes.place(id,position);
   const error = positionError(id,position); if (error) { announce(error,true); return false; }
   pushHistory(); invalidate();
   if (adding) scene.balls.push({id,position,velocity:{x:0,y:0},omega:{x:0,y:0,z:0},spec:clone(config.ball_spec),pocket:null});
   else { const ball=scene.balls.find(ball=>ball.id===id); ball.position=position; ball.pocket=null; }
   selected=id; pending=null; $('preset').value='custom'; refreshSelection(); storeScene(); refreshLaunch(); refreshUI(); window.TableModes?.onScene(); draw();
-  announce(`${ballName(id)}已摆好。切换到瞄准即可出杆。`); return true;
+  announce(window.TableModes?.isSetup()?`${ballName(id)}已摆好。可继续编辑，或点击“完成摆球，开始分析”。`:`${ballName(id)}已摆好。切换到瞄准即可出杆。`); return true;
 }
 
 function paintBall(ball, map, ghost=false) {
@@ -368,6 +368,7 @@ function drawContactGuide(map) {
 }
 
 function updateContactReadout() {
+  if(window.TableModes?.isSetup()){$('guide-info').textContent='自由摆球阶段：完成摆球后，AI 将按新球形重新分析。';$('contact-analysis').textContent='';return;}
   const source=record||guideRecord;
   if (!source) {
     const limits=ShotGuide.drawWindow(cueBall(),scene.shot,config.model);
@@ -426,7 +427,7 @@ tipCanvas.addEventListener('pointermove',event=>{if(tipDragging)tipPointer(event
 tipCanvas.addEventListener('pointerup',()=>tipDragging=false);tipCanvas.addEventListener('pointercancel',()=>tipDragging=false);
 
 $('aim-mode').onclick=()=>{mode='aim';pending=null;refreshUI();draw();};
-$('edit-mode').onclick=()=>{if(window.TableModes?.isRules())return window.TableModes.beginPlace();mode='edit';pending=active(cueBall())?null:'cue';refreshUI();draw();};
+$('edit-mode').onclick=()=>{if(window.TableModes?.isRules()&&!window.TableModes.isSetup())return window.TableModes.beginPlace();mode='edit';pending=active(cueBall())?null:'cue';refreshUI();draw();};
 $('angle').oninput=event=>{const angle=Number(event.target.value);if(!Number.isFinite(angle))return;invalidate();scene.shot.angle_deg=(angle%360+360)%360;$('preset').value='custom';storeScene();refreshLaunch();refreshUI();draw();};
 $('angle').onchange=()=>syncShotControls();
 $('power').oninput=event=>{invalidate();scene.shot.cue_speed=Number(event.target.value)/100*config.limits.max_cue_speed;$('preset').value='custom';updateShotLabels();storeScene();refreshLaunch();refreshUI();draw();};
@@ -447,7 +448,7 @@ $('undo').onclick=()=>{if(!history.length||locked())return;const previous=histor
 $('preset').onchange=event=>{const preset=config.presets.find(preset=>preset.id===event.target.value);if(preset){setScene(preset.scene,preset.id);announce(`已载入${preset.name}，可直接出杆或自由调整。`);}};
 $('save').onclick=()=>{if(window.TableModes?.exportRules())return;const blob=new Blob([JSON.stringify(scene,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download='中八练习场景.json';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);announce('已保存出杆前场景与完整参数，导入后可复现这一杆。');};
 $('import').onclick=()=>$('file').click();
-$('file').onchange=async event=>{if(window.TableModes?.isRules()){event.target.value='';return;}const file=event.target.files[0];if(!file)return;try{if(file.size>65536)throw new Error('场景文件不能超过 64 KB');const data=JSON.parse(await file.text()),currentRevision=revision,value=await api('/api/validate',data);if(revision!==currentRevision)return;setScene(value.scene);announce('场景已导入，球桌与物理版本校验通过。');}catch(error){announce(error.message,true);}finally{event.target.value='';}};
+$('file').onchange=async event=>{if(window.TableModes?.isRules()&&!window.TableModes.isSetup()){event.target.value='';return;}const file=event.target.files[0];if(!file)return;try{if(file.size>65536)throw new Error('场景文件不能超过 64 KB');let data=JSON.parse(await file.text());if(window.TableModes?.isSetup()&&data.kind==='zhongba-ai-analysis'){if(!data.source_scene)throw new Error('这份旧版 AI 分析没有原始球位，请导入已保存的场景文件');data=data.source_scene;}const currentRevision=revision,value=await api(window.TableModes?.isSetup()?'/api/ai/layout':'/api/validate',data);if(window.TableModes?.isSetup()&&value.scene.model_signature!==config.model_signature)throw new Error('请导入当前中八台型的残局场景或新版 AI 分析记录');if(revision!==currentRevision)return;setScene(value.scene);announce('场景已导入，球桌与物理版本校验通过。');}catch(error){announce(error.message,true);}finally{event.target.value='';}};
 document.addEventListener('keydown',event=>{
   if(!scene||['INPUT','SELECT','TEXTAREA'].includes(event.target.tagName))return;
   if(event.code==='Space'){event.preventDefault();if(fired)$('play').click();else calculate(true);}

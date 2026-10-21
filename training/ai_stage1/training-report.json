@@ -1,26 +1,26 @@
 {
   "training": {
     "seed": 20261021,
-    "selected_epoch": 80,
+    "selected_epoch": 180,
     "total_epochs": 1600,
-    "layout_count": 120,
-    "sample_count": 676,
-    "dataset_sha256": "de605b0c9d3bbb7360442dc23713c19f2aebd8b31664dcba684f10c39d3ac85d",
+    "layout_count": 180,
+    "sample_count": 997,
+    "dataset_sha256": "ad3d77336e2ad4d9a0ab76aa4989aa59ab129d31c0f4a663a87bfcfe1ae4cc56",
     "source": "synthetic_shared_physics_rollouts",
-    "label_definition": "Bounded rollout completion discounted by ordinary-stroke difficulty (moderate distance, cut angle, rail/rear access and clearance); small partial-progress credit. A low value is not proof that a clear is impossible.",
+    "label_definition": "Bounded rollout completion discounted by potting geometric tolerance first (both travel distances, cut angle and pocket entry), then ordinary position effort and cue access; small partial-progress credit. Not measured human probabilities or proof of impossibility.",
     "metrics": {
       "train": {
         "model": {
-          "samples": 483,
-          "mean_target": 0.4158,
-          "mse": 0.04622,
-          "log_loss": 0.57041
+          "samples": 692,
+          "mean_target": 0.2587,
+          "mse": 0.01038,
+          "log_loss": 0.47927
         },
         "constant_baseline": {
-          "samples": 483,
-          "mean_target": 0.4158,
-          "mse": 0.08965,
-          "log_loss": 0.67889
+          "samples": 692,
+          "mean_target": 0.2587,
+          "mse": 0.04043,
+          "log_loss": 0.57164
         },
         "layout_seeds": [
           17001,
@@ -102,21 +102,61 @@
           17115,
           17116,
           17117,
-          17118
+          17118,
+          17121,
+          17122,
+          17123,
+          17124,
+          17127,
+          17128,
+          17129,
+          17130,
+          17133,
+          17134,
+          17135,
+          17136,
+          17139,
+          17140,
+          17141,
+          17142,
+          17145,
+          17146,
+          17147,
+          17148,
+          17151,
+          17152,
+          17153,
+          17154,
+          17157,
+          17158,
+          17159,
+          17160,
+          17163,
+          17164,
+          17165,
+          17166,
+          17169,
+          17170,
+          17171,
+          17172,
+          17175,
+          17176,
+          17177,
+          17178
         ]
       },
       "validation": {
         "model": {
-          "samples": 97,
-          "mean_target": 0.3801,
-          "mse": 0.04836,
-          "log_loss": 0.50616
+          "samples": 174,
+          "mean_target": 0.2346,
+          "mse": 0.01631,
+          "log_loss": 0.46402
         },
         "constant_baseline": {
-          "samples": 97,
-          "mean_target": 0.3801,
-          "mse": 0.11171,
-          "log_loss": 0.66675
+          "samples": 174,
+          "mean_target": 0.2346,
+          "mse": 0.0425,
+          "log_loss": 0.54636
         },
         "layout_seeds": [
           17005,
@@ -138,21 +178,31 @@
           17101,
           17107,
           17113,
-          17119
+          17119,
+          17125,
+          17131,
+          17137,
+          17143,
+          17149,
+          17155,
+          17161,
+          17167,
+          17173,
+          17179
         ]
       },
       "test": {
         "model": {
-          "samples": 96,
-          "mean_target": 0.5317,
-          "mse": 0.04241,
-          "log_loss": 0.66146
+          "samples": 131,
+          "mean_target": 0.2334,
+          "mse": 0.01504,
+          "log_loss": 0.45285
         },
         "constant_baseline": {
-          "samples": 96,
-          "mean_target": 0.5317,
-          "mse": 0.0681,
-          "log_loss": 0.71831
+          "samples": 131,
+          "mean_target": 0.2334,
+          "mse": 0.04582,
+          "log_loss": 0.54509
         },
         "layout_seeds": [
           17006,
@@ -174,40 +224,50 @@
           17102,
           17108,
           17114,
-          17120
+          17120,
+          17126,
+          17132,
+          17138,
+          17144,
+          17150,
+          17156,
+          17162,
+          17168,
+          17174,
+          17180
         ]
       }
     },
     "candidate_ranking": {
       "train": {
-        "layouts_with_candidates": 69,
-        "baseline_clears": 49,
-        "trained_ranking_clears": 49,
-        "candidate_set_best_possible": 59,
-        "baseline_quality": 0.4699,
-        "trained_quality": 0.4704,
-        "baseline_mean_difficulty": 0.9256,
-        "trained_mean_difficulty": 0.9282
+        "layouts_with_candidates": 104,
+        "baseline_clears": 77,
+        "trained_ranking_clears": 78,
+        "candidate_set_best_possible": 91,
+        "baseline_quality": 0.2863,
+        "trained_quality": 0.2903,
+        "baseline_mean_difficulty": 2.124,
+        "trained_mean_difficulty": 2.1213
       },
       "validation": {
-        "layouts_with_candidates": 15,
-        "baseline_clears": 11,
-        "trained_ranking_clears": 11,
-        "candidate_set_best_possible": 11,
-        "baseline_quality": 0.4922,
-        "trained_quality": 0.4922,
-        "baseline_mean_difficulty": 0.8398,
-        "trained_mean_difficulty": 0.8398
+        "layouts_with_candidates": 25,
+        "baseline_clears": 20,
+        "trained_ranking_clears": 20,
+        "candidate_set_best_possible": 21,
+        "baseline_quality": 0.3012,
+        "trained_quality": 0.3012,
+        "baseline_mean_difficulty": 2.0496,
+        "trained_mean_difficulty": 2.0496
       },
       "test": {
-        "layouts_with_candidates": 14,
-        "baseline_clears": 13,
-        "trained_ranking_clears": 13,
-        "candidate_set_best_possible": 13,
-        "baseline_quality": 0.6113,
-        "trained_quality": 0.6119,
-        "baseline_mean_difficulty": 0.9237,
-        "trained_mean_difficulty": 0.9259
+        "layouts_with_candidates": 20,
+        "baseline_clears": 15,
+        "trained_ranking_clears": 15,
+        "candidate_set_best_possible": 17,
+        "baseline_quality": 0.2624,
+        "trained_quality": 0.2624,
+        "baseline_mean_difficulty": 2.057,
+        "trained_mean_difficulty": 2.057
       }
     },
     "limitations": "Pilot synthetic data. Scores are rollout-policy values, not calibrated human success probabilities. No professional video training."
@@ -216,1201 +276,1201 @@
     {
       "epoch": 20,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.05685,
-        "log_loss": 0.60038
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.03233,
+        "log_loss": 0.54774
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.0568,
-        "log_loss": 0.536
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.03368,
+        "log_loss": 0.52064
       }
     },
     {
       "epoch": 40,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.05265,
-        "log_loss": 0.58681
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.01497,
+        "log_loss": 0.49496
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.04821,
-        "log_loss": 0.50836
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01802,
+        "log_loss": 0.47076
       }
     },
     {
       "epoch": 60,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.04958,
-        "log_loss": 0.57854
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.01369,
+        "log_loss": 0.48959
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.04824,
-        "log_loss": 0.50702
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01801,
+        "log_loss": 0.4681
       }
     },
     {
       "epoch": 80,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.04639,
-        "log_loss": 0.57081
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.0128,
+        "log_loss": 0.48687
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.04836,
-        "log_loss": 0.50616
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01808,
+        "log_loss": 0.46817
       }
     },
     {
       "epoch": 100,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.04309,
-        "log_loss": 0.56296
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.01215,
+        "log_loss": 0.48485
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.04988,
-        "log_loss": 0.50851
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01747,
+        "log_loss": 0.46664
       }
     },
     {
       "epoch": 120,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.04013,
-        "log_loss": 0.55587
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.01164,
+        "log_loss": 0.48315
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.05117,
-        "log_loss": 0.51056
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01688,
+        "log_loss": 0.46508
       }
     },
     {
       "epoch": 140,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.03763,
-        "log_loss": 0.54953
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.01119,
+        "log_loss": 0.48168
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.05311,
-        "log_loss": 0.51436
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01661,
+        "log_loss": 0.46442
       }
     },
     {
       "epoch": 160,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.0354,
-        "log_loss": 0.54384
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.01076,
+        "log_loss": 0.48042
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.05475,
-        "log_loss": 0.51789
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01644,
+        "log_loss": 0.46417
       }
     },
     {
       "epoch": 180,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.03323,
-        "log_loss": 0.53838
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.01039,
+        "log_loss": 0.47932
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.05644,
-        "log_loss": 0.52153
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01631,
+        "log_loss": 0.46402
       }
     },
     {
       "epoch": 200,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.03127,
-        "log_loss": 0.53346
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.01008,
+        "log_loss": 0.47837
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.05799,
-        "log_loss": 0.52474
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01627,
+        "log_loss": 0.46406
       }
     },
     {
       "epoch": 220,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02971,
-        "log_loss": 0.52947
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.0098,
+        "log_loss": 0.47753
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.05921,
-        "log_loss": 0.52739
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01631,
+        "log_loss": 0.46426
       }
     },
     {
       "epoch": 240,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02843,
-        "log_loss": 0.5263
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00956,
+        "log_loss": 0.4768
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.05994,
-        "log_loss": 0.52897
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01636,
+        "log_loss": 0.46448
       }
     },
     {
       "epoch": 260,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02739,
-        "log_loss": 0.52369
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00937,
+        "log_loss": 0.47623
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06035,
-        "log_loss": 0.52965
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01639,
+        "log_loss": 0.46463
       }
     },
     {
       "epoch": 280,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02649,
-        "log_loss": 0.52147
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00924,
+        "log_loss": 0.47579
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.0606,
-        "log_loss": 0.52976
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01643,
+        "log_loss": 0.46477
       }
     },
     {
       "epoch": 300,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02557,
-        "log_loss": 0.5192
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00913,
+        "log_loss": 0.47544
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06097,
-        "log_loss": 0.52994
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01651,
+        "log_loss": 0.46496
       }
     },
     {
       "epoch": 320,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02469,
-        "log_loss": 0.51701
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00903,
+        "log_loss": 0.47514
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.0615,
-        "log_loss": 0.5311
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.0166,
+        "log_loss": 0.46518
       }
     },
     {
       "epoch": 340,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02395,
-        "log_loss": 0.51513
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00895,
+        "log_loss": 0.47488
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06211,
-        "log_loss": 0.53284
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01668,
+        "log_loss": 0.46535
       }
     },
     {
       "epoch": 360,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02336,
-        "log_loss": 0.51357
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00888,
+        "log_loss": 0.47467
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.0625,
-        "log_loss": 0.53396
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01675,
+        "log_loss": 0.46547
       }
     },
     {
       "epoch": 380,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.0229,
-        "log_loss": 0.51231
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00881,
+        "log_loss": 0.47447
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06231,
-        "log_loss": 0.53359
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01682,
+        "log_loss": 0.4656
       }
     },
     {
       "epoch": 400,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02252,
-        "log_loss": 0.51126
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00875,
+        "log_loss": 0.4743
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06199,
-        "log_loss": 0.53291
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01689,
+        "log_loss": 0.46576
       }
     },
     {
       "epoch": 420,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02221,
-        "log_loss": 0.5104
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00869,
+        "log_loss": 0.47414
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06185,
-        "log_loss": 0.53278
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01697,
+        "log_loss": 0.46592
       }
     },
     {
       "epoch": 440,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02195,
-        "log_loss": 0.50971
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00864,
+        "log_loss": 0.47402
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06196,
-        "log_loss": 0.53331
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01704,
+        "log_loss": 0.46607
       }
     },
     {
       "epoch": 460,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02175,
-        "log_loss": 0.50916
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00861,
+        "log_loss": 0.47392
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06198,
-        "log_loss": 0.53365
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.0171,
+        "log_loss": 0.46619
       }
     },
     {
       "epoch": 480,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.0216,
-        "log_loss": 0.50873
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00858,
+        "log_loss": 0.47384
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06221,
-        "log_loss": 0.53445
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01716,
+        "log_loss": 0.46631
       }
     },
     {
       "epoch": 500,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02147,
-        "log_loss": 0.50838
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00855,
+        "log_loss": 0.47377
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06256,
-        "log_loss": 0.53549
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01721,
+        "log_loss": 0.46642
       }
     },
     {
       "epoch": 520,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02136,
-        "log_loss": 0.5081
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00853,
+        "log_loss": 0.47371
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06297,
-        "log_loss": 0.53663
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01726,
+        "log_loss": 0.46653
       }
     },
     {
       "epoch": 540,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02128,
-        "log_loss": 0.50786
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00851,
+        "log_loss": 0.47365
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06342,
-        "log_loss": 0.5378
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01732,
+        "log_loss": 0.46664
       }
     },
     {
       "epoch": 560,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.0212,
-        "log_loss": 0.50767
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00849,
+        "log_loss": 0.47359
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06387,
-        "log_loss": 0.53892
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01739,
+        "log_loss": 0.46677
       }
     },
     {
       "epoch": 580,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02115,
-        "log_loss": 0.50752
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00846,
+        "log_loss": 0.47352
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06428,
-        "log_loss": 0.53994
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01747,
+        "log_loss": 0.46692
       }
     },
     {
       "epoch": 600,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.0211,
-        "log_loss": 0.5074
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00844,
+        "log_loss": 0.47344
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06465,
-        "log_loss": 0.54086
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01756,
+        "log_loss": 0.46709
       }
     },
     {
       "epoch": 620,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02106,
-        "log_loss": 0.50731
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00841,
+        "log_loss": 0.47334
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06499,
-        "log_loss": 0.5417
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01766,
+        "log_loss": 0.46724
       }
     },
     {
       "epoch": 640,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02104,
-        "log_loss": 0.50724
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00838,
+        "log_loss": 0.47324
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06522,
-        "log_loss": 0.5423
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01774,
+        "log_loss": 0.46736
       }
     },
     {
       "epoch": 660,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.021,
-        "log_loss": 0.50718
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00835,
+        "log_loss": 0.47315
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06569,
-        "log_loss": 0.54342
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01782,
+        "log_loss": 0.46751
       }
     },
     {
       "epoch": 680,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02098,
-        "log_loss": 0.50712
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.0084,
+        "log_loss": 0.47328
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06585,
-        "log_loss": 0.5439
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01795,
+        "log_loss": 0.46766
       }
     },
     {
       "epoch": 700,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02096,
-        "log_loss": 0.50708
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.0083,
+        "log_loss": 0.473
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06612,
-        "log_loss": 0.54466
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01797,
+        "log_loss": 0.46784
       }
     },
     {
       "epoch": 720,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02095,
-        "log_loss": 0.50705
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00829,
+        "log_loss": 0.47295
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06639,
-        "log_loss": 0.54539
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01805,
+        "log_loss": 0.46797
       }
     },
     {
       "epoch": 740,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02093,
-        "log_loss": 0.50703
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00827,
+        "log_loss": 0.47288
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06667,
-        "log_loss": 0.54618
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01811,
+        "log_loss": 0.4681
       }
     },
     {
       "epoch": 760,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02092,
-        "log_loss": 0.507
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00825,
+        "log_loss": 0.47282
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06697,
-        "log_loss": 0.54704
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01818,
+        "log_loss": 0.46826
       }
     },
     {
       "epoch": 780,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02091,
-        "log_loss": 0.50698
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00824,
+        "log_loss": 0.47277
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06728,
-        "log_loss": 0.54797
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01824,
+        "log_loss": 0.46841
       }
     },
     {
       "epoch": 800,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02089,
-        "log_loss": 0.50696
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00823,
+        "log_loss": 0.47272
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06756,
-        "log_loss": 0.54884
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.0183,
+        "log_loss": 0.46856
       }
     },
     {
       "epoch": 820,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02092,
-        "log_loss": 0.50697
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00822,
+        "log_loss": 0.47269
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06751,
-        "log_loss": 0.54908
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01836,
+        "log_loss": 0.46873
       }
     },
     {
       "epoch": 840,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02087,
-        "log_loss": 0.50691
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00821,
+        "log_loss": 0.47265
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06767,
-        "log_loss": 0.54953
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01843,
+        "log_loss": 0.4689
       }
     },
     {
       "epoch": 860,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02084,
-        "log_loss": 0.50687
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00821,
+        "log_loss": 0.47262
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06766,
-        "log_loss": 0.54958
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01851,
+        "log_loss": 0.46908
       }
     },
     {
       "epoch": 880,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.0208,
-        "log_loss": 0.5068
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.0082,
+        "log_loss": 0.47258
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06758,
-        "log_loss": 0.54945
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01859,
+        "log_loss": 0.46926
       }
     },
     {
       "epoch": 900,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02072,
-        "log_loss": 0.50664
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.0082,
+        "log_loss": 0.47255
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06762,
-        "log_loss": 0.54973
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01868,
+        "log_loss": 0.46945
       }
     },
     {
       "epoch": 920,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02057,
-        "log_loss": 0.50632
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00819,
+        "log_loss": 0.47252
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06801,
-        "log_loss": 0.55093
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01879,
+        "log_loss": 0.46965
       }
     },
     {
       "epoch": 940,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02041,
-        "log_loss": 0.50596
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00819,
+        "log_loss": 0.47248
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06811,
-        "log_loss": 0.55119
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01892,
+        "log_loss": 0.46989
       }
     },
     {
       "epoch": 960,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02025,
-        "log_loss": 0.50558
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00819,
+        "log_loss": 0.47245
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06786,
-        "log_loss": 0.55013
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01905,
+        "log_loss": 0.47014
       }
     },
     {
       "epoch": 980,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02013,
-        "log_loss": 0.50529
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00818,
+        "log_loss": 0.47241
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06768,
-        "log_loss": 0.54883
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01918,
+        "log_loss": 0.47039
       }
     },
     {
       "epoch": 1000,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.02,
-        "log_loss": 0.50498
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00817,
+        "log_loss": 0.47236
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06758,
-        "log_loss": 0.54774
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01928,
+        "log_loss": 0.47057
       }
     },
     {
       "epoch": 1020,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01987,
-        "log_loss": 0.5047
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00815,
+        "log_loss": 0.47231
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06816,
-        "log_loss": 0.54821
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01935,
+        "log_loss": 0.47066
       }
     },
     {
       "epoch": 1040,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01975,
-        "log_loss": 0.50437
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00814,
+        "log_loss": 0.47225
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06901,
-        "log_loss": 0.54983
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01938,
+        "log_loss": 0.47069
       }
     },
     {
       "epoch": 1060,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01958,
-        "log_loss": 0.50393
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00812,
+        "log_loss": 0.47221
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.07103,
-        "log_loss": 0.55441
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01941,
+        "log_loss": 0.47071
       }
     },
     {
       "epoch": 1080,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01934,
-        "log_loss": 0.50328
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00811,
+        "log_loss": 0.47217
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.07328,
-        "log_loss": 0.55931
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01944,
+        "log_loss": 0.47074
       }
     },
     {
       "epoch": 1100,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.0191,
-        "log_loss": 0.50261
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.0081,
+        "log_loss": 0.47213
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.0748,
-        "log_loss": 0.56329
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01946,
+        "log_loss": 0.47079
       }
     },
     {
       "epoch": 1120,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01894,
-        "log_loss": 0.50221
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00809,
+        "log_loss": 0.4721
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.07536,
-        "log_loss": 0.56579
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01949,
+        "log_loss": 0.47084
       }
     },
     {
       "epoch": 1140,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01885,
-        "log_loss": 0.50199
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00808,
+        "log_loss": 0.47207
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.07525,
-        "log_loss": 0.56584
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01951,
+        "log_loss": 0.4709
       }
     },
     {
       "epoch": 1160,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01879,
-        "log_loss": 0.50179
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00807,
+        "log_loss": 0.47205
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.07421,
-        "log_loss": 0.56359
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01953,
+        "log_loss": 0.47096
       }
     },
     {
       "epoch": 1180,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01878,
-        "log_loss": 0.50173
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00806,
+        "log_loss": 0.47202
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.07356,
-        "log_loss": 0.56209
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01955,
+        "log_loss": 0.47102
       }
     },
     {
       "epoch": 1200,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01878,
-        "log_loss": 0.50169
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00805,
+        "log_loss": 0.47199
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.07271,
-        "log_loss": 0.56031
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01956,
+        "log_loss": 0.47107
       }
     },
     {
       "epoch": 1220,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01876,
-        "log_loss": 0.50162
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00804,
+        "log_loss": 0.47196
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.07234,
-        "log_loss": 0.55996
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01956,
+        "log_loss": 0.47112
       }
     },
     {
       "epoch": 1240,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01874,
-        "log_loss": 0.50157
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00804,
+        "log_loss": 0.47192
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.07207,
-        "log_loss": 0.55931
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01955,
+        "log_loss": 0.47119
       }
     },
     {
       "epoch": 1260,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01873,
-        "log_loss": 0.50153
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00802,
+        "log_loss": 0.47189
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.07171,
-        "log_loss": 0.55829
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01952,
+        "log_loss": 0.47115
       }
     },
     {
       "epoch": 1280,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01872,
-        "log_loss": 0.5015
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00801,
+        "log_loss": 0.47183
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.07133,
-        "log_loss": 0.5571
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01941,
+        "log_loss": 0.47093
       }
     },
     {
       "epoch": 1300,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.0187,
-        "log_loss": 0.50146
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00797,
+        "log_loss": 0.4717
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.07098,
-        "log_loss": 0.55596
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01925,
+        "log_loss": 0.47067
       }
     },
     {
       "epoch": 1320,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01869,
-        "log_loss": 0.50143
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00793,
+        "log_loss": 0.47154
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.07066,
-        "log_loss": 0.55491
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01907,
+        "log_loss": 0.47038
       }
     },
     {
       "epoch": 1340,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01867,
-        "log_loss": 0.50141
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00788,
+        "log_loss": 0.47138
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.07061,
-        "log_loss": 0.55444
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01895,
+        "log_loss": 0.47019
       }
     },
     {
       "epoch": 1360,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01865,
-        "log_loss": 0.5014
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00785,
+        "log_loss": 0.47127
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.0703,
-        "log_loss": 0.55348
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01886,
+        "log_loss": 0.47005
       }
     },
     {
       "epoch": 1380,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01866,
-        "log_loss": 0.50136
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00783,
+        "log_loss": 0.47118
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.07,
-        "log_loss": 0.55258
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01878,
+        "log_loss": 0.4699
       }
     },
     {
       "epoch": 1400,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01866,
-        "log_loss": 0.50133
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00781,
+        "log_loss": 0.47111
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06972,
-        "log_loss": 0.55176
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01871,
+        "log_loss": 0.46977
       }
     },
     {
       "epoch": 1420,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01864,
-        "log_loss": 0.50131
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.0078,
+        "log_loss": 0.47106
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06961,
-        "log_loss": 0.55129
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01866,
+        "log_loss": 0.46966
       }
     },
     {
       "epoch": 1440,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01863,
-        "log_loss": 0.50129
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00779,
+        "log_loss": 0.47102
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06949,
-        "log_loss": 0.55086
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01862,
+        "log_loss": 0.46957
       }
     },
     {
       "epoch": 1460,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01862,
-        "log_loss": 0.50127
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00778,
+        "log_loss": 0.47099
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06941,
-        "log_loss": 0.55049
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.0186,
+        "log_loss": 0.46951
       }
     },
     {
       "epoch": 1480,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01861,
-        "log_loss": 0.50125
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00778,
+        "log_loss": 0.47096
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06933,
-        "log_loss": 0.55018
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01859,
+        "log_loss": 0.46947
       }
     },
     {
       "epoch": 1500,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.0186,
-        "log_loss": 0.50123
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00777,
+        "log_loss": 0.47094
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06927,
-        "log_loss": 0.54991
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01859,
+        "log_loss": 0.46945
       }
     },
     {
       "epoch": 1520,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.0186,
-        "log_loss": 0.50121
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00776,
+        "log_loss": 0.47091
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.0692,
-        "log_loss": 0.54965
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01861,
+        "log_loss": 0.46944
       }
     },
     {
       "epoch": 1540,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.0186,
-        "log_loss": 0.50122
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00775,
+        "log_loss": 0.47088
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.0692,
-        "log_loss": 0.54948
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01863,
+        "log_loss": 0.46945
       }
     },
     {
       "epoch": 1560,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01859,
-        "log_loss": 0.50119
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00774,
+        "log_loss": 0.47084
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.0691,
-        "log_loss": 0.54923
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01866,
+        "log_loss": 0.46945
       }
     },
     {
       "epoch": 1580,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01858,
-        "log_loss": 0.50117
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00773,
+        "log_loss": 0.47081
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06909,
-        "log_loss": 0.54913
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01869,
+        "log_loss": 0.46945
       }
     },
     {
       "epoch": 1600,
       "train": {
-        "samples": 483,
-        "mean_target": 0.4158,
-        "mse": 0.01856,
-        "log_loss": 0.50116
+        "samples": 692,
+        "mean_target": 0.2587,
+        "mse": 0.00776,
+        "log_loss": 0.47093
       },
       "validation": {
-        "samples": 97,
-        "mean_target": 0.3801,
-        "mse": 0.06914,
-        "log_loss": 0.54916
+        "samples": 174,
+        "mean_target": 0.2346,
+        "mse": 0.01885,
+        "log_loss": 0.46956
       }
     }
   ]

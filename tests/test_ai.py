@@ -13,7 +13,7 @@ from billiards.game import GameStore
 from billiards.human_stroke import check_stroke, load_policy
 from billiards.model import Ball, Vec2
 from billiards.play import PlayService
-from billiards.runout import Search, ValueModel, features, shot_options
+from billiards.runout import MODEL_VERSION, Search, ValueModel, features, shot_options
 
 
 @pytest.fixture(scope='module')
@@ -87,9 +87,10 @@ def test_endgame_search_replays_a_real_rule_valid_clear_with_human_constraints(s
     original=deepcopy(state)
     search=Search(service,seconds=25,evaluations=900)
     result=search.solve(state)
-    assert state==original and result['model']=='short-runout-value-v1'
+    assert state==original and result['model']==MODEL_VERSION
     assert result['status']=='found' and result['endgame']
     route=result['routes'][0];assert route['clear_verified']
+    assert next(s for s in route['steps'] if s['target']=='1')['pocket']=='bottom-middle'
     assert route['steps'][-1]['target']=='8'
     current=state
     for step in route['steps']:
@@ -144,3 +145,51 @@ def test_free_placement_and_rule_choice_are_explicit_ai_actions(service):
     assert result['action']['action']=='place' and state==before
     state.update(phase='choice',choices=['choose_solid','choose_stripe'],chooser=state['turn'])
     assert decide(service,state)['action']['choice'] in state['choices']
+
+
+@pytest.mark.parametrize('mirror',[False,True])
+def test_near_pocket_cut_is_easier_than_long_straight_object_travel(service,mirror):
+    state=GameStore(service).new({'scenario':'ai_endgame'})
+    if mirror:
+        for b in state['scene']['balls']:
+            b['position']={'x':service.table.length-b['position']['x'],'y':service.table.width-b['position']['y']}
+    options=shot_options(service,state,load_policy(service))
+    near=next(o for o in options if o['target']=='1' and o['pocket']==('top-middle' if mirror else 'bottom-middle'))
+    far=next(o for o in options if o['target']=='1' and o['pocket']==('top-left' if mirror else 'bottom-right'))
+    assert near['cut']>far['cut']
+    assert near['object_distance']<far['object_distance']/3
+    assert near['aim_half_window_deg']>3*far['aim_half_window_deg']
+    assert near['cost']<far['cost']
+
+
+def test_near_pocket_candidate_survives_the_old_sixty_five_degree_cut_limit(service):
+    state=GameStore(service).new({'scenario':'ai_endgame'})
+    state['scene']['balls'][0]['position']={'x':.4040541086647289,'y':.6492344197767196}
+    options=shot_options(service,state,load_policy(service))
+    near=next(o for o in options if o['target']=='1' and o['pocket']=='bottom-middle')
+    assert 65<near['cut']<78 and near['object_distance']<.45
+
+
+def test_custom_layout_is_a_separate_editable_game_and_only_commits_valid_setup(service):
+    games=GameStore(service);original=games.new({'scenario':'ai_endgame'})
+    custom=games.new({'scenario':'ai_custom','scene':original['scene'],'ai_player':1})
+    assert custom['id']!=original['id'] and custom['phase']=='setup'
+    with pytest.raises(ValueError):games.ai_snapshot({'id':custom['id'],'revision':0})
+    with pytest.raises(ValueError):games.action({'id':custom['id'],'revision':0,'action':'shoot','shot':custom['scene']['shot']})
+    bad=deepcopy(custom['scene']);bad['balls']=[b for b in bad['balls'] if b['id']!='8']
+    with pytest.raises(ValueError,match='8 号球'):
+        games.action({'id':custom['id'],'revision':0,'action':'finish_setup','scene':bad})
+    scene=deepcopy(custom['scene']);next(b for b in scene['balls'] if b['id']=='1')['position']={'x':1.2,'y':.35}
+    finished=games.action({'id':custom['id'],'revision':0,'action':'finish_setup',
+                           'scene':scene,'ai_group':'stripe','ai_player':1})
+    assert finished['phase']=='playing' and finished['revision']==1
+    assert finished['groups']==['solid','stripe'] and finished['scene']==scene
+    assert games.get({'id':original['id']})==original
+    assert games.ai_snapshot({'id':custom['id'],'revision':1})['scene']==scene
+
+
+def test_formal_game_cannot_be_rewritten_by_the_layout_commit_action(service):
+    games=GameStore(service);state=games.new({'seed':0})
+    with pytest.raises(ValueError):
+        games.action({'id':state['id'],'revision':0,'action':'finish_setup','scene':state['scene']})
+    assert games.get({'id':state['id']})==state

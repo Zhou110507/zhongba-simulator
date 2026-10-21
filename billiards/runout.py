@@ -17,13 +17,15 @@ from .model import Vec2, Vec3
 from .planner_routes import segment_distance
 from .pockets import outline
 from .rules import adjudicate, legal_ids
+from .shot_difficulty import geometric_tolerance
 
 FEATURE_NAMES = ['remaining', 'best_distance', 'best_object_distance', 'best_cut',
                  'best_clearance', 'option_count', 'available_targets', 'blocked_fraction',
                  'cue_near_rail', 'cue_x', 'cue_y', 'mean_target_distance',
                  'max_target_distance', 'cluster_pairs', 'black_options', 'black_distance',
-                 'second_cost', 'third_cost', 'rear_restricted_fraction', 'best_cost']
-MODEL_VERSION = 'short-runout-value-v1'
+                 'second_cost', 'third_cost', 'rear_restricted_fraction', 'best_cost',
+                 'best_pot_difficulty', 'best_aim_window', 'best_pocket_alignment']
+MODEL_VERSION = 'short-runout-value-v2'
 
 
 def shot_options(service, state, policy):
@@ -52,18 +54,23 @@ def shot_options(service, state, policy):
             access = check_stroke(balls, ShotInput(angle, 1., 0., .5), service.table, policy)
             if not access['allowed']: continue
             cut = degrees(acos(cosine))
+            if cut>policy['normal_cut_degrees'] and delta.norm()>policy['near_pocket_cut_exception_m']:continue
+            pot=geometric_tolerance(pocket.half_width,unit.dot(pocket.outward),cue.spec.radius,
+                                    ray.norm(),delta.norm(),cut)
             distance_cost = .30*abs(ray.norm()-policy['preferred_cue_object_distance_m'])
             distance_cost += 2.*max(0., policy['comfortable_min_distance_m']-ray.norm())
             distance_cost += .8*max(0., ray.norm()-policy['comfortable_max_distance_m'])
             edge = min(cue.position.x, service.table.length-cue.position.x,
                        cue.position.y, service.table.width-cue.position.y)
-            cost = distance_cost+.25*delta.norm()+1.5*(1-cosine)+.014/max(.014, clearance)
+            # Potting accuracy dominates: a near-pocket cut can be easier than
+            # a straighter shot sending the object ball across the table.
+            cost = 1.8*pot['pot_difficulty']+.30*distance_cost+.15*(1-cosine)+.014/max(.014, clearance)
             cost += 2.*max(0., policy['comfortable_rail_clearance_m']-edge)
             cost += .12*bool(access['notes'])
             options.append({'target': target.id, 'pocket': pocket.id, 'angle': angle,
                             'desired': unit, 'distance': ray.norm(), 'object_distance': delta.norm(),
                             'cut': cut, 'clearance': clearance, 'cost': cost,
-                            'rear_restricted': bool(access['notes'])})
+                            'rear_restricted': bool(access['notes']),**pot})
     return sorted(options, key=lambda v: (v['cost'], v['target'], v['pocket']))
 
 
@@ -90,7 +97,9 @@ def features(service, state, policy, options=None):
               sum((a.position-b.position).norm() < .14 for i, a in enumerate(targets) for b in targets[i+1:])/10,
               min(6, len(black_options))/6, (black.position-cue.position).norm()/2.54 if black else 0,
               costs[1]/3 if len(costs)>1 else 1, costs[2]/3 if len(costs)>2 else 1,
-              sum(o['rear_restricted'] for o in options)/max(1, len(options)), best.get('cost', 3)/3]
+              sum(o['rear_restricted'] for o in options)/max(1, len(options)), best.get('cost', 3)/3,
+              best.get('pot_difficulty',3)/3,min(1.,best.get('aim_half_window_deg',0.)/.3),
+              best.get('pocket_entry_cosine',0.)]
     return np.asarray(values, dtype=float)
 
 
@@ -173,6 +182,9 @@ class Search:
                 step = {'target': option['target'], 'pocket': target.pocket, 'shot': asdict(shot),
                         'cue_final': asdict(cue.position), 'cut_degrees': round(option['cut'], 1),
                         'distance_mm': round(option['distance']*1000), 'human': access,
+                        'object_distance_mm':round(option['object_distance']*1000),
+                        'aim_half_window_deg':round(option['aim_half_window_deg'],4),
+                        'pot_difficulty':round(option['pot_difficulty'],5),
                         'potted': d['potted'], 'verified': True,
                         'cue_cushions':banks,'cue_ball_contacts':len(cue_hits),
                         'cost': option['cost']+.10*speed+.20*abs(tip_y)+.08*banks}
@@ -219,6 +231,11 @@ class Search:
             heuristic += 1.5*self.model.score(features(self.service, state, self.policy, options))
         return heuristic
 
+    def route_cost(self, entry):
+        state,path,total=entry
+        hardest=max((s['pot_difficulty'] for s in path),default=0.)
+        return total/max(1,len(path))+.4*hardest-.55*self.position_value(state)
+
     def solve(self, state):
         owner = state['turn']; own = legal_ids(state)
         endgame = state['groups'][owner] is not None and len(own) <= 3
@@ -240,28 +257,32 @@ class Search:
                                'evaluations': self.count, 'depth': level+1,
                                'elapsed': round(monotonic()-self.started, 1)})
             if complete or not expanded: break
-            expanded.sort(key=lambda n: (-len(n[1]), n[2]/len(n[1])-.8*self.position_value(n[0])))
-            frontier = []; signatures = set()
+            expanded.sort(key=lambda n: (-len(n[1]), self.route_cost(n)))
+            frontier = []; signatures = set();first_lines={}
             for entry in expanded:
                 # Keep distinct ball orders and stroke choices; don't fill the beam
                 # with almost identical first-stroke variants.
                 route = entry[1]
-                signature = (tuple(s['target'] for s in route), round(route[0]['shot']['tip_y'], 1),
+                signature = (tuple((s['target'],s['pocket']) for s in route), round(route[0]['shot']['tip_y'], 1),
                              round(route[0]['shot']['cue_speed'], 1))
                 if signature in signatures: continue
+                first_line=(route[0]['target'],route[0]['pocket'])
+                if first_lines.get(first_line,0)>=2:continue
+                first_lines[first_line]=first_lines.get(first_line,0)+1
                 signatures.add(signature); frontier.append(entry)
-                if len(frontier) == 4: break
+                if len(frontier) == 6: break
             if self.stopped() or monotonic() >= self.search_deadline: break
         candidates = complete or paths
         candidates.sort(key=lambda n: (not n[0]['winner'] == owner, -len(n[1]),
-                                      n[2]/len(n[1])-.8*self.position_value(n[0])))
+                                      self.route_cost(n)))
         routes = []; keys = set()
         for after, path, cost in candidates:
-            key = tuple(s['target'] for s in path)
+            key = tuple((s['target'],s['pocket']) for s in path)
             if key in keys: continue
             keys.add(key)
             clear = after['winner'] == owner
             reasons = ['每杆通过当前物理模型与中八规则检查；使用普通水平杆法限制']
+            reasons.append('优先考虑进球几何容错，再权衡走位；较大的切角不自动等于较难进球')
             if clear and len(path)>1: reasons.append(f'保留 {path[-2]["target"]} 号作为黑八连接球')
             if any(s['human']['notes'] for s in path): reasons.append('近库杆采用高杆限制；未用低杆强拉')
             if not clear: reasons.append('这是预算内找到的部分路线，后续需根据实际落点重算')
