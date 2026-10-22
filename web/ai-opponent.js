@@ -50,6 +50,7 @@ window.AIOpponent=(()=>{
       if(action?.action==='place')text+=` 白球位置 ${Math.round(action.x*1000)}, ${Math.round(action.y*1000)} mm。`;
       if(action?.action==='shoot'){const s=action.shot;text+=` 杆头 ${s.cue_speed.toFixed(2)} m/s，高低击点 ${s.tip_y.toFixed(2)} R、侧击点 ${s.tip_x.toFixed(2)} R${value.cue_cushions!=null?`；白球预计 ${value.cue_cushions} 库`:''}。`;}
       if(value.predicted_fouls?.length)text+=' 预计风险：'+value.predicted_fouls.join('、');
+      if(value.safety_check){const c=value.safety_check;text+=` 防守微扰 ${c.legal}/${c.checked} 项合法（要求 ${c.expected} 项）；所检查落点最多留给对手 ${c.worst_easy_options} 条普通进袋线路，非真人成功率。`;}
       if(value.execution_gate?.ready===false)text+=' 前瞻尚未补齐，暂不出杆。';
       message(text);return;
     }
@@ -58,7 +59,7 @@ window.AIOpponent=(()=>{
     if(value.requested_depth!=null&&!value.cache_hit)message($('ai-status').textContent+` · 前瞻 ${value.verified_depth}/${value.requested_depth} 杆${value.horizon_complete?'（已满足）':value.horizon_limit==='budget_exhausted'?'（预算用尽，深度尚未满足）':'（尚未找到更长的宽容错续接）'}`);
     if(value.execution_gate?.kind==='offense'){
       const gate=value.execution_gate;
-      message($('ai-status').textContent+` · 出杆前队列 ${gate.available}/${gate.required} 杆${gate.ready?'（可出杆）':rolling?.fallback_pending?'（续接未接通，正在选择当前局面的战术）':gate.blocked?'（续接异常，请重新思考）':'（等待队尾补算，暂不出杆）'}`);
+      message($('ai-status').textContent+` · 出杆前队列 ${gate.available}/${gate.required} 杆${gate.recovery?'（保留已验证进球继续出杆；三杆续接尚未接通）':gate.ready?'（可出杆）':rolling?.fallback_pending?'（保留进球，正在调整后续走位）':gate.blocked?'（续接异常，请重新思考）':'（等待队尾补算，暂不出杆）'}`);
     }
     for(const [index,route]of value.routes.entries()){
       const card=document.createElement('details'),title=document.createElement('summary');

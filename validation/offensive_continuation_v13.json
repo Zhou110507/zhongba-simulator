@@ -1,0 +1,119 @@
+{
+  "app_version": "pot-preserving-continuation-v13",
+  "scope": "Known integration-demo autonomous playback; not held-out strength or human-success evidence.",
+  "finished": true,
+  "winner": 1,
+  "ai_player": 1,
+  "elapsed_seconds": 46.45,
+  "metrics": {
+    "cache_hits": 3,
+    "prefetches": 3,
+    "searches": 1,
+    "invalidations": 0,
+    "extensions": 1,
+    "extended_steps": 0
+  },
+  "rows": [
+    {
+      "revision_after": 1,
+      "tactic": null,
+      "gate": {
+        "ready": true,
+        "required": 3,
+        "available": 3,
+        "kind": "offense",
+        "clear_verified": false,
+        "recovery": false,
+        "waiting": false,
+        "blocked": false
+      },
+      "queue": [
+        "3",
+        "1",
+        "2"
+      ],
+      "repaired_tail": false,
+      "recovery": null,
+      "potted": [
+        "3"
+      ],
+      "fouls": [],
+      "elapsed_seconds": 32.139
+    },
+    {
+      "revision_after": 2,
+      "tactic": null,
+      "gate": {
+        "ready": true,
+        "required": 3,
+        "available": 3,
+        "kind": "offense",
+        "clear_verified": true,
+        "recovery": false,
+        "waiting": false,
+        "blocked": false
+      },
+      "queue": [
+        "1",
+        "2",
+        "8"
+      ],
+      "repaired_tail": true,
+      "recovery": null,
+      "potted": [
+        "1"
+      ],
+      "fouls": [],
+      "elapsed_seconds": 46.407
+    },
+    {
+      "revision_after": 3,
+      "tactic": null,
+      "gate": {
+        "ready": true,
+        "required": 2,
+        "available": 2,
+        "kind": "offense",
+        "clear_verified": true,
+        "recovery": false,
+        "waiting": false,
+        "blocked": false
+      },
+      "queue": [
+        "2",
+        "8"
+      ],
+      "repaired_tail": true,
+      "recovery": null,
+      "potted": [
+        "2"
+      ],
+      "fouls": [],
+      "elapsed_seconds": 46.43
+    },
+    {
+      "revision_after": 4,
+      "tactic": null,
+      "gate": {
+        "ready": true,
+        "required": 1,
+        "available": 1,
+        "kind": "offense",
+        "clear_verified": true,
+        "recovery": false,
+        "waiting": false,
+        "blocked": false
+      },
+      "queue": [
+        "8"
+      ],
+      "repaired_tail": true,
+      "recovery": null,
+      "potted": [
+        "8"
+      ],
+      "fouls": [],
+      "elapsed_seconds": 46.45
+    }
+  ]
+}

@@ -26,11 +26,12 @@ def pipeline(monkeypatch):
     states=[]
     for index in range(8):
         state=deepcopy(initial);state['revision']=index
+        if index:state['last_decision']={'potted':[str(index)],'fouls':[]}
         next(b for b in state['scene']['balls'] if b['id']=='cue')['position']['x']+=index*.01
         if index==7:state.update(phase='finished',winner=state['turn'])
         states.append(state)
     steps=[{'target':str(i+1),'pocket':'top-right','shot':{'angle_deg':i,'cue_speed':1.,'tip_x':0.,'tip_y':0.},
-            'cost':1.,'position_effort':.1} for i in range(7)]
+            'cost':1.,'position_effort':.1,'verified':True} for i in range(7)]
     def segment(start,end):
         return {'status':'found','routes':[{'steps':deepcopy(steps[start:end]),'reasons':[],
                                           'clear_verified':end==7,'mean_cost':1.}],
@@ -49,6 +50,7 @@ def pipeline(monkeypatch):
         return {'complete':True,'rule_committed':True,'result':{},'game_after':deepcopy(states[index+1])}
     monkeypatch.setattr(games,'action',action)
     monkeypatch.setattr('billiards.ai_jobs.decide',lambda *a,**k:pytest.fail('Cached prefix was re-searched'))
+    monkeypatch.setattr('billiards.ai_jobs.repair',lambda *a,**k:None)
     return games,jobs,states,steps,segment,committed
 
 
@@ -124,13 +126,13 @@ def test_late_suffix_cannot_resurrect_cancelled_or_changed_table(monkeypatch,cha
     finally:release.set()
 
 
-@pytest.mark.parametrize('suffix_error',[False,True])
-def test_exhausted_suffix_switches_to_actual_table_tactic_without_root_search(monkeypatch,suffix_error):
+@pytest.mark.parametrize('suffix_error',[False,True,'repair'])
+def test_exhausted_suffix_keeps_verified_pots_instead_of_switching_to_safety(monkeypatch,suffix_error):
     _,jobs,states,steps,_,committed=pipeline(monkeypatch)
     entered=Event();release=Event();fallback=Event()
     def extend(*a,**k):
         entered.set();assert release.wait(3)
-        if suffix_error:raise RuntimeError('injected suffix failure')
+        if suffix_error is True:raise RuntimeError('injected suffix failure')
         return {'status':'not_found','routes':[]}
     def tactic(service,state,**kwargs):
         assert state['revision']==1 and matches(state,states[1])
@@ -139,32 +141,33 @@ def test_exhausted_suffix_switches_to_actual_table_tactic_without_root_search(mo
         return {'status':'found','routes':[],'tactic':'attack',
                 'action':{'action':'shoot','shot':steps[1]['shot']}}
     monkeypatch.setattr('billiards.ai_jobs.extend',extend);monkeypatch.setattr('billiards.tactics.choose_contact',tactic)
+    if suffix_error=='repair':
+        def broken_repair(*a,**k):raise RuntimeError('injected repair failure')
+        monkeypatch.setattr('billiards.ai_jobs.repair',broken_repair)
     try:
         key=jobs.execute({'id':'initial','prefetch':True})['prefetch']['id'];assert entered.wait(1)
         with pytest.raises(ValueError,match='等待前瞻补齐'):jobs.execute({'id':key,'prefetch':True})
         release.set()
         wait_for(lambda:jobs.status({'id':key})['analysis']['execution_gate']['ready'])
-        assert fallback.is_set() and committed==[1]
+        assert not fallback.is_set() and committed==[1]
         ready=jobs.status({'id':key})['analysis']
-        assert ready['tactic']=='attack' and ready['routes']==[]
-        assert ready['transition']['source_revision']==1
-        assert ready['transition']['reason']==('suffix_error' if suffix_error else 'no_robust_continuation_found')
-        assert jobs.continuations[states[0]['id']]['abandoned_analysis']['routes'][0]['steps']==steps[1:3]
+        assert ready['routes'][0]['steps']==steps[1:3]
+        assert ready['execution_gate']['recovery'] and ready['execution_gate']['available']==2
+        assert ready['offensive_recovery']['reason']=={False:'no_robust_continuation_found',True:'suffix_error','repair':'repair_error'}[suffix_error]
         jobs.execute({'id':key});assert committed==[1,2]
         assert jobs.metrics['searches']==0
     finally:release.set()
 
 
 @pytest.mark.parametrize('change',['cancel','ball','model'])
-def test_tactical_transition_waits_and_rejects_stale_results(monkeypatch,change):
+def test_offensive_repair_waits_and_rejects_stale_results(monkeypatch,change):
     games,jobs,states,steps,_,committed=pipeline(monkeypatch)
     entered=Event();release=Event();calls=[]
     monkeypatch.setattr('billiards.ai_jobs.extend',lambda *a,**k:{'status':'not_found','routes':[]})
-    def tactic(service,state,**kwargs):
+    def repair(service,prefix,state,**kwargs):
         calls.append(state['revision']);entered.set();assert release.wait(3)
-        return {'status':'found','routes':[],'tactic':'safety',
-                'action':{'action':'shoot','shot':steps[1]['shot']}}
-    monkeypatch.setattr('billiards.tactics.choose_contact',tactic)
+        return None
+    monkeypatch.setattr('billiards.ai_jobs.repair',repair)
     try:
         key=jobs.execute({'id':'initial','prefetch':True})['prefetch']['id'];assert entered.wait(1)
         for _ in range(3):
@@ -176,7 +179,7 @@ def test_tactical_transition_waits_and_rejects_stale_results(monkeypatch,change)
         elif change=='ball':games.games[states[0]['id']]['scene']['balls'][-1]['position']['y']+=.002
         else:monkeypatch.setattr('billiards.ai_jobs.model_stamp',lambda service:'changed-model')
         release.set();wait_for(lambda:not jobs.continuations[states[0]['id']]['extending'])
-        assert 'tactic' not in jobs.jobs[key]['analysis']
+        assert 'offensive_recovery' not in jobs.jobs[key]['analysis']
         with pytest.raises(ValueError):jobs.execute({'id':key})
         assert calls==[1] and committed==[1] and jobs.metrics['searches']==0
     finally:release.set()
@@ -211,3 +214,23 @@ def test_busy_cpu_does_not_block_ready_prefix_and_poll_retries_refill(monkeypatc
     jobs.slots.release();jobs.status({'id':key})
     assert entered.wait(1)
     wait_for(lambda:len(jobs.status({'id':key})['analysis']['routes'][0]['steps'])==3)
+
+
+@pytest.mark.parametrize('end',[4,5])
+def test_tail_repair_preserves_earlier_queued_stroke_and_requests_full_depth(monkeypatch,end):
+    from billiards import ai_rolling
+    _,_,states,steps,segment,_=pipeline(monkeypatch)
+    prefix=segment(1,3);calls=[]
+    def suffix(service,source,depth,**kwargs):
+        calls.append((source,depth));return segment(2,end)
+    monkeypatch.setattr(ai_rolling,'extend',suffix)
+    result=ai_rolling.repair(None,prefix,states[1],cancelled=lambda:False,progress=lambda _:None)
+    assert matches(calls[0][0],states[2]) and calls[0][1]==3
+    if end==4:
+        assert result is None  # three verified strokes do not certify a four-shot endgame
+        return
+    assert result['repaired_tail'] and result['repair_retained_steps']==1
+    assert result['routes'][0]['steps']==steps[1:5]
+    assert result['_forecasts'][0][0]==prefix['_forecasts'][0][0]
+    assert result['requested_depth']==4 and result['verified_depth']==4
+    assert prefix['routes'][0]['steps']==steps[1:3]  # immutable source

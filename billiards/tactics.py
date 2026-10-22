@@ -12,7 +12,7 @@ from .model import Vec2
 from .planner_routes import RAILS,image,segment_distance
 from .rules import legal_ids,group
 from .runout import Search,shot_options,cluster_pressure
-from .shot_prior import contact_cost,planning_policy
+from .shot_prior import contact_cost,planning_policy,human_pot_cost
 
 VERSION='escape-safety-value-v1'
 FEATURES=['legal','own_pots','opponent_pots','scratch','lost','own_options',
@@ -133,13 +133,17 @@ def kick_rays(service,state,max_rails=3):
 
 def contact_candidates(service,state,search,*,attempts=320):
     direct=direct_contact_rays(service,state)
-    rays=direct or [r for r in kick_rays(service,state) if r['rails']>0]
+    # Centre-contact rays are not potting aims. Explicit pocket/ghost-ball
+    # candidates must precede the contact-only safety sampler.
+    pots=[{'angle':o['angle'],'rails':0,'target':o['target'],'length':o['distance'],
+           'option':o} for o in shot_options(service,state,search.policy)]
+    rays=pots+direct if direct else [r for r in kick_rays(service,state) if r['rails']>0]
     rows=[];seen=set();tried=0
     # Guarantee at least one chance to each target and rail count before more
     # tiny variants; negative-clearance rays remain useful for intentional K.
     selected=[];groups=set()
     for ray in rays:
-        key=ray['target'],ray['rails']
+        key=ray['target'],ray.get('option',{}).get('pocket'),ray['rails']
         if key not in groups:selected.append(ray);groups.add(key)
     selected+= [r for r in rays if r not in selected][:20]
     settings=[(1.8,0.,0.),(2.6,0.,.4),(3.2,.25,.3),(1.1,0.,.5),
@@ -148,10 +152,15 @@ def contact_candidates(service,state,search,*,attempts=320):
         for speed,side,tip in settings:
             for ray in selected:
                 if search.stopped() or tried>=attempts:return rows
+                if ray.get('option') and offset:continue
                 shot=ShotInput((ray['angle']+offset)%360,speed,side,tip)
                 key=(round(shot.angle_deg,5),speed,side,tip)
                 if key in seen:continue
                 seen.add(key);tried+=1
+                if ray.get('option'):
+                    aimed=search.aimed(state,ray['option'],speed,tip,side)
+                    if not aimed:continue
+                    shot=ShotInput(**aimed[1]['shot'])
                 trial=search.forward(state,shot)
                 if trial is None:continue
                 result,after,access=trial
@@ -174,13 +183,59 @@ def contact_candidates(service,state,search,*,attempts=320):
                                 {o['target'] for o in shot_options(service,state,search.policy)})&set(legal_ids(state))
                         if not opened:continue
                     margin=search.human_margin(state,shot,target.id,target.pocket,require_leaf=bool(cue_others)) if target else None
-                    if not margin or not margin['allowed'] or margin['leaf_passed']<3:continue
+                    # Tactical pot quality and future position are distinct.
+                    # Keep a robust pot even if it cannot promise another easy
+                    # pot; intentional K still requires all four broad leaves.
+                    if not margin or not margin['allowed']:continue
                 rows.append({'shot':asdict(shot),'x':x.tolist(),'after':after,
                              'human':access,'cushions':int(round(x[11]*8)),
                              'first_contact_cushions':approach,
                              'control_risk':risk,
                              'legal':bool(x[0]) and not bool(x[4]),'pot':bool(x[1]>0 or x[15])})
     return rows
+
+
+def opponent_threat(service,after,owner,policy):
+    """Conservative potting openings, not centre-line hiding or win probability."""
+    if after['winner'] is not None:
+        return {'easy_options':100 if after['winner']!=owner else 0,'best_cost':0. if after['winner']!=owner else 16.}
+    other=deepcopy(after);other['turn']=1-owner
+    options=shot_options(service,other,policy)
+    easy=[o for o in options if not o['rear_restricted'] and o['aim_half_window_deg']>=planning_policy()['preferred_aim_half_window_deg']
+          and o['cut']<=50 and .18<=o['distance']<=1.2]
+    return {'easy_options':len(easy),'easy_targets':sorted({o['target'] for o in easy},key=int),
+            'best_cost':min((human_pot_cost(o) for o in options),default=16.)}
+
+
+def safety_checks(service,state,rows,*,cancelled):
+    """Rank real openings after ordinary execution errors; never call a weak
+    legal touch a strong safety merely because the target centre was hidden.
+    """
+    from dataclasses import replace
+    probe=Search(service,trained=False,seconds=4,evaluations=120,cancelled=cancelled)
+    policy=planning_policy()
+    for row in rows:
+        threat=opponent_threat(service,row['after'],state['turn'],probe.policy)
+        check={'checked':0,'legal':0,'expected':4,'worst_easy_options':threat['easy_options'],
+               'easiest_reply_cost':threat['best_cost'],'not_human_probability':True}
+        original=ShotInput(**row['shot'])
+        for da,scale in ((-policy['angle_probe_deg'],1.),(policy['angle_probe_deg'],1.),
+                         (0.,1-policy['speed_probe_fraction']),(0.,1+policy['speed_probe_fraction'])):
+            if probe.stopped():break
+            trial=probe.forward(state,replace(original,angle_deg=(original.angle_deg+da)%360,
+                                             cue_speed=original.cue_speed*scale))
+            check['checked']+=1
+            if not trial:
+                check['worst_easy_options']=max(check['worst_easy_options'],100);continue
+            _,after,_=trial
+            legal=not after['last_decision']['fouls'] and after['winner']!=1-state['turn']
+            check['legal']+=bool(legal)
+            threat=opponent_threat(service,after,state['turn'],probe.policy)
+            check['worst_easy_options']=max(check['worst_easy_options'],threat['easy_options'])
+            check['easiest_reply_cost']=min(check['easiest_reply_cost'],threat['best_cost'])
+        check['complete']=check['checked']==check['expected']
+        row['safety_check']=check
+    return probe.count
 
 
 def choose_contact(service,state,*,cancelled=lambda:False,seconds=8,evaluations=450):
@@ -194,11 +249,25 @@ def choose_contact(service,state,*,cancelled=lambda:False,seconds=8,evaluations=
     if candidates:
         def rank(row):
             x=np.asarray(row['x']);return (row['legal'],model.score(x)+.12*x[8]-.025*x[12]-.2*row.get('control_risk',0.))
-        best=max(candidates,key=rank);after=best['after'];x=best['x']
+        safety_evaluations=0
+        if legal and not pots:
+            # Reserve distinct strokes; the learned score only breaks ties
+            # after checking the opponent's actual pocket lines and tolerance.
+            shortlist=sorted(legal,key=rank,reverse=True)[:6]
+            safety_evaluations=safety_checks(service,state,shortlist,cancelled=cancelled)
+            def safety_rank(row):
+                c=row['safety_check']
+                return (c['complete'] and c['legal']==c['expected'],
+                        -c['worst_easy_options'],c['easiest_reply_cost'],rank(row))
+            best=max(shortlist,key=safety_rank)
+        else:best=max(candidates,key=rank)
+        if cancelled():return {'status':'cancelled','routes':[]}
+        after=best['after'];x=best['x']
         escape=best['first_contact_cushions']>0
         kind=('kick_attack' if escape else 'attack') if best['pot'] and best['legal'] else ('escape' if escape else 'safety') if best['legal'] else 'best_effort'
         return {'status':'found','routes':[],'model':VERSION,'tactic':kind,'planning_mode':'single_shot_tactic',
                 'action':{'action':'shoot','shot':best['shot']},'evaluations':search.count,
+                'safety_check':best.get('safety_check'),'safety_evaluations':safety_evaluations,
                 'predicted_fouls':after['last_decision']['fouls'],'hidden_fraction':x[8],
                 'cue_cushions':best['cushions'],'human':best['human'],
                 'requires_escape':not bool(direct_contact_rays(service,state)),
@@ -206,7 +275,8 @@ def choose_contact(service,state,*,cancelled=lambda:False,seconds=8,evaluations=
                 'message':('直打进攻：模拟验证合法进球' if kind=='attack' else
                            '解球进攻：目标球无法直达，经库边触球并合法进球' if kind=='kick_attack' else
                            '解球：目标球无法直达，经库边完成合法触球' if kind=='escape' else
-                           '直打防守：目标球可以直接打到，选择合法触球并限制对手进攻' if kind=='safety' else
+                           ('直打防守：完成合法触球；对手仍可能有进攻机会' if best.get('safety_check',{}).get('worst_easy_options',1)>0 else
+                            '直打防守：完成合法触球，所检查的落点未见普通直接进袋机会') if kind=='safety' else
                            '有限搜索未找到无犯规解法，仍完成当前杆；已明确列出预计犯规，未宣称合法')}
     # Every live, non-cancelled turn still produces a bounded shot. Pathological
     # fully surrounded white balls may foul: never claim guaranteed legality.

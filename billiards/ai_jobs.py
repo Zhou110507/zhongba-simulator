@@ -15,7 +15,7 @@ from .pockets import unsupported_pocket
 from .rules import HEAD, legal_ids
 from .runout import Search, shot_options
 from .ai_cache import model_stamp,matches,continuation,public_analysis
-from .ai_rolling import HORIZON,endpoint,extend,append,readiness
+from .ai_rolling import HORIZON,endpoint,extend,append,readiness,repair
 from .ai_difficulty import realize
 
 
@@ -186,8 +186,35 @@ class AIJobs:
         with self.lock:
             if not self._live(key,lane):lane['cancel'].set();return
             source=deepcopy(lane['expected'])
+            prefix=deepcopy(lane['analysis'])
             lane['fallback_pending']=True
-            lane['progress']={'stage':'续接未接通，按当前实际球位选择进攻、防守或解球','evaluations':0}
+            lane['progress']={'stage':'优先保留已验证进球，检查末杆能否调整续接','evaluations':0}
+        if prefix and endpoint(prefix) is not None:
+            fixed=None
+            if reason!='suffix_error':
+                try:
+                    fixed=repair(self.games.service,prefix,source,cancelled=lane['cancel'].is_set,
+                                 progress=lambda value:self._repair_progress(key,lane,value))
+                except Exception:
+                    import traceback
+                    traceback.print_exc();reason='repair_error'
+            with self.lock:
+                if not self._live(key,lane):lane['cancel'].set();return
+                if fixed:
+                    fixed.update(game_id=key,revision=lane['revision'],cache_hit=bool(fixed.get('repair_retained_steps')))
+                    lane['analysis']=fixed;self._publish(lane);return
+                # Keep ALL known pots. Never replace them with a weaker safety
+                # because a different future endpoint could not be certified.
+                prefix['offensive_recovery']={'reason':reason,'target_depth':HORIZON,
+                    'verified_depth':len(prefix['routes'][0]['steps']),
+                    'definition':'续接尚未接通，保留已验证进球；未宣称达到三杆前瞻'}
+                prefix['_recovery_anchor']=deepcopy(endpoint(prefix))
+                if readiness(prefix,source)['ready']:
+                    lane['failed_anchor']=deepcopy(endpoint(prefix))
+                    lane['analysis']=prefix;self._publish(lane);return
+        with self.lock:
+            if not self._live(key,lane):lane['cancel'].set();return
+            lane['progress']={'stage':'没有保留的已验证进球，按当前球位继续检查进攻与防守','evaluations':0}
         from .tactics import choose_contact
         result=choose_contact(self.games.service,source,cancelled=lane['cancel'].is_set)
         with self.lock:
@@ -201,6 +228,10 @@ class AIJobs:
                 result.update(game_id=key,revision=lane['revision'])
                 lane['analysis']=result;self._publish(lane)
             else:lane['cancel'].set()
+
+    def _repair_progress(self,key,lane,value):
+        with self.lock:
+            if self.continuations.get(key) is lane:lane['progress']=value
 
     def _extend(self,key):
         with self.lock:

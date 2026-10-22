@@ -12,7 +12,7 @@ from billiards.model import Ball,Vec2
 from billiards.play import PlayService
 from billiards.runout import Search
 from billiards.shot_prior import ShotPrior,contact_cost,continuation_cost
-from billiards.tactics import direct_contact_rays,contact_candidates
+from billiards.tactics import direct_contact_rays,contact_candidates,opponent_threat,safety_checks
 
 
 @pytest.fixture(scope='module')
@@ -47,6 +47,36 @@ def test_occluded_centre_with_visible_edge_does_not_require_escape(service):
 
 def test_fully_obscured_target_requires_escape(service):
     assert direct_contact_rays(service,board(service,.6))==[]
+
+
+def test_defense_assesses_the_opponents_pocket_lines_not_our_own_options(service):
+    state=board(service)
+    # From this white ball, the opponent's nine is a short, straight shot into
+    # the bottom-middle pocket. Our own one has no bearing on that threat.
+    state['scene']=service.snapshot([Ball(i,Vec2(x,y),spec=service.ball_spec) for i,x,y in
+        [('cue',1.27,.7),('9',1.27,.32),('1',.3,.9),('8',2.1,1.0)]],ShotInput(0,1.))
+    check=opponent_threat(service,state,state['turn'],Search(service).policy)
+    assert check['easy_options']>=1 and '9' in check['easy_targets']
+    changed=deepcopy(state)
+    next(b for b in changed['scene']['balls'] if b['id']=='9')['pocket']='bottom-middle'
+    # With the nine gone the opponent is on black; that may itself be open.
+    # Do not confuse the opponent's black-eight option with our own one.
+    assert set(opponent_threat(service,changed,state['turn'],Search(service).policy)['easy_targets'])<= {'8'}
+
+
+def test_safety_checks_record_real_legality_and_do_not_claim_unrun_probes(service):
+    state=board(service)
+    search=Search(service,trained=False,seconds=10,evaluations=20)
+    shot=ShotInput(0,1.1,0,0);trial=search.forward(state,shot)
+    assert trial and not trial[1]['last_decision']['fouls']
+    from dataclasses import asdict
+    rows=[{'shot':asdict(shot),'after':trial[1]}]
+    count=safety_checks(service,state,rows,cancelled=lambda:False)
+    check=rows[0]['safety_check']
+    assert check['complete'] and check['checked']==check['legal']==4 and count==4
+    cancelled_rows=[{'shot':asdict(shot),'after':trial[1]}]
+    assert safety_checks(service,state,cancelled_rows,cancelled=lambda:True)==0
+    assert not cancelled_rows[0]['safety_check']['complete'] and cancelled_rows[0]['safety_check']['checked']==0
 
 
 def test_prior_search_with_no_pot_options_is_an_ordinary_not_found(service,monkeypatch):

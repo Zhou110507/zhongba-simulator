@@ -240,16 +240,15 @@ def test_initial_partial_plan_starts_tail_worker_before_any_shot(service,planned
     finally:release.set()
 
 
-def test_unextendable_queue_completes_a_real_tactical_shot_without_restarting_prefix(service,planned,monkeypatch):
+def test_unextendable_queue_preserves_and_executes_its_real_verified_pot(service,planned,monkeypatch):
     state,result=deepcopy(planned);result['routes'][0].update(steps=result['routes'][0]['steps'][:3],clear_verified=False)
     result['_forecasts'][0]=result['_forecasts'][0][:3]
     games,jobs=prepared(service,(state,result));calls=[]
     def missing(*a,**k):calls.append(1);return {'status':'not_found','routes':[],'horizon_limit':'no_robust_continuation_found'}
     monkeypatch.setattr('billiards.ai_jobs.extend',missing)
+    monkeypatch.setattr('billiards.ai_jobs.repair',lambda *a,**k:None)
     def tactic(service,source,**kwargs):
-        assert matches(source,result['_forecasts'][0][0][1]) and source['revision']==1
-        return {'status':'found','routes':[],'tactic':'attack',
-                'action':{'action':'shoot','shot':planned[1]['routes'][0]['steps'][1]['shot']}}
+        pytest.fail('A certified pot must never be discarded for a contact-only fallback')
     monkeypatch.setattr('billiards.tactics.choose_contact',tactic)
     first=jobs.execute({'id':'ready','prefetch':True});key=first['prefetch']['id'];deadline=monotonic()+2
     while monotonic()<deadline:
@@ -257,6 +256,8 @@ def test_unextendable_queue_completes_a_real_tactical_shot_without_restarting_pr
         if status['analysis']['execution_gate']['ready']:break
         sleep(.005)
     assert status['analysis']['execution_gate']['ready']
+    assert status['analysis']['execution_gate']['recovery']
+    assert status['analysis']['routes'][0]['steps']==result['routes'][0]['steps'][1:]
     value=jobs.execute({'id':key})
     assert value['complete'] and value['rule_committed'] and not value['game_after']['last_decision']['fouls']
     assert len(calls)==1 and jobs.metrics['searches']==0
@@ -299,6 +300,22 @@ def test_all_single_shot_tactics_have_no_offensive_queue_requirement(service,pla
     assert readiness(result,state)['ready']
     # A tactic label cannot bypass an actual, uncertified offensive route.
     result['routes']=[{'steps':[{}]}]
+    assert not readiness(result,state)['ready']
+
+
+@pytest.mark.parametrize('invalid',['endpoint','unverified','foul','no_pot'])
+def test_partial_offense_recovery_cannot_certify_an_invalid_or_changed_pot(service,planned,invalid):
+    from billiards.ai_rolling import readiness,endpoint
+    state,result=deepcopy(planned)
+    result['routes'][0].update(steps=result['routes'][0]['steps'][:2],clear_verified=False)
+    result['_forecasts'][0]=result['_forecasts'][0][:2]
+    result.update(action={'action':'shoot'},offensive_recovery={'reason':'no_robust_continuation_found'},
+                  _recovery_anchor=deepcopy(endpoint(result)))
+    assert readiness(result,state)['ready'] and readiness(result,state)['recovery']
+    if invalid=='endpoint':result['_recovery_anchor']['scene']['balls'][0]['position']['x']+=.001
+    elif invalid=='unverified':result['routes'][0]['steps'][0]['verified']=False
+    elif invalid=='foul':result['_forecasts'][0][0][1]['last_decision']['fouls']=['测试犯规']
+    else:result['_forecasts'][0][0][1]['last_decision']['potted']=[]
     assert not readiness(result,state)['ready']
 
 

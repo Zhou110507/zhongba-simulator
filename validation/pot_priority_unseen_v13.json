@@ -1,0 +1,693 @@
+{
+  "version": "pot-preserving-continuation-v13",
+  "baseline_commit": "72cd5815e884accb69506243baaaa279292bf003",
+  "seeds": [
+    960001,
+    960002,
+    960003,
+    960004,
+    960005,
+    960006,
+    960007,
+    960008,
+    960009,
+    960010,
+    960011,
+    960012
+  ],
+  "seed_overlap_with_model_metadata": [],
+  "model_hashes_unchanged": true,
+  "model_hashes": {
+    "ai_break_model.json": "ce1f94915cc6cd058104666a169eb57b203c4a8c106471478181ca79af6d7979",
+    "ai_difficulty.json": "b5d1f63314719e7ef67ad8c0c7302e0312cdc491a4f00708e6dc77bfe9e9ffb6",
+    "ai_human_planning.json": "0132630ac540b4b87728dd2418cfc51875f0ab69235d0f78e9402b18f053bc2b",
+    "ai_human_policy.json": "d389e7b441b74b5dabd35d5f811aa96864c1caeb8c86d8c3f92507fa95bdc4cf",
+    "ai_shot_prior.json": "7f0a90a3aa9022d4d32b77c8cd86e00b74203fd9d0e8f61ec9e12714f93421e4",
+    "ai_tactics_model.json": "f08b80196dbe45fc348f017d9d865cc491d3c8026aef4fb2142acd2e6f433fb7",
+    "ai_value_model.json": "70482c66118fe849e7c3ee1f81c57192f3595b3f17dcc7f399403acde5e3a339"
+  },
+  "scope": "12 prospective synthetic tactical layouts; no training or tuning, no human probability, no full-rack strength or latency claim.",
+  "budget": "600 total evaluations per version; v13 reserves 120 for safety validation; 120 seconds headroom for contact search.",
+  "summary": {
+    "v12": {
+      "pot_cases": 3,
+      "foul_cases": 0,
+      "evaluations": 2371
+    },
+    "v13": {
+      "pot_cases": 5,
+      "foul_cases": 0,
+      "evaluations": 3180
+    }
+  },
+  "rows": [
+    {
+      "seed": 960001,
+      "own_balls": 1,
+      "versions": {
+        "v12": {
+          "tactic": "safety",
+          "shot": {
+            "angle_deg": 193.74393686025311,
+            "cue_speed": 1.8,
+            "tip_x": 0.0,
+            "tip_y": 0.0
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 16.0
+          },
+          "evaluations": 166,
+          "elapsed_seconds": 5.091,
+          "safety_check": null
+        },
+        "v13": {
+          "tactic": "safety",
+          "shot": {
+            "angle_deg": 193.74393686025311,
+            "cue_speed": 1.1,
+            "tip_x": 0.0,
+            "tip_y": 0.5
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 13.228621598083272
+          },
+          "evaluations": 226,
+          "elapsed_seconds": 6.962,
+          "safety_check": {
+            "checked": 4,
+            "legal": 4,
+            "expected": 4,
+            "worst_easy_options": 0,
+            "easiest_reply_cost": 12.505921444329704,
+            "not_human_probability": true,
+            "complete": true
+          }
+        }
+      }
+    },
+    {
+      "seed": 960002,
+      "own_balls": 2,
+      "versions": {
+        "v12": {
+          "tactic": "safety",
+          "shot": {
+            "angle_deg": 357.58452319147136,
+            "cue_speed": 1.1,
+            "tip_x": 0.0,
+            "tip_y": 0.5
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 4.214589886174796
+          },
+          "evaluations": 28,
+          "elapsed_seconds": 0.496,
+          "safety_check": null
+        },
+        "v13": {
+          "tactic": "safety",
+          "shot": {
+            "angle_deg": 357.65548170749884,
+            "cue_speed": 1.1,
+            "tip_x": 0.0,
+            "tip_y": 0.5
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 3.4438225551336674
+          },
+          "evaluations": 52,
+          "elapsed_seconds": 0.972,
+          "safety_check": {
+            "checked": 4,
+            "legal": 4,
+            "expected": 4,
+            "worst_easy_options": 0,
+            "easiest_reply_cost": 3.4438225551336674,
+            "not_human_probability": true,
+            "complete": true
+          }
+        }
+      }
+    },
+    {
+      "seed": 960003,
+      "own_balls": 3,
+      "versions": {
+        "v12": {
+          "tactic": "safety",
+          "shot": {
+            "angle_deg": 344.7985833208405,
+            "cue_speed": 2.6,
+            "tip_x": -0.25,
+            "tip_y": 0.3
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 16.0
+          },
+          "evaluations": 358,
+          "elapsed_seconds": 11.559,
+          "safety_check": null
+        },
+        "v13": {
+          "tactic": "safety",
+          "shot": {
+            "angle_deg": 349.7437942093781,
+            "cue_speed": 0.8,
+            "tip_x": 0.0,
+            "tip_y": 0.0
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 16.0
+          },
+          "evaluations": 497,
+          "elapsed_seconds": 15.08,
+          "safety_check": {
+            "checked": 4,
+            "legal": 4,
+            "expected": 4,
+            "worst_easy_options": 0,
+            "easiest_reply_cost": 13.274177567473224,
+            "not_human_probability": true,
+            "complete": true
+          }
+        }
+      }
+    },
+    {
+      "seed": 960004,
+      "own_balls": 4,
+      "versions": {
+        "v12": {
+          "tactic": "attack",
+          "shot": {
+            "angle_deg": 28.266502293799842,
+            "cue_speed": 1.1,
+            "tip_x": 0.0,
+            "tip_y": 0.5
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [
+            "9"
+          ],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 1,
+            "best_cost": 2.1552306440389772
+          },
+          "evaluations": 152,
+          "elapsed_seconds": 5.243,
+          "safety_check": null
+        },
+        "v13": {
+          "tactic": "attack",
+          "shot": {
+            "angle_deg": 289.7873840900586,
+            "cue_speed": 0.8,
+            "tip_x": 0.0,
+            "tip_y": 0.0
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [
+            "12"
+          ],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 5.284657089925054
+          },
+          "evaluations": 245,
+          "elapsed_seconds": 7.153,
+          "safety_check": null
+        }
+      }
+    },
+    {
+      "seed": 960005,
+      "own_balls": 5,
+      "versions": {
+        "v12": {
+          "tactic": "attack",
+          "shot": {
+            "angle_deg": 317.0770861513375,
+            "cue_speed": 3.2,
+            "tip_x": 0.0,
+            "tip_y": -0.45
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [
+            "4"
+          ],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 1,
+            "best_cost": 2.6716304898976215
+          },
+          "evaluations": 385,
+          "elapsed_seconds": 18.272,
+          "safety_check": null
+        },
+        "v13": {
+          "tactic": "attack",
+          "shot": {
+            "angle_deg": 317.23512271153106,
+            "cue_speed": 1.8,
+            "tip_x": 0.0,
+            "tip_y": 0.0
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [
+            "4"
+          ],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 6.594875783022495
+          },
+          "evaluations": 480,
+          "elapsed_seconds": 21.29,
+          "safety_check": null
+        }
+      }
+    },
+    {
+      "seed": 960006,
+      "own_balls": 1,
+      "versions": {
+        "v12": {
+          "tactic": "safety",
+          "shot": {
+            "angle_deg": 185.9894714322551,
+            "cue_speed": 2.6,
+            "tip_x": -0.25,
+            "tip_y": 0.3
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 16.0
+          },
+          "evaluations": 173,
+          "elapsed_seconds": 5.665,
+          "safety_check": null
+        },
+        "v13": {
+          "tactic": "safety",
+          "shot": {
+            "angle_deg": 185.70775937089533,
+            "cue_speed": 0.8,
+            "tip_x": 0.0,
+            "tip_y": 0.0
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 9.819046886285516
+          },
+          "evaluations": 195,
+          "elapsed_seconds": 6.897,
+          "safety_check": {
+            "checked": 4,
+            "legal": 4,
+            "expected": 4,
+            "worst_easy_options": 0,
+            "easiest_reply_cost": 9.717413399938676,
+            "not_human_probability": true,
+            "complete": true
+          }
+        }
+      }
+    },
+    {
+      "seed": 960007,
+      "own_balls": 2,
+      "versions": {
+        "v12": {
+          "tactic": "safety",
+          "shot": {
+            "angle_deg": 277.42638508614925,
+            "cue_speed": 1.1,
+            "tip_x": 0.0,
+            "tip_y": 0.5
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 16.0
+          },
+          "evaluations": 223,
+          "elapsed_seconds": 11.551,
+          "safety_check": null
+        },
+        "v13": {
+          "tactic": "safety",
+          "shot": {
+            "angle_deg": 277.42638508614925,
+            "cue_speed": 1.1,
+            "tip_x": 0.0,
+            "tip_y": 0.5
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 16.0
+          },
+          "evaluations": 247,
+          "elapsed_seconds": 12.186,
+          "safety_check": {
+            "checked": 4,
+            "legal": 4,
+            "expected": 4,
+            "worst_easy_options": 0,
+            "easiest_reply_cost": 16.0,
+            "not_human_probability": true,
+            "complete": true
+          }
+        }
+      }
+    },
+    {
+      "seed": 960008,
+      "own_balls": 3,
+      "versions": {
+        "v12": {
+          "tactic": "safety",
+          "shot": {
+            "angle_deg": 88.6321242191813,
+            "cue_speed": 2.6,
+            "tip_x": -0.25,
+            "tip_y": 0.3
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 16.0
+          },
+          "evaluations": 206,
+          "elapsed_seconds": 8.673,
+          "safety_check": null
+        },
+        "v13": {
+          "tactic": "attack",
+          "shot": {
+            "angle_deg": 85.0398107553888,
+            "cue_speed": 0.8,
+            "tip_x": 0.0,
+            "tip_y": 0.0
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [
+            "9"
+          ],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 4.29082515820081
+          },
+          "evaluations": 273,
+          "elapsed_seconds": 11.672,
+          "safety_check": null
+        }
+      }
+    },
+    {
+      "seed": 960009,
+      "own_balls": 4,
+      "versions": {
+        "v12": {
+          "tactic": "safety",
+          "shot": {
+            "angle_deg": 7.326679676611556,
+            "cue_speed": 1.1,
+            "tip_x": 0.0,
+            "tip_y": 0.5
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 16.0
+          },
+          "evaluations": 54,
+          "elapsed_seconds": 2.171,
+          "safety_check": null
+        },
+        "v13": {
+          "tactic": "safety",
+          "shot": {
+            "angle_deg": 7.3572203806547165,
+            "cue_speed": 1.1,
+            "tip_x": 0.0,
+            "tip_y": 0.5
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 16.0
+          },
+          "evaluations": 101,
+          "elapsed_seconds": 4.233,
+          "safety_check": {
+            "checked": 4,
+            "legal": 4,
+            "expected": 4,
+            "worst_easy_options": 0,
+            "easiest_reply_cost": 16.0,
+            "not_human_probability": true,
+            "complete": true
+          }
+        }
+      }
+    },
+    {
+      "seed": 960010,
+      "own_balls": 5,
+      "versions": {
+        "v12": {
+          "tactic": "attack",
+          "shot": {
+            "angle_deg": 328.3080891379973,
+            "cue_speed": 2.6,
+            "tip_x": -0.25,
+            "tip_y": 0.3
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [
+            "13"
+          ],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 7.033927419302154
+          },
+          "evaluations": 426,
+          "elapsed_seconds": 20.197,
+          "safety_check": null
+        },
+        "v13": {
+          "tactic": "attack",
+          "shot": {
+            "angle_deg": 160.53857066122418,
+            "cue_speed": 0.8,
+            "tip_x": 0.0,
+            "tip_y": 0.0
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [
+            "9"
+          ],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 4.28822145945665
+          },
+          "evaluations": 480,
+          "elapsed_seconds": 17.461,
+          "safety_check": null
+        }
+      }
+    },
+    {
+      "seed": 960011,
+      "own_balls": 1,
+      "versions": {
+        "v12": {
+          "tactic": "safety",
+          "shot": {
+            "angle_deg": 348.72947931475306,
+            "cue_speed": 2.6,
+            "tip_x": 0.0,
+            "tip_y": 0.4
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 18.877507837911434
+          },
+          "evaluations": 154,
+          "elapsed_seconds": 7.347,
+          "safety_check": null
+        },
+        "v13": {
+          "tactic": "attack",
+          "shot": {
+            "angle_deg": 355.19763235770574,
+            "cue_speed": 3.2,
+            "tip_x": 0.25,
+            "tip_y": 0.3
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [
+            "1"
+          ],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 5.768341227242764
+          },
+          "evaluations": 292,
+          "elapsed_seconds": 12.048,
+          "safety_check": null
+        }
+      }
+    },
+    {
+      "seed": 960012,
+      "own_balls": 2,
+      "versions": {
+        "v12": {
+          "tactic": "safety",
+          "shot": {
+            "angle_deg": 351.8796227528555,
+            "cue_speed": 1.1,
+            "tip_x": 0.0,
+            "tip_y": 0.5
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 5.989708966285548
+          },
+          "evaluations": 46,
+          "elapsed_seconds": 1.546,
+          "safety_check": null
+        },
+        "v13": {
+          "tactic": "safety",
+          "shot": {
+            "angle_deg": 352.08502668077966,
+            "cue_speed": 1.1,
+            "tip_x": 0.0,
+            "tip_y": 0.5
+          },
+          "complete": true,
+          "committed": true,
+          "fouls": [],
+          "own_pots": [],
+          "won": false,
+          "opponent_threat": {
+            "easy_options": 0,
+            "best_cost": 5.8861104834792775
+          },
+          "evaluations": 92,
+          "elapsed_seconds": 2.933,
+          "safety_check": {
+            "checked": 4,
+            "legal": 4,
+            "expected": 4,
+            "worst_easy_options": 0,
+            "easiest_reply_cost": 5.672404163067133,
+            "not_human_probability": true,
+            "complete": true
+          }
+        }
+      }
+    }
+  ]
+}

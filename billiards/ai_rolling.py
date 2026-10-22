@@ -25,8 +25,20 @@ def readiness(analysis,state):
     valid &= all(matches(a[1],b[0]) for a,b in zip(chain,chain[1:]))
     clear=bool(valid and chain[-1][1]['phase']=='finished' and chain[-1][1]['winner']==state['turn'])
     available=len(chain) if valid else 0
-    ready=valid and (clear or available>=required and required==HORIZON)
-    return {'ready':bool(ready),'required':required,'available':available,'kind':'offense','clear_verified':clear}
+    # Exhausting continuation search does not invalidate already certified pots.
+    # The recovery is bound to this exact endpoint; it never claims full depth.
+    recovery=bool(valid and analysis.get('offensive_recovery') and
+                  analysis.get('_recovery_anchor') and matches(chain[-1][1],analysis['_recovery_anchor']) and
+                  all(step.get('verified') and
+                      (not step.get('human_margin') or step['human_margin']['allowed'])
+                      for step in routes[0]['steps']) and
+                  all(after.get('last_decision') and not after['last_decision'].get('fouls') and
+                      step['target'] in after['last_decision'].get('potted',[]) and
+                      (after['turn']==state['turn'] or after['winner']==state['turn'])
+                      for step,(_,after) in zip(routes[0]['steps'],chain)))
+    ready=valid and (clear or available>=required and required==HORIZON or recovery)
+    return {'ready':bool(ready),'required':required,'available':available,'kind':'offense',
+            'clear_verified':clear,'recovery':recovery}
 
 
 def endpoint(analysis):
@@ -48,6 +60,34 @@ def extend(service,state,depth,*,cancelled,progress):
         result=search.solve(state,max_depth=depth)
     if rounds:result['budget_continuations']=rounds
     return result
+
+
+def repair(service,analysis,state,*,cancelled,progress):
+    """Change only the last unplayed stroke to seek a better continuation.
+
+    Earlier certified strokes remain intact. An exhausted fixed endpoint is
+    not evidence that every other position from the preceding stroke fails.
+    """
+    if endpoint(analysis) is None:return None
+    chain=analysis['_forecasts'][0];keep=len(chain)-1
+    source=chain[keep][0]
+    own=legal_ids(state)
+    target=(1 if own==['8'] else len(own)+1) if state['groups'][state['turn']] and len(own)<=3 else HORIZON
+    progress({'stage':f'保留前 {keep} 杆，调整尚未执行的末杆以衔接后续','evaluations':0})
+    suffix=extend(service,source,max(1,target-keep),cancelled=cancelled,progress=progress)
+    prefix=deepcopy(analysis) if keep else None
+    if prefix:
+        prefix['routes'][0].update(steps=prefix['routes'][0]['steps'][:keep],clear_verified=False)
+        prefix['_forecasts'][0]=prefix['_forecasts'][0][:keep]
+    combined=append(prefix,suffix,source)
+    if combined:
+        gate=readiness(combined,state)
+        done=combined['routes'][0]['clear_verified'] or len(combined['routes'][0]['steps'])>=target
+        if gate['ready'] and done:
+            combined.update(repaired_tail=True,repair_retained_steps=keep,requested_depth=target,
+                            verified_depth=len(combined['routes'][0]['steps']),horizon_complete=True)
+            return combined
+    return None
 
 
 def append(prefix,suffix,anchor):
@@ -73,4 +113,7 @@ def append(prefix,suffix,anchor):
                   action={'action':'shoot','shot':deepcopy(steps[0]['shot'])},
                   extension_evaluations=result.get('extension_evaluations',0)+suffix.get('evaluations',0),
                   extended_steps=result.get('extended_steps',0)+len(suffix['routes'][0]['steps']))
+    # A changed endpoint needs a fresh recovery decision, never an inherited
+    # permission from the old exhausted queue.
+    result.pop('offensive_recovery',None);result.pop('_recovery_anchor',None)
     return result
