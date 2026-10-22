@@ -20,7 +20,7 @@ from .planner_routes import segment_distance
 from .pockets import outline
 from .rules import adjudicate, legal_ids
 from .shot_difficulty import geometric_tolerance
-from .shot_prior import ShotPrior,inputs,contact_cost,continuation_cost
+from .shot_prior import ShotPrior,inputs,contact_cost,continuation_cost,human_pot_cost,planning_policy
 
 FEATURE_NAMES = ['remaining', 'best_distance', 'best_object_distance', 'best_cut',
                  'best_clearance', 'option_count', 'available_targets', 'blocked_fraction',
@@ -95,7 +95,7 @@ def shot_options(service, state, policy):
                             'cut': cut, 'clearance': clearance, 'cost': cost,
                             'rear_restricted': bool(access['notes']),'bridge_cost':bridge_cost,
                             'long_object_cost':long_object_cost,**pot})
-    return sorted(options, key=lambda v: (v['cost'], v['target'], v['pocket']))
+    return sorted(options, key=lambda v: (human_pot_cost(v), v['target'], v['pocket']))
 
 
 def features(service, state, policy, options=None):
@@ -160,6 +160,7 @@ class Search:
         self.rejected = {}; self.expanded = 0
         self.forecasts={}
         self.simulations=OrderedDict();self.reused_simulations=0
+        self.aimed_trials={};self.margin_trials={};self.reused_candidate_trials=0
 
     def stopped(self):
         return self.cancelled() or monotonic() >= self.deadline or self.count >= self.cap
@@ -201,7 +202,42 @@ class Search:
         if len(self.simulations)>24:self.simulations.popitem(last=False)
         return result, after, access
 
-    def aimed(self, state, option, speed, tip_y, tip_x=0.):
+    def human_margin(self,state,shot,target,pocket,*,require_leaf=False):
+        policy=planning_policy();key=(json.dumps(state,sort_keys=True),shot,target,pocket,require_leaf)
+        if key in self.margin_trials:return self.margin_trials[key]
+        angle=policy['angle_probe_deg'];spread=policy['speed_probe_fraction']
+        balls,_=self.service.decode(state['scene'])
+        access=check_stroke(balls,shot,self.service.table,self.policy)
+        upper=self.policy['rail_max_cue_speed_mps'] if access['notes'] else self.policy['max_normal_cue_speed_mps']
+        passed=leaves=0
+        for da,ds in ((-angle,1.),(angle,1.),(0.,1-spread),(0.,1+spread)):
+            if self.stopped():return None
+            trial=self.forward(state,replace(shot,angle_deg=(shot.angle_deg+da)%360,cue_speed=min(upper,shot.cue_speed*ds)))
+            if trial is None:continue
+            result,after,_=trial
+            ball=next(b for b in result.final if b.id==target)
+            valid=ball.pocket==pocket and not after['last_decision']['fouls'] and after['winner'] in (None,state['turn'])
+            passed+=bool(valid)
+            if valid:
+                options=shot_options(self.service,after,self.policy) if after['winner'] is None else []
+                leaves+=bool(after['winner']==state['turn'] or any(o['aim_half_window_deg']>=.03 and not o['rear_restricted'] and .18<=o['distance']<=1.2 for o in options))
+        value={'pot_passed':passed,'leaf_passed':leaves,'checked':4,
+               'allowed':passed==4 and (not require_leaf or leaves==4),
+               'angle_deg':angle,'speed_fraction':spread,'not_human_probability':True}
+        self.margin_trials[key]=value
+        return value
+
+    def aimed(self,state,option,speed,tip_y,tip_x=0.):
+        key=(json.dumps(state,sort_keys=True),option['target'],option['pocket'],option['angle'],option['desired'],speed,tip_y,tip_x)
+        if key in self.aimed_trials:
+            self.reused_candidate_trials+=1
+            return deepcopy(self.aimed_trials[key])
+        value=self._aimed(state,option,speed,tip_y,tip_x)
+        if not self.stopped():self.aimed_trials[key]=deepcopy(value)
+        return value
+
+    def _aimed(self, state, option, speed, tip_y, tip_x=0.):
+        if option['aim_half_window_deg']<planning_policy()['minimum_aim_half_window_deg']:return None
         angle = option['angle']; previous = None; best = None
         for _ in range(3):
             shot = ShotInput(angle % 360, speed, tip_x, tip_y)
@@ -238,21 +274,24 @@ class Search:
                         'jaw_contacts':jaw_hits,'clean_pot':jaw_hits==0,'pocket_offset_mm':round(offset*1000,2),
                         'pocket_entry_cost':round(pocket_cost,5),
                         'position_effort':round(.035*speed+.08*abs(tip_y)+.16*abs(tip_x)+.025*banks,5),
-                        'cost': option['cost']+.035*speed+.08*abs(tip_y)+.16*abs(tip_x)+.025*banks+pocket_cost}
+                        'cost': human_pot_cost(option)+.035*speed+.08*abs(tip_y)+.16*abs(tip_x)+.025*banks+pocket_cost}
                 contacts=[list(e.actors) for e in result.events if e.kind=='ball_ball' and e is not event and e.time>=event.time]
                 gain=max(0,cluster_pressure(state,option['target'])-cluster_pressure(after,option['target'])) if contacts else 0
                 next_options=shot_options(self.service,after,self.policy) if after['winner'] is None else []
                 before_options=shot_options(self.service,state,self.policy) if contacts else []
-                opened=sorted({o['target'] for o in next_options}-{o['target'] for o in before_options}-{option['target']},key=int) if contacts else []
+                opened=sorted(({o['target'] for o in next_options}-{o['target'] for o in before_options}-{option['target']})&set(legal_ids(state)),key=int) if contacts else []
+                cue_others={b if a=='cue' else a for a,b in contacts if 'cue' in (a,b) and option['target'] not in (a,b)}
+                cue_jaws=sum(e.kind=='ball_cushion' and 'cue' in e.actors and e.detail.startswith('jaw:') for e in result.events)
                 collision_cost=contact_cost(contacts,option['target'],opened)
                 link_cost=continuation_cost(next_options,after['winner']==state['turn'])
-                step.update(secondary_contacts=contacts,breakout_gain=gain,opened_targets=opened,
+                margin=self.human_margin(state,shot,option['target'],target.pocket,require_leaf=bool(cue_others)) if not cue_others or opened else None
+                step.update(secondary_contacts=contacts,breakout_gain=gain,opened_targets=opened,cue_jaw_contacts=cue_jaws,human_margin=margin,
                             contact_cost=collision_cost,continuation_cost=link_cost)
-                step['cost']+=collision_cost+link_cost
+                step['cost']+=collision_cost+link_cost+planning_policy()['cue_jaw_contact_cost']*cue_jaws+planning_policy()['object_jaw_contact_cost']*jaw_hits
                 step['next_shot']=({k:next_options[0][k] for k in ('target','pocket','cost','distance','object_distance','cut','rear_restricted')}
                                    if next_options else None)
                 key=len(self.forecasts);self.forecasts[key]=(state,after);step['_forecast_key']=key
-                best = (after, step)
+                if margin and margin['allowed']:best = (after, step)
             outgoing = next(b for b in event.after if b.id == option['target']).velocity
             if outgoing.norm() < 1e-8: break
             desired = option['desired']
@@ -276,8 +315,8 @@ class Search:
         for o in options:
             if o not in chosen: chosen.append(o)
         chosen = chosen[:max(6,len(seen))]
-        # Compare a small off-centre pocket line too. A useful jaw-assisted pot
-        # may outweigh the deliberately small clean-entry preference.
+        # Keep off-centre alternatives, but certify their margin and charge
+        # explicit object-jaw and cue-jaw risks before recommending them.
         biased=[]
         for base in options[:2]:
             pocket=next(p for p in outline(self.service.table).pockets if p.id==base['pocket'])
@@ -298,12 +337,14 @@ class Search:
                 key=task[0]['target'],task[0]['pocket']
                 if key not in lines:selected.append(task);lines.add(key)
             tasks=selected+[task for _,task in ranked if task not in selected]
-            attempts=min(attempts,max(18,len(chosen)*6))
         for o,(speed,tip_x,tip_y) in tasks:
             if self.stopped() or self.count >= self.search_cap or tried >= attempts:return pool
             tried+=1
             value=self.aimed(state,o,speed,tip_y,tip_x)
-            if value is not None:pool.append(value)
+            if value is not None:
+                after,step=value
+                if after['winner']==state['turn'] or step['human_margin']['leaf_passed']>=3:pool.append(value)
+                else:self.rejected['human:fragile_next_position']=self.rejected.get('human:fragile_next_position',0)+1
         return pool
 
     def position_value(self, state):
@@ -323,12 +364,62 @@ class Search:
         # Extra rails/spin remain a small tie-breaker, not a hard preference.
         return total/max(1,len(path))+.65*hardest+.25*sum(leaves)/max(1,len(leaves))-.65*self.position_value(state)
 
+    def plan(self,state,*,max_depth=None):
+        result=self.solve(state,max_depth=max_depth)
+        # Latency is not a reason to publish a shallower plan. Continue once
+        # with the same exact candidate cache if the first budget stopped short.
+        if (result.get('routes') and not result.get('horizon_complete',True) and not self.cancelled()
+                and (self.stopped() or monotonic()>=self.search_deadline)):
+            duration=self.deadline-self.started
+            self.deadline=self.started+2*duration;self.search_deadline=self.deadline-3.
+            self.cap*=2;self.search_cap=self.cap-24
+            forecasts=result.get('_forecasts')
+            if forecasts and forecasts[0]:
+                # Preserve the certified prefix; spend the extra budget at its
+                # endpoint instead of widening the root for a second time.
+                from .ai_rolling import append
+                anchor=forecasts[0][-1][1]
+                requested=result['requested_depth']
+                before_count=self.count
+                suffix=self.solve(anchor,max_depth=max(1,requested-result['verified_depth']))
+                if self.cancelled():return {**suffix,'continued_for_horizon':True}
+                suffix['evaluations']=self.count-before_count
+                combined=append(result,suffix,anchor)
+                if combined:result=combined
+                actual=len(result['routes'][0]['steps'])
+                done=result['routes'][0]['clear_verified'] or actual>=requested
+                result.update(requested_depth=requested,verified_depth=actual,horizon_complete=done,
+                              horizon_limit=None if done else suffix['horizon_limit'],
+                              evaluations=self.count,elapsed=round(monotonic()-self.started,2),
+                              reused_simulations=self.reused_simulations,reused_candidate_trials=self.reused_candidate_trials)
+            else:result=self.solve(state,max_depth=max_depth)
+            result['continued_for_horizon']=True
+        return result
+
     def solve(self, state, *, max_depth=None):
         owner = state['turn']; own = legal_ids(state)
         endgame = state['groups'][owner] is not None and len(own) <= 3
         depth = (1 if own == ['8'] else len(own)+1) if endgame else 3
         if max_depth is not None:depth=min(depth,max(1,max_depth))
         frontier = [(state, [], 0.)]; paths = []; complete = []
+        # Establish a full-depth seed before spending the budget widening the
+        # beam. Learned order saves work; it must never lower the target depth.
+        seed_deadline=self.started+(self.deadline-self.started)*.45
+        def seed(node,path,total):
+            if len(path)>=depth or node['winner']==owner:return True
+            if self.stopped() or monotonic()>=seed_deadline:return False
+            pool=self.candidates(node,attempts=12)
+            ranked=[]
+            for after,step in pool:
+                entry=(after,path+[step],total+step['cost']);paths.append(entry)
+                if after['winner']==owner:complete.append(entry)
+                elif after['turn']!=owner or after['phase']!='playing':continue
+                ranked.append(entry)
+            ranked.sort(key=self.route_cost)
+            for after,route,cost in ranked[:2]:
+                if seed(after,route,cost):return True
+            return False
+        seed(state,[],0.)
         for level in range(depth):
             expanded = []
             for node, path, cost in frontier:
@@ -362,11 +453,9 @@ class Search:
                 signatures.add(signature); frontier.append(entry)
                 if len(frontier) == 6: break
             if self.stopped() or monotonic() >= self.search_deadline: break
-        candidates = complete or paths
-        # Extra verified strokes are useful, but must not outrank a comfortable
-        # continuation solely because the path is longer and ends in a dead end.
-        candidates.sort(key=lambda n: (not n[0]['winner'] == owner,
-                                      self.route_cost(n)-.35*len(n[1])))
+        longest=max((len(p[1]) for p in paths),default=0)
+        candidates = complete or [p for p in paths if len(p[1])==longest]
+        candidates.sort(key=lambda n:(not n[0]['winner']==owner,self.route_cost(n)))
         routes = []; keys = set();forecasts=[]
         for after, path, cost in candidates:
             key = tuple((s['target'],s['pocket']) for s in path)
@@ -424,6 +513,10 @@ class Search:
                 'model': self.model.data['version'] if self.model and self.model.data else 'heuristic-baseline',
                 'evaluations': self.count, 'elapsed': round(monotonic()-self.started, 2),
                 'reused_simulations':self.reused_simulations,
+                'reused_candidate_trials':self.reused_candidate_trials,
+                'requested_depth':depth,'verified_depth':len(routes[0]['steps']) if routes else 0,
+                'horizon_complete':bool(routes and (routes[0]['clear_verified'] or len(routes[0]['steps'])>=depth)),
+                'horizon_limit':None if routes and (routes[0]['clear_verified'] or len(routes[0]['steps'])>=depth) else 'budget_exhausted' if self.stopped() or monotonic()>=self.search_deadline else 'no_robust_continuation_found',
                 'human_policy': self.policy['version'], 'rejected_strokes': self.rejected,
                 '_forecasts':forecasts,
                 'scope': 'simulation-trained ranking; ordinary horizontal strokes; no professional success claim'}

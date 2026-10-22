@@ -155,16 +155,19 @@ def test_cache_miss_prefetch_runs_before_next_client_turn_without_duplicate_work
     finally:release.set()
 
 
-def test_legal_k_releases_own_opponent_cluster_and_still_pots(service):
+def test_legal_k_still_pots_but_cluster_credit_cannot_override_precise_collision_risk(service):
     from tools.train_runout import layout
     from billiards.runout import shot_options
     state=layout(service,17042);search=Search(service,trained=False,seconds=10,evaluations=30)
     option=next(o for o in shot_options(service,state,search.policy) if o['target']=='9' and o['pocket']=='bottom-left')
-    value=search.aimed(state,option,2.5,.3,-.3)
-    assert value and value[1]['breakout_gain']>0
-    assert ['cue','10'] in value[1]['secondary_contacts'] and ['cue','2'] in value[1]['secondary_contacts']
+    shot={'angle_deg':198.4051972968517,'cue_speed':2.5,'tip_y':.3,'tip_x':-.3}
+    physics,after,_=search.forward(state,ShotInput(**shot))
+    contacts=[list(e.actors) for e in physics.events if e.kind=='ball_ball']
+    assert ['cue','10'] in contacts and ['cue','2'] in contacts
+    assert not after['last_decision']['fouls'] and '9' in after['last_decision']['potted']
+    assert search.aimed(state,option,2.5,.3,-.3) is None
     games=GameStore(service);games.games[state['id']]=state
-    actual=games.action({'id':state['id'],'revision':0,'action':'shoot','shot':value[1]['shot']})
+    actual=games.action({'id':state['id'],'revision':0,'action':'shoot','shot':shot})
     assert actual['complete'] and not actual['game_after']['last_decision']['fouls']
     assert '9' in actual['game_after']['last_decision']['potted']
 

@@ -10,7 +10,7 @@ import numpy as np
 
 from billiards.play import PlayService
 from billiards.runout import Search,shot_options,stroke_settings
-from billiards.shot_prior import FEATURES,VERSION,inputs
+from billiards.shot_prior import FEATURES,VERSION,inputs,planning_policy
 from billiards.human_stroke import load_policy
 from tools.train_runout import layout
 
@@ -40,6 +40,35 @@ def generate(seed):
 
 
 def split(seed):return 'test' if seed%6==0 else 'validation' if seed%6==5 else 'train'
+
+
+def refine_case(rows):
+    from billiards.cue import ShotInput
+    service=PlayService(table_profile='cbsa_2017');state=layout(service,rows[0]['seed'],max_balls=5)
+    search=Search(service,trained=False,seconds=300,evaluations=1000)
+    for row in rows:
+        if not row['verified_pot']:continue
+        margin=search.human_margin(state,ShotInput(**row['shot']),row['target'],row['pocket'])
+        row['leaf_passed']=margin['leaf_passed'] if margin else 0
+        row['pot_margin_passed']=margin['pot_passed'] if margin else 0
+        row['label_eligible']=bool(margin and margin['pot_passed']==4 and margin['leaf_passed']>=3)
+        if not row['label_eligible']:row['y']=0.
+    return rows,search.count
+
+
+def refine_leaves(data,workers):
+    groups={}
+    for row in data['rows']:groups.setdefault(row['seed'],[]).append(row)
+    rows=[];count=0
+    with ProcessPoolExecutor(max_workers=workers) as pool:
+        jobs=[pool.submit(refine_case,r) for r in groups.values()]
+        for i,f in enumerate(as_completed(jobs),1):
+            r,n=f.result();rows+=r;count+=n
+            if i%40==0:print(json.dumps({'leaf_audit_layouts':i,'simulations':count}),flush=True)
+    rows.sort(key=lambda r:(r['seed'],r['option'],r['setting']))
+    data.update(rows=rows,raw_candidate_simulations=data['simulations'],simulations=data['simulations']+count,
+                leaf_margin_checked=True,leaf_audit_simulations=count)
+    return data
 
 
 def ranking(rows,predictions):
@@ -86,7 +115,7 @@ def fit(service,rows):
         metrics[name]={'samples':len(items),'seeds':sorted({r['seed'] for r in items}),
                        'mse':float(np.mean((pred-yy)**2)),**ranking(items,pred)}
     model={'version':VERSION,'features':FEATURES,'physics_signature':service.signature,
-           'human_policy':load_policy(service),'mean':mean.tolist(),'scale':scale.tolist(),
+           'human_policy':load_policy(service),'planning_policy':planning_policy(),'mean':mean.tolist(),'scale':scale.tolist(),
            'w1':w1.tolist(),'b1':b1.tolist(),'w2':w2.tolist(),'b2':float(b2[0]),
            'training':{'selected_epoch':selected,'epochs':1600,'metrics':metrics,
                        'label':'Verified pot utility exp(-0.20 * cost), including next-shot comfort and secondary-contact cost; failed/unreliable results zero.',
@@ -98,7 +127,7 @@ def main():
     parser=argparse.ArgumentParser();parser.add_argument('--layouts',type=int,default=72)
     parser.add_argument('--workers',type=int,default=4);parser.add_argument('--reuse',action='store_true')
     args=parser.parse_args();service=PlayService(table_profile='cbsa_2017')
-    directory=service.root/'training'/'ai_stage4';directory.mkdir(parents=True,exist_ok=True)
+    directory=service.root/'training'/'ai_stage5';directory.mkdir(parents=True,exist_ok=True)
     path=directory/'shot-prior-dataset.json.gz';started=monotonic()
     if args.reuse:data=json.loads(gzip.decompress(path.read_bytes()).decode('utf8'))
     else:
@@ -113,9 +142,12 @@ def main():
               'physics_signature':service.signature,'human_policy':load_policy(service),'simulations':simulations,'rows':rows}
         path.write_bytes(gzip.compress((json.dumps(data,ensure_ascii=False)+'\n').encode('utf8'),compresslevel=9,mtime=0))
     assert data['physics_signature']==service.signature and data['human_policy']==load_policy(service)
+    if not data.get('leaf_margin_checked'):
+        data=refine_leaves(data,args.workers)
+        path.write_bytes(gzip.compress((json.dumps(data,ensure_ascii=False)+'\n').encode('utf8'),compresslevel=9,mtime=0))
     model,trace=fit(service,data['rows'])
     model['training']['dataset_sha256']=hashlib.sha256(gzip.decompress(path.read_bytes())).hexdigest()
-    model['training']['dataset_file']='training/ai_stage4/shot-prior-dataset.json.gz'
+    model['training']['dataset_file']='training/ai_stage5/shot-prior-dataset.json.gz'
     (service.root/'configs'/'ai_shot_prior.json').write_text(json.dumps(model,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
     report={'model':model,'trace':trace,'simulations':data['simulations'],'elapsed':monotonic()-started}
     (directory/'shot-prior-training.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf8')

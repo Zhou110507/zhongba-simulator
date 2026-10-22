@@ -1,0 +1,635 @@
+{
+  "version": "wide-margin-full-horizon-v9",
+  "planning_policy": {
+    "version": "wide-margin-depth-v1",
+    "extra_pot_difficulty_weight": 2.4,
+    "minimum_aim_half_window_deg": 0.012,
+    "preferred_aim_half_window_deg": 0.08,
+    "narrow_window_weight": 1.2,
+    "cue_other_contact_cost": 5.0,
+    "secondary_contact_cost": 0.5,
+    "opened_target_credit": 0.35,
+    "cue_jaw_contact_cost": 4.0,
+    "object_jaw_contact_cost": 0.45,
+    "angle_probe_deg": 0.1,
+    "speed_probe_fraction": 0.03,
+    "definition": "Engineering preferences and discrete robustness checks, not measured human success rates. Preserve the original horizon; prefer wide pot margins and broad natural leaves. Incidental collision stops are excluded; purposeful K requires newly opened own targets and robust continuations. Cue-ball jaw-assisted position is penalized."
+  },
+  "training_simulations": 52269,
+  "dataset_sha256": "83d669e6c4883eb1c0292e725c8c0e1cb6d690290f834422140852346dc30894",
+  "heldout_prior_metrics": {
+    "samples": 1418,
+    "seeds": [
+      720006,
+      720012,
+      720018,
+      720024,
+      720030,
+      720036,
+      720042,
+      720048,
+      720054,
+      720060,
+      720066,
+      720072,
+      720078,
+      720084,
+      720090,
+      720108,
+      720114,
+      720120,
+      720126,
+      720132,
+      720138,
+      720144,
+      720150,
+      720156,
+      720162,
+      720168,
+      720174,
+      720180,
+      720186,
+      720192,
+      720198,
+      720204,
+      720210,
+      720222,
+      720228,
+      720234,
+      720240,
+      720246,
+      720252,
+      720258,
+      720264,
+      720270,
+      720276,
+      720282,
+      720288
+    ],
+    "mse": 0.0075376965315009665,
+    "options": 80,
+    "top4_utility": 0.06328610410111417,
+    "baseline_top4_utility": 0.06368659592192857,
+    "oracle_utility": 0.1018781200959212
+  },
+  "rows": [
+    {
+      "status": "found",
+      "endgame": true,
+      "model": "short-runout-value-v4",
+      "evaluations": 893,
+      "elapsed": 30.05,
+      "reused_simulations": 22,
+      "reused_candidate_trials": 12,
+      "requested_depth": 3,
+      "verified_depth": 3,
+      "horizon_complete": true,
+      "horizon_limit": null,
+      "human_policy": "human-position-contacts-v4",
+      "rejected_strokes": {
+        "human:fragile_next_position": 33,
+        "simulation:cancelled": 1
+      },
+      "scope": "simulation-trained ranking; ordinary horizontal strokes; no professional success claim",
+      "case": "endgame",
+      "wall_seconds": 30.053026399808004,
+      "routes": [
+        {
+          "steps": [
+            {
+              "target": "3",
+              "pocket": "top-left",
+              "shot": {
+                "angle_deg": 127.35657273031781,
+                "cue_speed": 2.2,
+                "tip_x": 0.0,
+                "tip_y": -0.45
+              },
+              "cue_final": {
+                "x": 1.8084876610794125,
+                "y": 1.0798198855509469
+              },
+              "cut_degrees": 23.5,
+              "distance_mm": 444,
+              "human": {
+                "allowed": true,
+                "reasons": [],
+                "notes": [],
+                "rear_rail_distance_mm": 817.7,
+                "policy_version": "human-position-contacts-v4"
+              },
+              "object_distance_mm": 488,
+              "aim_half_window_deg": 0.1636,
+              "pot_difficulty": 0.39818,
+              "potted": [
+                "3"
+              ],
+              "verified": true,
+              "cue_cushions": 1,
+              "cue_ball_contacts": 1,
+              "jaw_contacts": 0,
+              "clean_pot": true,
+              "pocket_offset_mm": 12.34,
+              "pocket_entry_cost": 0.01763,
+              "position_effort": 0.138,
+              "cost": 3.6230257837195943,
+              "secondary_contacts": [],
+              "breakout_gain": 0,
+              "opened_targets": [],
+              "cue_jaw_contacts": 0,
+              "human_margin": {
+                "pot_passed": 4,
+                "leaf_passed": 4,
+                "checked": 4,
+                "allowed": true,
+                "angle_deg": 0.1,
+                "speed_fraction": 0.03,
+                "not_human_probability": true
+              },
+              "contact_cost": 0.0,
+              "continuation_cost": 1.7196602497601938,
+              "next_shot": {
+                "target": "1",
+                "pocket": "bottom-middle",
+                "cost": 1.0227674063232355,
+                "distance": 0.9173480909878391,
+                "object_distance": 0.31200000000000006,
+                "cut": 35.944741038921784,
+                "rear_restricted": false
+              }
+            },
+            {
+              "target": "1",
+              "pocket": "bottom-middle",
+              "shot": {
+                "angle_deg": 234.0063445418646,
+                "cue_speed": 1.6,
+                "tip_x": 0.0,
+                "tip_y": 0.3
+              },
+              "cue_final": {
+                "x": 1.668554158675691,
+                "y": 0.7478355705453043
+              },
+              "cut_degrees": 35.9,
+              "distance_mm": 917,
+              "human": {
+                "allowed": true,
+                "reasons": [],
+                "notes": [],
+                "rear_rail_distance_mm": 235.1,
+                "policy_version": "human-position-contacts-v4"
+              },
+              "object_distance_mm": 312,
+              "aim_half_window_deg": 0.1335,
+              "pot_difficulty": 0.4695,
+              "potted": [
+                "1"
+              ],
+              "verified": true,
+              "cue_cushions": 2,
+              "cue_ball_contacts": 1,
+              "jaw_contacts": 0,
+              "clean_pot": true,
+              "pocket_offset_mm": 0.05,
+              "pocket_entry_cost": 7e-05,
+              "position_effort": 0.13,
+              "cost": 3.555446152584673,
+              "secondary_contacts": [],
+              "breakout_gain": 0,
+              "opened_targets": [],
+              "cue_jaw_contacts": 0,
+              "human_margin": {
+                "pot_passed": 4,
+                "leaf_passed": 4,
+                "checked": 4,
+                "allowed": true,
+                "angle_deg": 0.1,
+                "speed_fraction": 0.03,
+                "not_human_probability": true
+              },
+              "contact_cost": 0.0,
+              "continuation_cost": 1.2757978452490677,
+              "next_shot": {
+                "target": "2",
+                "pocket": "top-right",
+                "cost": 0.7263791691809653,
+                "distance": 0.4062098362354893,
+                "object_distance": 0.5502186192158764,
+                "cut": 7.534891866709628,
+                "rear_restricted": false
+              }
+            },
+            {
+              "target": "2",
+              "pocket": "top-right",
+              "shot": {
+                "angle_deg": 26.38558589455142,
+                "cue_speed": 2.5,
+                "tip_x": 0.0,
+                "tip_y": -0.5
+              },
+              "cue_final": {
+                "x": 0.8613247509211855,
+                "y": 0.2720672887745429
+              },
+              "cut_degrees": 7.5,
+              "distance_mm": 406,
+              "human": {
+                "allowed": true,
+                "reasons": [],
+                "notes": [],
+                "rear_rail_distance_mm": 1682.8,
+                "policy_version": "human-position-contacts-v4"
+              },
+              "object_distance_mm": 550,
+              "aim_half_window_deg": 0.1835,
+              "pot_difficulty": 0.36182,
+              "potted": [
+                "2"
+              ],
+              "verified": true,
+              "cue_cushions": 1,
+              "cue_ball_contacts": 1,
+              "jaw_contacts": 0,
+              "clean_pot": true,
+              "pocket_offset_mm": 5.06,
+              "pocket_entry_cost": 0.00723,
+              "position_effort": 0.1525,
+              "cost": 5.729935198764943,
+              "secondary_contacts": [],
+              "breakout_gain": 0,
+              "opened_targets": [],
+              "cue_jaw_contacts": 0,
+              "human_margin": {
+                "pot_passed": 4,
+                "leaf_passed": 4,
+                "checked": 4,
+                "allowed": true,
+                "angle_deg": 0.1,
+                "speed_fraction": 0.03,
+                "not_human_probability": true
+              },
+              "contact_cost": 0.0,
+              "continuation_cost": 3.9754597809660397,
+              "next_shot": {
+                "target": "8",
+                "pocket": "bottom-right",
+                "cost": 1.9628767295620468,
+                "distance": 1.071713913619977,
+                "object_distance": 0.6405693130445423,
+                "cut": 33.7141417141411,
+                "rear_restricted": false
+              }
+            }
+          ],
+          "clear_verified": false,
+          "reasons": [
+            "每杆通过当前物理模型与中八规则检查；使用普通水平杆法限制",
+            "综合当前进球、下一球好打度与走位代价；允许五库内及适度加塞换取更舒服的续接",
+            "这是预算内找到的部分路线，后续需根据实际落点重算"
+          ],
+          "mean_cost": 4.3028,
+          "max_shot_cost": 5.5774,
+          "mean_position_effort": 0.1402
+        }
+      ]
+    },
+    {
+      "status": "found",
+      "endgame": false,
+      "model": "short-runout-value-v4",
+      "evaluations": 629,
+      "elapsed": 35.21,
+      "reused_simulations": 26,
+      "reused_candidate_trials": 60,
+      "requested_depth": 3,
+      "verified_depth": 1,
+      "horizon_complete": false,
+      "horizon_limit": "no_robust_continuation_found",
+      "human_policy": "human-position-contacts-v4",
+      "rejected_strokes": {
+        "human:fragile_next_position": 29
+      },
+      "scope": "simulation-trained ranking; ordinary horizontal strokes; no professional success claim",
+      "continued_for_horizon": true,
+      "case": "previous-user-layout",
+      "wall_seconds": 35.212107700062916,
+      "routes": [
+        {
+          "steps": [
+            {
+              "target": "2",
+              "pocket": "top-right",
+              "shot": {
+                "angle_deg": 64.85172284739618,
+                "cue_speed": 2.5,
+                "tip_x": 0.0,
+                "tip_y": -0.5
+              },
+              "cue_final": {
+                "x": 2.076991112655324,
+                "y": 0.19258756901580382
+              },
+              "cut_degrees": 2.6,
+              "distance_mm": 500,
+              "human": {
+                "allowed": true,
+                "reasons": [],
+                "notes": [],
+                "rear_rail_distance_mm": 701.5,
+                "policy_version": "human-position-contacts-v4"
+              },
+              "object_distance_mm": 137,
+              "aim_half_window_deg": 0.4881,
+              "pot_difficulty": 0.15178,
+              "potted": [
+                "2"
+              ],
+              "verified": true,
+              "cue_cushions": 1,
+              "cue_ball_contacts": 1,
+              "jaw_contacts": 1,
+              "clean_pot": false,
+              "pocket_offset_mm": 6.81,
+              "pocket_entry_cost": 0.12973,
+              "position_effort": 0.1525,
+              "cost": 5.610327453294845,
+              "secondary_contacts": [],
+              "breakout_gain": 0,
+              "opened_targets": [],
+              "cue_jaw_contacts": 0,
+              "human_margin": {
+                "pot_passed": 4,
+                "leaf_passed": 4,
+                "checked": 4,
+                "allowed": true,
+                "angle_deg": 0.1,
+                "speed_fraction": 0.03,
+                "not_human_probability": true
+              },
+              "contact_cost": 0.0,
+              "continuation_cost": 4.115008590336941,
+              "next_shot": {
+                "target": "6",
+                "pocket": "top-middle",
+                "cost": 2.043720735548889,
+                "distance": 0.559164496166113,
+                "object_distance": 0.9186461355113731,
+                "cut": 55.55792519604729,
+                "rear_restricted": false
+              }
+            }
+          ],
+          "clear_verified": false,
+          "reasons": [
+            "每杆通过当前物理模型与中八规则检查；使用普通水平杆法限制",
+            "综合当前进球、下一球好打度与走位代价；允许五库内及适度加塞换取更舒服的续接",
+            "这是预算内找到的部分路线，后续需根据实际落点重算"
+          ],
+          "mean_cost": 5.6103,
+          "max_shot_cost": 5.4578,
+          "mean_position_effort": 0.1525,
+          "perturbations": {
+            "passed": 4,
+            "checked": 4,
+            "expected": 4,
+            "complete": true,
+            "not_human_probability": true,
+            "definition": "Individual angle +/-0.05 degrees and cue speed +/-2%; actual legal pot plus an accessible moderate continuation. Not a joint full-route probability."
+          }
+        }
+      ]
+    },
+    {
+      "status": "found",
+      "endgame": true,
+      "model": "short-runout-value-v4",
+      "evaluations": 805,
+      "elapsed": 27.65,
+      "reused_simulations": 26,
+      "reused_candidate_trials": 24,
+      "requested_depth": 3,
+      "verified_depth": 3,
+      "horizon_complete": true,
+      "horizon_limit": null,
+      "human_policy": "human-position-contacts-v4",
+      "rejected_strokes": {
+        "human:fragile_next_position": 47
+      },
+      "scope": "simulation-trained ranking; ordinary horizontal strokes; no professional success claim",
+      "case": "unseen-980001",
+      "wall_seconds": 27.65424059983343,
+      "routes": [
+        {
+          "steps": [
+            {
+              "target": "1",
+              "pocket": "bottom-left",
+              "shot": {
+                "angle_deg": 180.93369952529187,
+                "cue_speed": 2.5,
+                "tip_x": 0.0,
+                "tip_y": 0.0
+              },
+              "cue_final": {
+                "x": 1.241209560110728,
+                "y": 0.5055787598254307
+              },
+              "cut_degrees": 25.3,
+              "distance_mm": 714,
+              "human": {
+                "allowed": true,
+                "reasons": [],
+                "notes": [],
+                "rear_rail_distance_mm": 1486.0,
+                "policy_version": "human-position-contacts-v4"
+              },
+              "object_distance_mm": 319,
+              "aim_half_window_deg": 0.1455,
+              "pot_difficulty": 0.43803,
+              "potted": [
+                "1"
+              ],
+              "verified": true,
+              "cue_cushions": 2,
+              "cue_ball_contacts": 1,
+              "jaw_contacts": 0,
+              "clean_pot": true,
+              "pocket_offset_mm": 5.68,
+              "pocket_entry_cost": 0.00812,
+              "position_effort": 0.1375,
+              "cost": 5.0569536195301135,
+              "secondary_contacts": [],
+              "breakout_gain": 0,
+              "opened_targets": [],
+              "cue_jaw_contacts": 0,
+              "human_margin": {
+                "pot_passed": 4,
+                "leaf_passed": 4,
+                "checked": 4,
+                "allowed": true,
+                "angle_deg": 0.1,
+                "speed_fraction": 0.03,
+                "not_human_probability": true
+              },
+              "contact_cost": 0.0,
+              "continuation_cost": 2.0155843971331335,
+              "next_shot": {
+                "target": "2",
+                "pocket": "bottom-right",
+                "cost": 1.2755644091905751,
+                "distance": 1.0394828504227716,
+                "object_distance": 0.3200419865332732,
+                "cut": 25.45945723160993,
+                "rear_restricted": false
+              }
+            },
+            {
+              "target": "2",
+              "pocket": "bottom-right",
+              "shot": {
+                "angle_deg": 345.5673291727717,
+                "cue_speed": 1.1,
+                "tip_x": 0.0,
+                "tip_y": 0.0
+              },
+              "cue_final": {
+                "x": 1.943884724815123,
+                "y": 0.5185557954732195
+              },
+              "cut_degrees": 25.5,
+              "distance_mm": 1039,
+              "human": {
+                "allowed": true,
+                "reasons": [],
+                "notes": [],
+                "rear_rail_distance_mm": 1281.7,
+                "policy_version": "human-position-contacts-v4"
+              },
+              "object_distance_mm": 320,
+              "aim_half_window_deg": 0.1178,
+              "pot_difficulty": 0.5183,
+              "potted": [
+                "2"
+              ],
+              "verified": true,
+              "cue_cushions": 1,
+              "cue_ball_contacts": 1,
+              "jaw_contacts": 0,
+              "clean_pot": true,
+              "pocket_offset_mm": 3.97,
+              "pocket_entry_cost": 0.00568,
+              "position_effort": 0.0635,
+              "cost": 3.515874872138887,
+              "secondary_contacts": [],
+              "breakout_gain": 0,
+              "opened_targets": [],
+              "cue_jaw_contacts": 0,
+              "human_margin": {
+                "pot_passed": 4,
+                "leaf_passed": 3,
+                "checked": 4,
+                "allowed": true,
+                "angle_deg": 0.1,
+                "speed_fraction": 0.03,
+                "not_human_probability": true
+              },
+              "contact_cost": 0.0,
+              "continuation_cost": 0.9272182117591193,
+              "next_shot": {
+                "target": "3",
+                "pocket": "top-right",
+                "cost": 0.5951267246800898,
+                "distance": 0.20677100648751798,
+                "object_distance": 0.690997694467331,
+                "cut": 3.395245618163711,
+                "rear_restricted": false
+              }
+            },
+            {
+              "target": "3",
+              "pocket": "top-right",
+              "shot": {
+                "angle_deg": 54.289741392665526,
+                "cue_speed": 2.2,
+                "tip_x": 0.0,
+                "tip_y": -0.45
+              },
+              "cue_final": {
+                "x": 1.0205403976299277,
+                "y": 0.33561605433452246
+              },
+              "cut_degrees": 3.4,
+              "distance_mm": 207,
+              "human": {
+                "allowed": true,
+                "reasons": [],
+                "notes": [],
+                "rear_rail_distance_mm": 638.6,
+                "policy_version": "human-position-contacts-v4"
+              },
+              "object_distance_mm": 691,
+              "aim_half_window_deg": 0.3021,
+              "pot_difficulty": 0.23496,
+              "potted": [
+                "3"
+              ],
+              "verified": true,
+              "cue_cushions": 1,
+              "cue_ball_contacts": 1,
+              "jaw_contacts": 0,
+              "clean_pot": true,
+              "pocket_offset_mm": 4.6,
+              "pocket_entry_cost": 0.00658,
+              "position_effort": 0.138,
+              "cost": 5.353968353246706,
+              "secondary_contacts": [],
+              "breakout_gain": 0,
+              "opened_targets": [],
+              "cue_jaw_contacts": 0,
+              "human_margin": {
+                "pot_passed": 4,
+                "leaf_passed": 4,
+                "checked": 4,
+                "allowed": true,
+                "angle_deg": 0.1,
+                "speed_fraction": 0.03,
+                "not_human_probability": true
+              },
+              "contact_cost": 0.0,
+              "continuation_cost": 4.0503690988977565,
+              "next_shot": {
+                "target": "8",
+                "pocket": "top-right",
+                "cost": 2.11596277027508,
+                "distance": 0.7053063537743888,
+                "object_distance": 1.0864447900279792,
+                "cut": 32.48804080210411,
+                "rear_restricted": false
+              }
+            }
+          ],
+          "clear_verified": false,
+          "reasons": [
+            "每杆通过当前物理模型与中八规则检查；使用普通水平杆法限制",
+            "综合当前进球、下一球好打度与走位代价；允许五库内及适度加塞换取更舒服的续接",
+            "这是预算内找到的部分路线，后续需根据实际落点重算"
+          ],
+          "mean_cost": 4.6423,
+          "max_shot_cost": 5.216,
+          "mean_position_effort": 0.113,
+          "perturbations": {
+            "passed": 10,
+            "checked": 12,
+            "expected": 12,
+            "complete": true,
+            "not_human_probability": true,
+            "definition": "Individual angle +/-0.05 degrees and cue speed +/-2%; actual legal pot plus an accessible moderate continuation. Not a joint full-route probability."
+          }
+        }
+      ]
+    }
+  ],
+  "limits": "Three-case synthetic/feedback engineering audit, not a calibrated human pot/clear probability. Full target depth is preserved; failure to find a longer robust route is reported explicitly. No latency improvement claim."
+}

@@ -5,7 +5,7 @@ import hashlib
 
 def model_stamp(service):
     value=hashlib.sha256(service.signature.encode())
-    for name in ('ai_human_policy.json','ai_value_model.json','ai_tactics_model.json','ai_break_model.json','ai_difficulty.json','ai_shot_prior.json'):
+    for name in ('ai_human_policy.json','ai_value_model.json','ai_tactics_model.json','ai_break_model.json','ai_difficulty.json','ai_shot_prior.json','ai_human_planning.json'):
         path=service.root/'configs'/name
         if path.is_file():value.update(path.read_bytes())
     return value.hexdigest()

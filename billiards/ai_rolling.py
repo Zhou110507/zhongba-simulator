@@ -16,7 +16,7 @@ def endpoint(analysis):
 
 def extend(service,state,depth,*,cancelled,progress):
     # Never replay/re-search the prefix: start at its certified final state.
-    return Search(service,seconds=12,evaluations=700,cancelled=cancelled,progress=progress).solve(state,max_depth=depth)
+    return Search(service,seconds=24,evaluations=1500,cancelled=cancelled,progress=progress).plan(state,max_depth=depth)
 
 
 def append(prefix,suffix,anchor):

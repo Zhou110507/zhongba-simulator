@@ -12,6 +12,7 @@ from .model import Vec2
 from .planner_routes import RAILS,image,segment_distance
 from .rules import legal_ids,group
 from .runout import Search,shot_options,cluster_pressure
+from .shot_prior import contact_cost,planning_policy
 
 VERSION='escape-safety-value-v1'
 FEATURES=['legal','own_pots','opponent_pots','scratch','lost','own_options',
@@ -159,9 +160,25 @@ def contact_candidates(service,state,search,*,attempts=320):
                              (first is None or e.time<first.time-1e-9) for e in result.events)
                 if direct and approach:continue
                 x=tactical_features(service,state,after,shot,result,search.policy)
+                secondary=[list(e.actors) for e in result.events if e.kind=='ball_ball' and e is not first]
+                first_target=next((i for i in first.actors if i!='cue'),None) if first else None
+                cue_others={b if a=='cue' else a for a,b in secondary if 'cue' in (a,b) and first_target not in (a,b)}
+                jaws=sum(e.kind=='ball_cushion' and 'cue' in e.actors and e.detail.startswith('jaw:') for e in result.events)
+                risk=contact_cost(secondary,first_target,[])+planning_policy()['cue_jaw_contact_cost']*jaws
+                if x[1]>0 or x[15]:
+                    potted=after['last_decision']['potted']
+                    target=next((b for b in result.final if b.id in potted and b.id in legal_ids(state)),None)
+                    if cue_others:
+                        mine=deepcopy(after);mine['turn']=state['turn']
+                        opened=({o['target'] for o in shot_options(service,mine,search.policy)}-
+                                {o['target'] for o in shot_options(service,state,search.policy)})&set(legal_ids(state))
+                        if not opened:continue
+                    margin=search.human_margin(state,shot,target.id,target.pocket,require_leaf=bool(cue_others)) if target else None
+                    if not margin or not margin['allowed'] or margin['leaf_passed']<3:continue
                 rows.append({'shot':asdict(shot),'x':x.tolist(),'after':after,
                              'human':access,'cushions':int(round(x[11]*8)),
                              'first_contact_cushions':approach,
+                             'control_risk':risk,
                              'legal':bool(x[0]) and not bool(x[4]),'pot':bool(x[1]>0 or x[15])})
     return rows
 
@@ -176,7 +193,7 @@ def choose_contact(service,state,*,cancelled=lambda:False,seconds=8,evaluations=
     candidates=pots or legal or [r for r in rows if r['after']['winner'] is None] or rows
     if candidates:
         def rank(row):
-            x=np.asarray(row['x']);return (row['legal'],model.score(x)+.12*x[8]-.025*x[12])
+            x=np.asarray(row['x']);return (row['legal'],model.score(x)+.12*x[8]-.025*x[12]-.2*row.get('control_risk',0.))
         best=max(candidates,key=rank);after=best['after'];x=best['x']
         escape=best['first_contact_cushions']>0
         kind=('kick_attack' if escape else 'attack') if best['pot'] and best['legal'] else ('escape' if escape else 'safety') if best['legal'] else 'best_effort'

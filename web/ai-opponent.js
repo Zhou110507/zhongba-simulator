@@ -39,6 +39,7 @@ window.AIOpponent=(()=>{
     }
     const rolling=value.rolling;
     message(`${value.cache_hit?'球位符合预期，复用后续路线 · ':''}${value.routes[0].clear_verified?'已验证清台路线':'找到部分续接'} · ${value.evaluations} 次模拟 · ${value.elapsed} 秒${rolling?.extending?` · 保留后续 ${rolling.remaining} 杆，后台继续补算`:''}${value.extended_steps?` · 已从队尾新增 ${value.extended_steps} 杆（${value.extension_evaluations} 次模拟）`:''}`);
+    if(value.requested_depth!=null&&!value.cache_hit)message($('ai-status').textContent+` · 前瞻 ${value.verified_depth}/${value.requested_depth} 杆${value.horizon_complete?'（已满足）':value.horizon_limit==='budget_exhausted'?'（预算用尽，深度尚未满足）':'（尚未找到更长的宽容错续接）'}`);
     for(const [index,route]of value.routes.entries()){
       const card=document.createElement('details'),title=document.createElement('summary');
       card.open=index===0;title.textContent=`${index===0?'推荐':'备选 '+index}：${route.steps.map(s=>s.target).join(' → ')}${route.clear_verified?' · 含黑八清台':' · 后续待规划'}`;card.append(title);
@@ -49,6 +50,8 @@ window.AIOpponent=(()=>{
         item.textContent=`${step.target} 号 → ${pocketNames[step.pocket]||step.pocket}；白球停点 ${Math.round(step.cue_final.x*1000)}, ${Math.round(step.cue_final.y*1000)} mm。${s.tip_y>.1?'高杆':s.tip_y<-.1?'低杆':'中杆'}${side}，杆头 ${s.cue_speed.toFixed(2)} m/s；白球 ${step.cue_cushions??0} 库，${step.clean_pot===false?'目标球碰袋角后入袋':step.clean_pot===true?'目标球未碰袋角入袋':'旧记录未注明袋角接触'}；切角 ${step.cut_degrees}°，白球到接触位 ${step.distance_mm} mm，目标球距袋 ${step.object_distance_mm??'未记录'} mm。`;
         if(step.human.notes.length)item.textContent+=' '+step.human.notes.join('；');
         if(step.secondary_contacts?.length)item.textContent+=` 此路线包含碰球 ${step.secondary_contacts.map(p=>p.join('／')).join('、')}${step.opened_targets?.length?'，打开 '+step.opened_targets.join('、')+' 号球的进攻线路':'，走位误差可能被放大'}。`;
+        if(step.cue_jaw_contacts)item.textContent+=` 白球碰袋角 ${step.cue_jaw_contacts} 次，已计入高风险走位代价。`;
+        if(step.human_margin)item.textContent+=` 普通执行误差检查：${step.human_margin.pot_passed}/${step.human_margin.checked} 项进球，${step.human_margin.leaf_passed}/${step.human_margin.checked} 项保留舒服续接${step.opened_targets?.length?'；K 球要求四项续接全部通过':''}（非真人成功率）。`;
         list.append(item);
       }
       card.append(list);

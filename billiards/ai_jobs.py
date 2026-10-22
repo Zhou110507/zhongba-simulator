@@ -31,7 +31,7 @@ def decide(service, state, *, cancelled=lambda: False, progress=lambda value: No
     if state['is_break']:
         from .break_policy import decide_break
         return decide_break(service,state)
-    search=Search(service,seconds=12,evaluations=600,cancelled=cancelled,progress=progress)
+    search=Search(service,seconds=30,evaluations=1800,cancelled=cancelled,progress=progress)
     base['model']=search.model.data['version'] if search.model.data else 'heuristic-baseline'
     if state['ball_in_hand']=='head' and not state['is_break']:
         targets=[b for b in state['scene']['balls'] if b['id'] in legal_ids(state) and b['pocket'] is None]
@@ -71,9 +71,9 @@ def decide(service, state, *, cancelled=lambda: False, progress=lambda value: No
             if not valid_places:raise ValueError('台面没有有效白球位置，请检查场景')
             x,y=valid_places[0]
         return {**base,'status':'found','action':{'action':'place','x':x,'y':y},'message':'AI 选择有普通出杆空间的自由球位置'}
-    result=search.solve(state)
+    result=search.plan(state)
     if cancelled():return {**base,**result,'status':'cancelled','routes':[]}
-    if result['routes'] and result['routes'][0]['steps'][0]['cost']<5.:
+    if result['routes']:
         return {**base,**result,'action':{'action':'shoot','shot':result['routes'][0]['steps'][0]['shot']}}
     from .tactics import choose_contact
     progress({'stage':'进攻后备：可直达时检查防守，被遮挡时检查解球','evaluations':search.count})

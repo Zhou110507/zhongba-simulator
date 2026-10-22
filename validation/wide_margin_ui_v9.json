@@ -1,0 +1,34 @@
+{
+  "version": "wide-margin-full-horizon-v9",
+  "match": "ffd0432d36cd48debca0fae8ed00c416",
+  "fixture": "independent_ai_endgame_demo",
+  "level": "expert",
+  "planning": {
+    "requested_depth": 4,
+    "verified_depth": 3,
+    "horizon_complete": false,
+    "horizon_limit": "no_robust_continuation_found",
+    "targets": ["3", "1", "2"],
+    "evaluations": 960,
+    "seconds": 33.87,
+    "pot_probe_passes": [4, 4, 4],
+    "comfortable_leaf_probe_passes": [4, 4, 4],
+    "cue_jaw_contacts": 0,
+    "cue_other_contacts": 0
+  },
+  "actual_execution": {
+    "revision_before": 0,
+    "revision_after": 1,
+    "potted": ["3"],
+    "fouls": [],
+    "turn": 1,
+    "shot": {"angle_deg":127.35657273031781,"cue_speed":2.2,"tip_x":0.0,"tip_y":-0.45}
+  },
+  "next_ui_analysis": {
+    "cache_hit": true,
+    "targets": ["1", "2"],
+    "evaluations": 0,
+    "seconds": 0
+  },
+  "limits": "One independent localhost UI check, not a human success rate. Black eight was not certified; the UI displayed 3/4 explicitly. Original matches were not replaced by this demo."
+}

@@ -206,16 +206,16 @@ def feedback_state(service):
     return state
 
 
-def test_three_rail_position_is_allowed_and_leaves_better_shots_than_cheap_rail_stop(service):
+def test_three_rail_physics_remains_legal_but_fragile_pots_are_not_recommended(service):
     state=feedback_state(service);search=Search(service,trained=False,seconds=10,evaluations=100)
     options=shot_options(service,state,search.policy)
-    three=search.aimed(state,next(o for o in options if o['target']=='3' and o['pocket']=='bottom-right'),3.2,.5)
-    cheap=search.aimed(state,next(o for o in options if o['target']=='2' and o['pocket']=='top-right'),.75,0.)
-    assert three and cheap
-    assert three[1]['cue_cushions']>=3 and cheap[1]['cue_cushions']<three[1]['cue_cushions']
-    assert three[1]['next_shot']['cost']<cheap[1]['next_shot']['cost']
-    assert not three[1]['next_shot']['rear_restricted']
-    assert check_stroke(service.decode(state['scene'])[0],ShotInput(**three[1]['shot']),service.table,search.policy)['allowed']
+    shot=ShotInput(351.7295154106892,3.2,0.,.5)
+    physics,after,access=search.forward(state,shot)
+    assert access['allowed'] and not after['last_decision']['fouls']
+    assert next(b for b in physics.final if b.id=='3').pocket=='bottom-right'
+    assert sum(e.kind=='ball_cushion' and 'cue' in e.actors for e in physics.events)>=3
+    assert not search.human_margin(state,shot,'3','bottom-right')['allowed']
+    assert search.aimed(state,next(o for o in options if o['target']=='3' and o['pocket']=='bottom-right'),3.2,.5) is None
 
 
 def test_route_balance_accepts_more_position_effort_for_easier_shots_but_keeps_effort_cost(service):
@@ -236,7 +236,7 @@ def test_moderate_side_and_firm_strokes_do_not_bypass_rail_or_rear_ball_limits(s
     assert not check_stroke(rear,ShotInput(0,3.2,.25,-.3),service.table,policy)['allowed']
 
 
-def test_verified_jaw_assisted_pot_is_kept_with_a_soft_entry_penalty(service):
+def test_nominal_jaw_pot_remains_physical_but_exact_jaw_route_is_rejected(service):
     search=Search(service,trained=False,seconds=10,evaluations=30)
     first=ShotInput(25.454592179596894,1.1,-.25,0.)
     trial=search.forward(feedback_state(service),first);assert trial
@@ -248,9 +248,11 @@ def test_verified_jaw_assisted_pot_is_kept_with_a_soft_entry_penalty(service):
     outgoing=next(b for b in collision.after if b.id=='3').velocity
     option={**option,'angle':shot.angle_deg,'desired':outgoing*(1/outgoing.norm())}
     result=search.aimed(state,option,shot.cue_speed,shot.tip_y,shot.tip_x)
-    assert result and result[1]['jaw_contacts']>=1 and not result[1]['clean_pot']
-    assert 0<result[1]['pocket_entry_cost']<.4
-    assert result[1]['verified'] and not result[0]['last_decision']['fouls']
+    assert next(b for b in physics.final if b.id=='3').pocket=='bottom-right'
+    assert any(e.kind=='ball_cushion' and 'cue' in e.actors and e.detail.startswith('jaw:') for e in physics.events)
+    margin=search.human_margin(state,shot,'3','bottom-right')
+    assert margin['pot_passed']==2 and not margin['allowed']
+    assert result is None
 
 
 def test_deployed_ai_can_open_a_normal_fifteen_ball_rule_match(service):

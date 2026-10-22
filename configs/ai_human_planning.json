@@ -1,0 +1,15 @@
+{
+  "version": "wide-margin-depth-v1",
+  "extra_pot_difficulty_weight": 2.4,
+  "minimum_aim_half_window_deg": 0.012,
+  "preferred_aim_half_window_deg": 0.08,
+  "narrow_window_weight": 1.2,
+  "cue_other_contact_cost": 5.0,
+  "secondary_contact_cost": 0.5,
+  "opened_target_credit": 0.35,
+  "cue_jaw_contact_cost": 4.0,
+  "object_jaw_contact_cost": 0.45,
+  "angle_probe_deg": 0.10,
+  "speed_probe_fraction": 0.03,
+  "definition": "Engineering preferences and discrete robustness checks, not measured human success rates. Preserve the original horizon; prefer wide pot margins and broad natural leaves. Incidental collision stops are excluded; purposeful K requires newly opened own targets and robust continuations. Cue-ball jaw-assisted position is penalized."
+}

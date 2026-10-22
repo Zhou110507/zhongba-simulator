@@ -16,7 +16,7 @@ from .pockets import geometry_dict, outline
 from .shot_analysis import first_contact_analysis, cue_motion_report
 
 ROOT = Path(__file__).resolve().parents[1]
-APP_VERSION = 'human-continuation-prior-v8'
+APP_VERSION = 'wide-margin-full-horizon-v9'
 
 
 def _number(value, name):
