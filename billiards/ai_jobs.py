@@ -78,9 +78,6 @@ def decide(service, state, *, cancelled=lambda: False, progress=lambda value: No
     from .tactics import choose_contact
     progress({'stage':'进攻后备：可直达时检查防守，被遮挡时检查解球','evaluations':search.count})
     fallback=choose_contact(service,state,cancelled=cancelled)
-    if result['routes'] and (fallback.get('tactic')=='best_effort' or
-                             fallback.get('tactic')=='safety' and fallback.get('hidden_fraction',0)<.5):
-        return {**base,**result,'action':{'action':'shoot','shot':result['routes'][0]['steps'][0]['shot']}}
     return {**base,**fallback,'offensive_evaluations':search.count}
 
 
@@ -184,6 +181,27 @@ class AIJobs:
                 entry.update(status=lane['analysis']['status'],analysis=deepcopy(lane['analysis']))
                 entry.pop('_waiting_extension',None)
 
+    def _finish_tactically(self,key,lane,reason):
+        # A failed suffix never authorizes a stroke at its future endpoint.
+        with self.lock:
+            if not self._live(key,lane):lane['cancel'].set();return
+            source=deepcopy(lane['expected'])
+            lane['fallback_pending']=True
+            lane['progress']={'stage':'续接未接通，按当前实际球位选择进攻、防守或解球','evaluations':0}
+        from .tactics import choose_contact
+        result=choose_contact(self.games.service,source,cancelled=lane['cancel'].is_set)
+        with self.lock:
+            if (self._live(key,lane) and lane['revision']==source['revision'] and
+                matches(lane['expected'],source) and result['status']=='found'):
+                lane['abandoned_analysis']=lane['analysis']
+                result['transition']={'reason':reason,'source_revision':source['revision'],
+                                      'retained_steps':self._length(lane),'required':HORIZON}
+                result['message']=('三杆续接未接通，改按当前球位完成本杆；' if reason=='no_robust_continuation_found'
+                                   else '队尾补算异常，改按当前球位完成本杆；')+result.get('message','')
+                result.update(game_id=key,revision=lane['revision'])
+                lane['analysis']=result;self._publish(lane)
+            else:lane['cancel'].set()
+
     def _extend(self,key):
         with self.lock:
             lane=self.continuations.get(key)
@@ -202,38 +220,40 @@ class AIJobs:
             with self.lock:
                 if self.continuations.get(key) is lane:lane['progress']=value
         def run():
+            fallback_started=False
             try:
                 result=extend(self.games.service,anchor,depth,cancelled=lane['cancel'].is_set,progress=progress)
                 with self.lock:
                     if not self._live(key,lane):lane['cancel'].set();return
                     combined=append(lane['analysis'],result,anchor)
-                    needs_fallback=combined is None and lane['analysis'] is None
+                    needs_fallback=combined is None
                     if combined:
                         combined.update(game_id=key,revision=lane['revision'],cache_hit=True,evaluations=0,elapsed=0.)
                         lane['analysis']=combined
                         self.metrics['extended_steps']+=len(result['routes'][0]['steps'])
                         self._publish(lane)
-                    elif not needs_fallback:lane['failed_anchor']=deepcopy(anchor)
                 if needs_fallback:
-                    # The queue was consumed while extending and no offensive
-                    # suffix exists. Finish the actual turn via normal tactics.
-                    result=decide(self.games.service,anchor,cancelled=lane['cancel'].is_set,progress=progress)
-                    with self.lock:
-                        if self._live(key,lane) and lane['analysis'] is None:
-                            result.update(game_id=key,revision=lane['revision'])
-                            lane['analysis']=result;self._publish(lane)
-                        else:lane['cancel'].set()
+                    # extend resumes budget slices internally; only exhausted
+                    # continuation searches reach this tactical transition.
+                    fallback_started=True
+                    self._finish_tactically(key,lane,'no_robust_continuation_found')
             except Exception:
                 import traceback
                 traceback.print_exc()
+                if not fallback_started:
+                    try:
+                        self._finish_tactically(key,lane,'suffix_error')
+                        return
+                    except Exception:traceback.print_exc()
                 with self.lock:
                     lane['failed_anchor']=deepcopy(anchor)
                     for entry in self.jobs.values():
-                        if entry.get('_waiting_extension') and entry['game_id']==key and entry['stamp']==lane['stamp'] and matches(entry['source'],lane['expected']):
-                            entry.update(status='error',error='队尾补算失败，请重新思考')
+                        if entry['game_id']==key and entry['revision']==lane['revision'] and entry['stamp']==lane['stamp'] and matches(entry['source'],lane['expected']):
+                            entry.update(status='error',error='队尾补算及独立战术计算均失败，请查看日志')
             finally:
                 with self.lock:
                     lane['extending']=False
+                    lane['fallback_pending']=False
                     if lane['cancel'].is_set():
                         for entry in self.jobs.values():
                             if (entry.get('_waiting_extension') and entry['game_id']==key and
@@ -264,6 +284,7 @@ class AIJobs:
                     last=endpoint(lane['analysis'])
                     public['analysis']['rolling']={'target':HORIZON,'remaining':self._length(lane),
                                                   'extending':lane.get('extending',False),
+                                                  'fallback_pending':lane.get('fallback_pending',False),
                                                   'exhausted':bool(last and lane.get('failed_anchor') and matches(last,lane['failed_anchor'])),
                                                   'progress':lane.get('progress',{})}
                     gate=readiness(lane['analysis'] or entry['analysis'],entry['source'])

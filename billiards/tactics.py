@@ -197,7 +197,7 @@ def choose_contact(service,state,*,cancelled=lambda:False,seconds=8,evaluations=
         best=max(candidates,key=rank);after=best['after'];x=best['x']
         escape=best['first_contact_cushions']>0
         kind=('kick_attack' if escape else 'attack') if best['pot'] and best['legal'] else ('escape' if escape else 'safety') if best['legal'] else 'best_effort'
-        return {'status':'found','routes':[],'model':VERSION,'tactic':kind,
+        return {'status':'found','routes':[],'model':VERSION,'tactic':kind,'planning_mode':'single_shot_tactic',
                 'action':{'action':'shoot','shot':best['shot']},'evaluations':search.count,
                 'predicted_fouls':after['last_decision']['fouls'],'hidden_fraction':x[8],
                 'cue_cushions':best['cushions'],'human':best['human'],
@@ -214,7 +214,7 @@ def choose_contact(service,state,*,cancelled=lambda:False,seconds=8,evaluations=
     target=next((b for b in balls if b.id in legal_ids(state) and b.pocket is None),None)
     direct=direct_contact_rays(service,state)
     angle=direct[0]['angle'] if direct else degrees(atan2(target.position.y-cue.position.y,target.position.x-cue.position.x)) if target else 0.
-    return {'status':'found','routes':[],'model':VERSION,'tactic':'best_effort',
+    return {'status':'found','routes':[],'model':VERSION,'tactic':'best_effort','planning_mode':'single_shot_tactic',
             'action':{'action':'shoot','shot':asdict(ShotInput(angle%360,1.1,0.,.5))},
             'evaluations':search.count,'predicted_fouls':['预算内未验证到合法解法'],
             'message':'没有验证到可行水平杆法，仍提交有界尝试；可能犯规，不冒称无犯规解球'}

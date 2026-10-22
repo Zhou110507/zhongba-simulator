@@ -18,7 +18,7 @@ window.AIOpponent=(()=>{
     if(!analysis?.action)return false;
     if(analysis.execution_gate)return analysis.execution_gate.ready===true;
     if(analysis.routes?.length)return analysis.routes[0].clear_verified||analysis.routes[0].steps.length>=3;
-    return analysis.action.action!=='shoot'||analysis.rack_read===false||['safety','escape','best_effort'].includes(analysis.tactic);
+    return analysis.action.action!=='shoot'||analysis.rack_read===false||['attack','kick_attack','safety','escape','best_effort'].includes(analysis.tactic);
   }
   function scheduleExecution(){
     if(executionTimer||!$('ai-auto').checked||!canExecute()||!ownsTurn()||!context().idle||thinking||executing||identity(binding)!==identity(context().game))return;
@@ -58,7 +58,7 @@ window.AIOpponent=(()=>{
     if(value.requested_depth!=null&&!value.cache_hit)message($('ai-status').textContent+` · 前瞻 ${value.verified_depth}/${value.requested_depth} 杆${value.horizon_complete?'（已满足）':value.horizon_limit==='budget_exhausted'?'（预算用尽，深度尚未满足）':'（尚未找到更长的宽容错续接）'}`);
     if(value.execution_gate?.kind==='offense'){
       const gate=value.execution_gate;
-      message($('ai-status').textContent+` · 出杆前队列 ${gate.available}/${gate.required} 杆${gate.ready?'（可出杆）':gate.blocked?'（未找到足够续接，保留原路线，暂不出杆）':'（等待队尾补算，暂不出杆）'}`);
+      message($('ai-status').textContent+` · 出杆前队列 ${gate.available}/${gate.required} 杆${gate.ready?'（可出杆）':rolling?.fallback_pending?'（续接未接通，正在选择当前局面的战术）':gate.blocked?'（续接异常，请重新思考）':'（等待队尾补算，暂不出杆）'}`);
     }
     for(const [index,route]of value.routes.entries()){
       const card=document.createElement('details'),title=document.createElement('summary');
@@ -90,8 +90,9 @@ window.AIOpponent=(()=>{
       try{
         const status=await api('/api/ai/status',{id:key});
         if(token!==generation||executing||job!==key||identity(context().game)!==identity(expected))return;
+        if(status.status==='error'){pause();message(status.error);return;}
         if(status.status==='found'&&status.analysis){analysis=status.analysis;render(analysis);refreshUI();watchRolling(token,expected,key);}
-      }catch{} // The retained current stroke remains usable if background polling fails.
+      }catch{watchRolling(token,expected,key);} // Retry transient transport errors without re-searching the prefix.
     },750);
   }
   function refresh(){

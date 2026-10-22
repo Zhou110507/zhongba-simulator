@@ -240,23 +240,27 @@ def test_initial_partial_plan_starts_tail_worker_before_any_shot(service,planned
     finally:release.set()
 
 
-def test_unextendable_queue_is_reported_without_consuming_or_restarting_prefix(service,planned,monkeypatch):
+def test_unextendable_queue_completes_a_real_tactical_shot_without_restarting_prefix(service,planned,monkeypatch):
     state,result=deepcopy(planned);result['routes'][0].update(steps=result['routes'][0]['steps'][:3],clear_verified=False)
     result['_forecasts'][0]=result['_forecasts'][0][:3]
     games,jobs=prepared(service,(state,result));calls=[]
     def missing(*a,**k):calls.append(1);return {'status':'not_found','routes':[],'horizon_limit':'no_robust_continuation_found'}
     monkeypatch.setattr('billiards.ai_jobs.extend',missing)
+    def tactic(service,source,**kwargs):
+        assert matches(source,result['_forecasts'][0][0][1]) and source['revision']==1
+        return {'status':'found','routes':[],'tactic':'attack',
+                'action':{'action':'shoot','shot':planned[1]['routes'][0]['steps'][1]['shot']}}
+    monkeypatch.setattr('billiards.tactics.choose_contact',tactic)
     first=jobs.execute({'id':'ready','prefetch':True});key=first['prefetch']['id'];deadline=monotonic()+2
     while monotonic()<deadline:
         status=jobs.status({'id':key})
-        if status['analysis']['execution_gate']['blocked']:break
+        if status['analysis']['execution_gate']['ready']:break
         sleep(.005)
-    assert status['analysis']['execution_gate']['blocked']
-    for _ in range(3):
-        with pytest.raises(ValueError,match='等待前瞻补齐'):jobs.execute({'id':key})
-        jobs.status({'id':key})
+    assert status['analysis']['execution_gate']['ready']
+    value=jobs.execute({'id':key})
+    assert value['complete'] and value['rule_committed'] and not value['game_after']['last_decision']['fouls']
     assert len(calls)==1 and jobs.metrics['searches']==0
-    assert games.games[state['id']]['revision']==1
+    assert games.games[state['id']]['revision']==2
 
 
 def test_route_without_certified_forecasts_cannot_bypass_queue_gate(service,planned):
@@ -264,6 +268,38 @@ def test_route_without_certified_forecasts_cannot_bypass_queue_gate(service,plan
     with pytest.raises(ValueError,match='等待前瞻补齐'):jobs.execute({'id':'ready'})
     state=games.games[planned[0]['id']]
     assert state['revision']==0 and not state['history']
+
+
+def test_reported_tactical_attack_deadlock_replays_and_commits_once(service,monkeypatch):
+    fixture=json.loads((service.root/'tests/fixtures/ai-tactical-gate-deadlock.json').read_text(encoding='utf8'))
+    state=fixture['state'];analysis=fixture['analysis']
+    assert analysis['tactic']=='attack' and analysis['routes']==[]
+    assert analysis['action']['shot']['cue_speed']==1.1 and analysis['action']['shot']['tip_y']==.5
+    games=GameStore(service);games.games[state['id']]=deepcopy(state)
+    jobs=AIJobs(games,BoundedSemaphore(1))
+    monkeypatch.setattr('billiards.ai_jobs.decide',lambda *a,**k:deepcopy(analysis))
+    key=jobs.start({'id':state['id'],'revision':state['revision']})['id']
+    deadline=monotonic()+2
+    while jobs.status({'id':key})['status']=='running' and monotonic()<deadline:sleep(.005)
+    ready=jobs.status({'id':key})['analysis']['execution_gate']
+    assert ready['ready'] and ready['required']==0
+    value=jobs.execute({'id':key})
+    assert value['complete'] and value['rule_committed']
+    assert value['game_after']['last_decision']['potted'] and not value['game_after']['last_decision']['fouls']
+    assert value['game_after']['revision']==state['revision']+1
+    with pytest.raises(ValueError):jobs.execute({'id':key})
+    assert games.games[state['id']]['revision']==state['revision']+1
+
+
+@pytest.mark.parametrize('tactic',['attack','kick_attack','safety','escape','best_effort'])
+def test_all_single_shot_tactics_have_no_offensive_queue_requirement(service,planned,tactic):
+    from billiards.ai_rolling import readiness
+    state,result=deepcopy(planned)
+    result.update(tactic=tactic,action={'action':'shoot'},routes=[]);result.pop('_forecasts')
+    assert readiness(result,state)['ready']
+    # A tactic label cannot bypass an actual, uncertified offensive route.
+    result['routes']=[{'steps':[{}]}]
+    assert not readiness(result,state)['ready']
 
 
 def test_cancelling_during_slow_suffix_cannot_publish_or_shoot_later(service,planned,monkeypatch):

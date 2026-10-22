@@ -124,19 +124,61 @@ def test_late_suffix_cannot_resurrect_cancelled_or_changed_table(monkeypatch,cha
     finally:release.set()
 
 
-def test_no_suffix_keeps_prefix_and_cannot_use_tactics_at_an_unreached_endpoint(monkeypatch):
+@pytest.mark.parametrize('suffix_error',[False,True])
+def test_exhausted_suffix_switches_to_actual_table_tactic_without_root_search(monkeypatch,suffix_error):
     _,jobs,states,steps,_,committed=pipeline(monkeypatch)
     entered=Event();release=Event();fallback=Event()
-    def extend(*a,**k):entered.set();assert release.wait(3);return {'status':'not_found','routes':[]}
-    def decide(service,state,**kwargs):fallback.set();pytest.fail('Must not pretend the future endpoint was reached')
-    monkeypatch.setattr('billiards.ai_jobs.extend',extend);monkeypatch.setattr('billiards.ai_jobs.decide',decide)
+    def extend(*a,**k):
+        entered.set();assert release.wait(3)
+        if suffix_error:raise RuntimeError('injected suffix failure')
+        return {'status':'not_found','routes':[]}
+    def tactic(service,state,**kwargs):
+        assert state['revision']==1 and matches(state,states[1])
+        assert not matches(state,states[3])  # future endpoint was never reached
+        fallback.set()
+        return {'status':'found','routes':[],'tactic':'attack',
+                'action':{'action':'shoot','shot':steps[1]['shot']}}
+    monkeypatch.setattr('billiards.ai_jobs.extend',extend);monkeypatch.setattr('billiards.tactics.choose_contact',tactic)
     try:
         key=jobs.execute({'id':'initial','prefetch':True})['prefetch']['id'];assert entered.wait(1)
         with pytest.raises(ValueError,match='等待前瞻补齐'):jobs.execute({'id':key,'prefetch':True})
         release.set()
-        wait_for(lambda:jobs.status({'id':key})['analysis']['execution_gate']['blocked'])
-        assert not fallback.is_set() and committed==[1]
-        assert jobs.status({'id':key})['analysis']['routes'][0]['steps']==steps[1:3]
+        wait_for(lambda:jobs.status({'id':key})['analysis']['execution_gate']['ready'])
+        assert fallback.is_set() and committed==[1]
+        ready=jobs.status({'id':key})['analysis']
+        assert ready['tactic']=='attack' and ready['routes']==[]
+        assert ready['transition']['source_revision']==1
+        assert ready['transition']['reason']==('suffix_error' if suffix_error else 'no_robust_continuation_found')
+        assert jobs.continuations[states[0]['id']]['abandoned_analysis']['routes'][0]['steps']==steps[1:3]
+        jobs.execute({'id':key});assert committed==[1,2]
+        assert jobs.metrics['searches']==0
+    finally:release.set()
+
+
+@pytest.mark.parametrize('change',['cancel','ball','model'])
+def test_tactical_transition_waits_and_rejects_stale_results(monkeypatch,change):
+    games,jobs,states,steps,_,committed=pipeline(monkeypatch)
+    entered=Event();release=Event();calls=[]
+    monkeypatch.setattr('billiards.ai_jobs.extend',lambda *a,**k:{'status':'not_found','routes':[]})
+    def tactic(service,state,**kwargs):
+        calls.append(state['revision']);entered.set();assert release.wait(3)
+        return {'status':'found','routes':[],'tactic':'safety',
+                'action':{'action':'shoot','shot':steps[1]['shot']}}
+    monkeypatch.setattr('billiards.tactics.choose_contact',tactic)
+    try:
+        key=jobs.execute({'id':'initial','prefetch':True})['prefetch']['id'];assert entered.wait(1)
+        for _ in range(3):
+            status=jobs.status({'id':key})['analysis']
+            assert status['rolling']['fallback_pending'] and status['execution_gate']['waiting']
+            assert jobs.start({'id':states[1]['id'],'revision':1})['id']==key
+            with pytest.raises(ValueError,match='等待前瞻补齐'):jobs.execute({'id':key})
+        if change=='cancel':jobs.status({'id':key},cancel=True)
+        elif change=='ball':games.games[states[0]['id']]['scene']['balls'][-1]['position']['y']+=.002
+        else:monkeypatch.setattr('billiards.ai_jobs.model_stamp',lambda service:'changed-model')
+        release.set();wait_for(lambda:not jobs.continuations[states[0]['id']]['extending'])
+        assert 'tactic' not in jobs.jobs[key]['analysis']
+        with pytest.raises(ValueError):jobs.execute({'id':key})
+        assert calls==[1] and committed==[1] and jobs.metrics['searches']==0
     finally:release.set()
 
 

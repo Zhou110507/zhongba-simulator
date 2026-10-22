@@ -7,12 +7,15 @@ from .rules import legal_ids
 from .runout import Search
 
 HORIZON=3
+TACTICS=('attack','kick_attack','safety','escape','best_effort')
 
 
 def readiness(analysis,state):
     """A shot consumes a queue slot only after the verified horizon is full."""
     action=analysis.get('action',{});routes=analysis.get('routes',[])
-    if action.get('action')!='shoot' or state['is_break'] or (not routes and analysis.get('tactic') in ('safety','escape','best_effort')):
+    # A tactical pot is a single stroke, just like a safety or escape. It does
+    # not promise a runout queue. Never exempt an incomplete offensive route.
+    if action.get('action')!='shoot' or state['is_break'] or (not routes and analysis.get('tactic') in TACTICS):
         return {'ready':True,'required':0,'available':0,'kind':'rule_or_tactic'}
     own=legal_ids(state)
     required=min(HORIZON,1 if own==['8'] else len(own)+1) if state['groups'][state['turn']] else HORIZON

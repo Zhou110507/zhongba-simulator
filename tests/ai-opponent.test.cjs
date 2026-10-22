@@ -185,19 +185,25 @@ test('pausing automatic play during the wait preserves the filled plan without s
   assert.equal(h.calls.filter(c=>c.path.endsWith('/start')).length,1);
 });
 
-test('a verified finish with fewer than three strokes is executable but an exhausted partial route is not',async()=>{
+test('a verified finish is executable and an unconnected queue waits for an actual-table tactic',async()=>{
   const h=harness();const finish=rollingRoute(['2','8']);finish.clear_verified=true;
   h.setAnalysis({routes:[finish],execution_gate:{kind:'offense',ready:true,required:2,available:2}});
   await h.flow.think();assert.equal(h.$('ai-execute').disabled,false);
   const q=harness();q.$('ai-auto').checked=true;
   q.setAnalysis({routes:[rollingRoute(['2','3'])],
-    execution_gate:{kind:'offense',ready:false,required:3,available:2,blocked:true},
-    rolling:{target:3,remaining:2,extending:false,exhausted:true}});
+    execution_gate:{kind:'offense',ready:false,required:3,available:2,waiting:true},
+    rolling:{target:3,remaining:2,extending:true,exhausted:false,fallback_pending:true}});
   await q.flow.think();await new Promise(resolve=>setImmediate(resolve));
   assert.equal(q.$('ai-execute').disabled,true);
-  assert.match(q.$('ai-status').textContent,/未找到足够续接/);
+  assert.match(q.$('ai-status').textContent,/正在选择当前局面的战术/);
   assert.equal(q.calls.some(c=>c.path.endsWith('/execute')),false);
-  assert.equal([...q.scheduled].some(t=>t.ms===750),false);
+  const poll=[...q.scheduled].find(t=>t.ms===750);assert.ok(poll);
+  q.setAnalysis({routes:[],tactic:'attack',planning_mode:'single_shot_tactic',
+    action:{action:'shoot',shot:{cue_speed:1.1,tip_y:.5,tip_x:0}},
+    execution_gate:{kind:'rule_or_tactic',ready:true},rolling:{target:3,remaining:0,extending:false}});
+  await poll.fn();await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(q.calls.filter(c=>c.path.endsWith('/execute')).length,1);
+  assert.equal(q.calls.filter(c=>c.path.endsWith('/start')).length,1);
 });
 
 test('late rolling status cannot restore a plan after the layout changes',async()=>{
@@ -213,6 +219,24 @@ test('late rolling status cannot restore a plan after the layout changes',async(
   assert.equal(h.calls.some(c=>c.path.endsWith('/execute')),false);
 });
 
+test('a temporary rolling-status transport failure retries without losing the queue',async()=>{
+  const h=harness();h.setAnalysis({routes:[rollingRoute(['2','3'])],evaluations:0,elapsed:0,
+    execution_gate:{kind:'offense',ready:false,required:3,available:2,waiting:true},
+    rolling:{target:3,remaining:2,extending:true}});
+  await h.flow.think();
+  const poll=[...h.scheduled].find(t=>t.ms===750);h.scheduled.delete(poll);
+  h.setHook(async path=>{if(path.endsWith('/status'))throw new Error('temporary connection reset');});
+  await poll.fn();
+  assert.equal(h.$('ai-execute').disabled,true);
+  const retry=[...h.scheduled].find(t=>t.ms===750);assert.ok(retry);
+  h.setHook(null);h.setAnalysis({routes:[rollingRoute(['2','3','4'])],
+    execution_gate:{kind:'offense',ready:true,required:3,available:3},
+    rolling:{target:3,remaining:3,extending:false}});
+  await retry.fn();
+  assert.equal(h.$('ai-execute').disabled,false);
+  assert.equal(h.calls.filter(c=>c.path.endsWith('/start')).length,1);
+});
+
 test('tactical fallback does not keep polling for a nonexistent offensive queue',async()=>{
   const h=harness();h.setAnalysis({routes:[],tactic:'safety',
     rolling:{target:3,remaining:0,extending:false,exhausted:false}});
@@ -220,6 +244,19 @@ test('tactical fallback does not keep polling for a nonexistent offensive queue'
   assert.equal(h.$('ai-execute').disabled,false);
   assert.equal([...h.scheduled].some(t=>t.ms===750),false);
 });
+
+for(const tactic of ['attack','kick_attack','safety','escape','best_effort']){
+  test(`automatic ${tactic} completes its stroke without a fictitious three-shot queue`,async()=>{
+    const h=harness();h.$('ai-auto').checked=true;
+    h.setAnalysis({routes:[],tactic,planning_mode:'single_shot_tactic',
+      action:{action:'shoot',shot:{cue_speed:1.1,tip_y:.5,tip_x:0}},
+      execution_gate:{kind:'rule_or_tactic',ready:true}});
+    await h.flow.think();await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(h.calls.filter(c=>c.path.endsWith('/execute')).length,1);
+    assert.doesNotMatch(h.$('ai-status').textContent,/前瞻尚未补齐/);
+    assert.equal([...h.scheduled].some(t=>t.ms===750),false);
+  });
+}
 
 test('execution record distinguishes ideal plan from actual motor error',()=>{
   const h=harness();

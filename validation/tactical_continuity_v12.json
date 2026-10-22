@@ -1,0 +1,34 @@
+{
+  "app_version": "tactical-continuity-v12",
+  "fixture": "tests\\fixtures\\ai-tactical-gate-deadlock.json",
+  "scope": "Replay of a persisted user table and regenerated tactical shot; not a training or human-success benchmark.",
+  "original_match_modified": false,
+  "tactic": "attack",
+  "shot": {
+    "angle_deg": 250.11745720345698,
+    "cue_speed": 1.1,
+    "tip_x": 0.0,
+    "tip_y": 0.5
+  },
+  "old_gate_ready": false,
+  "execution_gate": {
+    "ready": true,
+    "required": 0,
+    "available": 0,
+    "kind": "rule_or_tactic",
+    "waiting": false,
+    "blocked": false
+  },
+  "revision_before": 3,
+  "revision_after": 4,
+  "complete": true,
+  "rule_committed": true,
+  "potted": [
+    "5"
+  ],
+  "fouls": [],
+  "duplicate_rejected": true,
+  "execution_seconds": 0.0699,
+  "next_turn": 0,
+  "next_phase": "playing"
+}
