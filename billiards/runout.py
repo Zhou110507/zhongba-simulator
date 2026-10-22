@@ -4,7 +4,9 @@ The shared physics and CBSA adjudicator certify each searched stroke. The model
 only ranks continuation states; it never certifies legality or human feasibility.
 """
 from copy import deepcopy
+from collections import OrderedDict
 from dataclasses import asdict, replace
+import json
 from math import acos, atan2, cos, degrees, radians, sin
 from time import monotonic
 
@@ -18,6 +20,7 @@ from .planner_routes import segment_distance
 from .pockets import outline
 from .rules import adjudicate, legal_ids
 from .shot_difficulty import geometric_tolerance
+from .shot_prior import ShotPrior,inputs,contact_cost,continuation_cost
 
 FEATURE_NAMES = ['remaining', 'best_distance', 'best_object_distance', 'best_cut',
                  'best_clearance', 'option_count', 'available_targets', 'blocked_fraction',
@@ -146,15 +149,17 @@ class ValueModel:
 
 class Search:
     def __init__(self, service, *, seconds=30, evaluations=1800, cancelled=lambda: False,
-                 progress=lambda value: None, trained=True):
+                 progress=lambda value: None, trained=True, use_prior=True):
         self.service = service; self.policy = load_policy(service)
         self.model = ValueModel(service) if trained else None
+        self.prior = ShotPrior(service) if trained and use_prior else None
         self.started = monotonic(); self.deadline = self.started+seconds
         self.search_deadline = self.deadline-min(3., seconds*.2)
         self.cap = evaluations; self.count = 0; self.cancelled = cancelled; self.progress = progress
         self.search_cap = self.cap-min(24, self.cap//4)
         self.rejected = {}; self.expanded = 0
         self.forecasts={}
+        self.simulations=OrderedDict();self.reused_simulations=0
 
     def stopped(self):
         return self.cancelled() or monotonic() >= self.deadline or self.count >= self.cap
@@ -169,6 +174,14 @@ class Search:
         if not access['allowed']:
             for reason in access['reasons']: self.rejected[reason] = self.rejected.get(reason, 0)+1
             return None
+        # Repeated aiming corrections/pocket variants can request the exact
+        # same stroke. Cache only within this immutable search, with rules and
+        # the complete source state in the key; never approximate ball positions.
+        key=(json.dumps(state,sort_keys=True),shot,opening)
+        if key in self.simulations:
+            result,after,saved_access=self.simulations[key]
+            self.simulations.move_to_end(key);self.reused_simulations+=1
+            return result,deepcopy(after),deepcopy(saved_access)
         cue = next(b for b in balls if b.id == 'cue')
         launched = strike(cue, shot, self.service.cue)
         result = simulate(tuple(launched if b.id == 'cue' else b for b in balls), self.service.table,
@@ -184,6 +197,8 @@ class Search:
                     'result': result.to_dict(None, compact=True)}
         after = adjudicate(state, response, self.service)
         after['scene'] = self.service.snapshot(final, shot)
+        self.simulations[key]=(result,deepcopy(after),deepcopy(access))
+        if len(self.simulations)>24:self.simulations.popitem(last=False)
         return result, after, access
 
     def aimed(self, state, option, speed, tip_y, tip_x=0.):
@@ -226,9 +241,14 @@ class Search:
                         'cost': option['cost']+.035*speed+.08*abs(tip_y)+.16*abs(tip_x)+.025*banks+pocket_cost}
                 contacts=[list(e.actors) for e in result.events if e.kind=='ball_ball' and e is not event and e.time>=event.time]
                 gain=max(0,cluster_pressure(state,option['target'])-cluster_pressure(after,option['target'])) if contacts else 0
-                step.update(secondary_contacts=contacts,breakout_gain=gain)
-                step['cost']+=.06*len(contacts)-.25*min(3,gain)
                 next_options=shot_options(self.service,after,self.policy) if after['winner'] is None else []
+                before_options=shot_options(self.service,state,self.policy) if contacts else []
+                opened=sorted({o['target'] for o in next_options}-{o['target'] for o in before_options}-{option['target']},key=int) if contacts else []
+                collision_cost=contact_cost(contacts,option['target'],opened)
+                link_cost=continuation_cost(next_options,after['winner']==state['turn'])
+                step.update(secondary_contacts=contacts,breakout_gain=gain,opened_targets=opened,
+                            contact_cost=collision_cost,continuation_cost=link_cost)
+                step['cost']+=collision_cost+link_cost
                 step['next_shot']=({k:next_options[0][k] for k in ('target','pocket','cost','distance','object_distance','cut','rear_restricted')}
                                    if next_options else None)
                 key=len(self.forecasts);self.forecasts[key]=(state,after);step['_forecast_key']=key
@@ -267,12 +287,23 @@ class Search:
                 biased.append({**base,'desired':delta*(1/delta.norm()),'pocket_bias_m':offset})
         settings = stroke_settings()
         pool = []; tried = 0
-        for index,(speed,tip_x,tip_y) in enumerate(settings):
-            for o in chosen+(biased if index==5 else []):
-                if self.stopped() or self.count >= self.search_cap or tried >= attempts: return pool
-                tried += 1
-                value = self.aimed(state, o, speed, tip_y,tip_x)
-                if value is not None: pool.append(value)
+        tasks=[(o,(speed,side,tip)) for index,(speed,side,tip) in enumerate(settings)
+               for o in chosen+(biased if index==5 else [])]
+        if self.prior and self.prior.data:
+            values=self.prior.predict([inputs(self.service,state,o,s) for o,s in tasks])
+            ranked=sorted(zip(values,tasks),key=lambda v:-v[0])
+            # Reserve exploration for each target/pocket, then use learned order.
+            selected=[];lines=set()
+            for _,task in ranked:
+                key=task[0]['target'],task[0]['pocket']
+                if key not in lines:selected.append(task);lines.add(key)
+            tasks=selected+[task for _,task in ranked if task not in selected]
+            attempts=min(attempts,max(18,len(chosen)*6))
+        for o,(speed,tip_x,tip_y) in tasks:
+            if self.stopped() or self.count >= self.search_cap or tried >= attempts:return pool
+            tried+=1
+            value=self.aimed(state,o,speed,tip_y,tip_x)
+            if value is not None:pool.append(value)
         return pool
 
     def position_value(self, state):
@@ -332,8 +363,10 @@ class Search:
                 if len(frontier) == 6: break
             if self.stopped() or monotonic() >= self.search_deadline: break
         candidates = complete or paths
-        candidates.sort(key=lambda n: (not n[0]['winner'] == owner, -len(n[1]),
-                                      self.route_cost(n)))
+        # Extra verified strokes are useful, but must not outrank a comfortable
+        # continuation solely because the path is longer and ends in a dead end.
+        candidates.sort(key=lambda n: (not n[0]['winner'] == owner,
+                                      self.route_cost(n)-.35*len(n[1])))
         routes = []; keys = set();forecasts=[]
         for after, path, cost in candidates:
             key = tuple((s['target'],s['pocket']) for s in path)
@@ -344,7 +377,7 @@ class Search:
             reasons.append('综合当前进球、下一球好打度与走位代价；允许五库内及适度加塞换取更舒服的续接')
             if clear and len(path)>1: reasons.append(f'保留 {path[-2]["target"]} 号作为黑八连接球')
             if any(s['human']['notes'] for s in path): reasons.append('近库杆采用高杆限制；未用低杆强拉')
-            if any(s['secondary_contacts'] for s in path):reasons.append('允许走位中的合法借碰和K球；首碰与提前进黑八仍按中八规则检查')
+            if any(s['secondary_contacts'] for s in path):reasons.append('优先不借碰的自然走位；借碰增加不确定性代价，仅在打开堵球等收益足够时采用')
             if not clear: reasons.append('这是预算内找到的部分路线，后续需根据实际落点重算')
             forecasts.append([self.forecasts[s['_forecast_key']] for s in path])
             routes.append({'steps': [{k:v for k,v in s.items() if k!='_forecast_key'} for s in path], 'clear_verified': clear, 'reasons': reasons,
@@ -382,9 +415,7 @@ class Search:
                         valid &= any(o['cut']<=50 and .18<=o['distance']<=1.2 and not o['rear_restricted']
                                      for o in options) and edge>=.07
                     passed+=bool(valid)
-                exact=self.forward(node,original)
-                if exact is None:break
-                node=exact[1]
+                node=forecasts[0][index][1]  # exact stroke was already certified
             route['perturbations']={'passed':passed,'checked':checked,'expected':expected,
                                     'complete':checked==expected,'not_human_probability':True,
                                     'definition':'Individual angle +/-0.05 degrees and cue speed +/-2%; actual legal pot plus an accessible moderate continuation. Not a joint full-route probability.'}
@@ -392,6 +423,7 @@ class Search:
                 'routes': [] if self.cancelled() else routes, 'endgame': endgame,
                 'model': self.model.data['version'] if self.model and self.model.data else 'heuristic-baseline',
                 'evaluations': self.count, 'elapsed': round(monotonic()-self.started, 2),
+                'reused_simulations':self.reused_simulations,
                 'human_policy': self.policy['version'], 'rejected_strokes': self.rejected,
                 '_forecasts':forecasts,
                 'scope': 'simulation-trained ranking; ordinary horizontal strokes; no professional success claim'}

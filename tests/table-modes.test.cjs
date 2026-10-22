@@ -21,6 +21,22 @@ async function harness(){
   return {c,$,game,flow:c.window.TableModes,requests,count:()=>setCount};
 }
 
+test('unassigned players have no ball list; assigned balls sort numerically and potted balls disappear',async()=>{
+  const {flow,$,game}=await harness();
+  assert.equal($('player-one').children.length,2);
+  const balls=[{id:'cue',pocket:null},...['7','3','1','2','15','9','8'].map(id=>({id,pocket:id==='2'?'top-right':null}))];
+  const assigned={...game,revision:1,is_break:false,groups:['solid','stripe'],scene:{...game.scene,balls}};
+  assert.equal(flow.acceptAI(assigned,game),true);
+  assert.deepEqual($('player-one').children[3].children.map(n=>n.children[0].textContent),['1','3','7']);
+  assert.deepEqual($('player-two').children[3].children.map(n=>n.children[0].textContent),['9','15']);
+  assert.equal($('player-two').children[3].children[0].className,'group-ball stripe');
+  const cleared=structuredClone(assigned);cleared.revision++;
+  for(const b of cleared.scene.balls)if(['1','3','7'].includes(b.id))b.pocket='top-right';
+  assert.equal(flow.acceptAI(cleared,assigned),true);
+  assert.deepEqual($('player-one').children[3].children.map(n=>n.children[0].textContent),['8']);
+  assert.equal($('player-one').children[3].children[0].className,'group-ball black');
+});
+
 for(const phase of ['playing','choice','finished'])test('committed shot automatically reaches '+phase+' with no apply action',async()=>{
   const {c,$,game,flow,count,requests}=await harness(),n=count(),calls=requests.length;
   const after={...game,revision:1,turn:1,phase,is_break:false,chooser:1,choices:[],winner:1,last_decision:{outcome:'本杆已判定',fouls:[],clauses:[]}};

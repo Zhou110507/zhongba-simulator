@@ -120,7 +120,7 @@ def test_offline_break_trials_use_strictly_positive_random_gaps(service):
 def test_blocked_direct_ball_has_a_verified_multirail_reply(service):
     state=tactical_layout(service,410001)
     result=choose_contact(service,state,seconds=12,evaluations=700)
-    assert result['status']=='found' and result['tactic'] in ('safety','kick_attack')
+    assert result['status']=='found' and result['tactic'] in ('escape','kick_attack')
     assert result['cue_cushions']>=1 and result['predicted_fouls']==[]
     games=GameStore(service);games.games[state['id']]=state
     value=games.action({'id':state['id'],'revision':0,**result['action']})

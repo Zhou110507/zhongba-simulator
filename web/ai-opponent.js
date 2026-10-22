@@ -48,7 +48,7 @@ window.AIOpponent=(()=>{
         const side=Math.abs(s.tip_x)>.02?`＋${s.tip_x>0?'右':'左'}塞 ${Math.abs(s.tip_x).toFixed(2)} R`:'';
         item.textContent=`${step.target} 号 → ${pocketNames[step.pocket]||step.pocket}；白球停点 ${Math.round(step.cue_final.x*1000)}, ${Math.round(step.cue_final.y*1000)} mm。${s.tip_y>.1?'高杆':s.tip_y<-.1?'低杆':'中杆'}${side}，杆头 ${s.cue_speed.toFixed(2)} m/s；白球 ${step.cue_cushions??0} 库，${step.clean_pot===false?'目标球碰袋角后入袋':step.clean_pot===true?'目标球未碰袋角入袋':'旧记录未注明袋角接触'}；切角 ${step.cut_degrees}°，白球到接触位 ${step.distance_mm} mm，目标球距袋 ${step.object_distance_mm??'未记录'} mm。`;
         if(step.human.notes.length)item.textContent+=' '+step.human.notes.join('；');
-        if(step.secondary_contacts?.length)item.textContent+=` 后续借碰 ${step.secondary_contacts.map(p=>p.join('／')).join('、')}${step.breakout_gain>0?'，使贴近球堆得到松动':''}。`;
+        if(step.secondary_contacts?.length)item.textContent+=` 此路线包含碰球 ${step.secondary_contacts.map(p=>p.join('／')).join('、')}${step.opened_targets?.length?'，打开 '+step.opened_targets.join('、')+' 号球的进攻线路':'，走位误差可能被放大'}。`;
         list.append(item);
       }
       card.append(list);

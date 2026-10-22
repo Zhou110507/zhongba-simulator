@@ -3,7 +3,7 @@ from copy import deepcopy
 from dataclasses import asdict
 from itertools import product
 import json
-from math import atan2,cos,degrees,radians,sin
+from math import asin,atan2,cos,degrees,radians,sin,sqrt,pi
 
 import numpy as np
 
@@ -60,6 +60,44 @@ class TacticModel:
         return float(1/(1+np.exp(-np.clip(h@np.asarray(d['w2'])+d['b2'],-30,30))))
 
 
+def direct_contact_rays(service,state):
+    """Visible contact intervals, independent of potting lines and cut limits.
+
+    Split each target's angular silhouette at every blocker tangent. Test the
+    interval interiors against the actual first sphere intersection, so a
+    visible edge counts even when the centre is blocked.
+    """
+    balls,_=service.decode(state['scene']);cue=next(b for b in balls if b.id=='cue')
+    active=[b for b in balls if b.pocket is None and b.id!='cue'];rays=[]
+    for target in active:
+        if target.id not in legal_ids(state):continue
+        delta=target.position-cue.position;distance=delta.norm();radius=cue.spec.radius+target.spec.radius
+        if distance<1e-9:continue
+        bearing=atan2(delta.y,delta.x);half=asin(min(1.,radius/distance))
+        cuts=[-half,0.,half]
+        for b in active:
+            d=b.position-cue.position;n=d.norm()
+            if n<1e-9:continue
+            centre=(atan2(d.y,d.x)-bearing+pi)%(2*pi)-pi
+            span=asin(min(1.,(cue.spec.radius+b.spec.radius)/n))
+            cuts.extend(v for v in (centre-span,centre+span) if -half<v<half)
+        cuts=sorted(set(cuts));angles=[0.]+[(a+b)/2 for a,b in zip(cuts,cuts[1:]) if b-a>1e-9]
+        found=[]
+        for offset in sorted(angles,key=abs):
+            u=Vec2(cos(bearing+offset),sin(bearing+offset));hits=[]
+            for b in active:
+                d=b.position-cue.position;t=d.dot(u);rr=cue.spec.radius+b.spec.radius
+                discriminant=rr*rr-max(0.,d.dot(d)-t*t)
+                if t>0 and discriminant>1e-14:hits.append((max(0.,t-sqrt(discriminant)),b.id))
+            if not hits:continue
+            first,key=min(hits);p=cue.position+u*first;r=cue.spec.radius
+            if key!=target.id or not (r<=p.x<=service.table.length-r and r<=p.y<=service.table.width-r):continue
+            found.append({'angle':degrees(bearing+offset)%360,'rails':0,'clearance':0.,'target':target.id,'length':first})
+            if len(found)==3:break
+        rays+=found
+    return rays
+
+
 def kick_rays(service,state,max_rails=3):
     balls,_=service.decode(state['scene']);cue=next(b for b in balls if b.id=='cue')
     radius=cue.spec.radius;bounds=(radius,service.table.length-radius,radius,service.table.width-radius)
@@ -93,7 +131,9 @@ def kick_rays(service,state,max_rails=3):
 
 
 def contact_candidates(service,state,search,*,attempts=320):
-    rays=kick_rays(service,state);rows=[];seen=set();tried=0
+    direct=direct_contact_rays(service,state)
+    rays=direct or [r for r in kick_rays(service,state) if r['rails']>0]
+    rows=[];seen=set();tried=0
     # Guarantee at least one chance to each target and rail count before more
     # tiny variants; negative-clearance rays remain useful for intentional K.
     selected=[];groups=set()
@@ -114,14 +154,19 @@ def contact_candidates(service,state,search,*,attempts=320):
                 trial=search.forward(state,shot)
                 if trial is None:continue
                 result,after,access=trial
+                first=next((e for e in result.events if e.kind=='ball_ball' and 'cue' in e.actors),None)
+                approach=sum(e.kind=='ball_cushion' and 'cue' in e.actors and
+                             (first is None or e.time<first.time-1e-9) for e in result.events)
+                if direct and approach:continue
                 x=tactical_features(service,state,after,shot,result,search.policy)
                 rows.append({'shot':asdict(shot),'x':x.tolist(),'after':after,
                              'human':access,'cushions':int(round(x[11]*8)),
+                             'first_contact_cushions':approach,
                              'legal':bool(x[0]) and not bool(x[4]),'pot':bool(x[1]>0 or x[15])})
     return rows
 
 
-def choose_contact(service,state,*,cancelled=lambda:False,seconds=12,evaluations=700):
+def choose_contact(service,state,*,cancelled=lambda:False,seconds=8,evaluations=450):
     model=TacticModel(service)
     search=Search(service,trained=False,seconds=seconds,evaluations=evaluations,cancelled=cancelled)
     rows=contact_candidates(service,state,search)
@@ -133,19 +178,25 @@ def choose_contact(service,state,*,cancelled=lambda:False,seconds=12,evaluations
         def rank(row):
             x=np.asarray(row['x']);return (row['legal'],model.score(x)+.12*x[8]-.025*x[12])
         best=max(candidates,key=rank);after=best['after'];x=best['x']
-        kind='kick_attack' if best['pot'] and best['legal'] else 'safety' if best['legal'] else 'best_effort'
+        escape=best['first_contact_cushions']>0
+        kind=('kick_attack' if escape else 'attack') if best['pot'] and best['legal'] else ('escape' if escape else 'safety') if best['legal'] else 'best_effort'
         return {'status':'found','routes':[],'model':VERSION,'tactic':kind,
                 'action':{'action':'shoot','shot':best['shot']},'evaluations':search.count,
                 'predicted_fouls':after['last_decision']['fouls'],'hidden_fraction':x[8],
                 'cue_cushions':best['cushions'],'human':best['human'],
-                'message':('解球进攻：模拟验证合法进球' if kind=='kick_attack' else
-                           '解球／防守：模拟验证合法触球，优先限制对手直接进攻' if kind=='safety' else
+                'requires_escape':not bool(direct_contact_rays(service,state)),
+                'first_contact_cushions':best['first_contact_cushions'],
+                'message':('直打进攻：模拟验证合法进球' if kind=='attack' else
+                           '解球进攻：目标球无法直达，经库边触球并合法进球' if kind=='kick_attack' else
+                           '解球：目标球无法直达，经库边完成合法触球' if kind=='escape' else
+                           '直打防守：目标球可以直接打到，选择合法触球并限制对手进攻' if kind=='safety' else
                            '有限搜索未找到无犯规解法，仍完成当前杆；已明确列出预计犯规，未宣称合法')}
     # Every live, non-cancelled turn still produces a bounded shot. Pathological
     # fully surrounded white balls may foul: never claim guaranteed legality.
     balls,_=service.decode(state['scene']);cue=next(b for b in balls if b.id=='cue')
     target=next((b for b in balls if b.id in legal_ids(state) and b.pocket is None),None)
-    angle=degrees(atan2(target.position.y-cue.position.y,target.position.x-cue.position.x)) if target else 0.
+    direct=direct_contact_rays(service,state)
+    angle=direct[0]['angle'] if direct else degrees(atan2(target.position.y-cue.position.y,target.position.x-cue.position.x)) if target else 0.
     return {'status':'found','routes':[],'model':VERSION,'tactic':'best_effort',
             'action':{'action':'shoot','shot':asdict(ShotInput(angle%360,1.1,0.,.5))},
             'evaluations':search.count,'predicted_fouls':['预算内未验证到合法解法'],

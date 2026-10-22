@@ -31,7 +31,7 @@ def decide(service, state, *, cancelled=lambda: False, progress=lambda value: No
     if state['is_break']:
         from .break_policy import decide_break
         return decide_break(service,state)
-    search=Search(service,seconds=24,evaluations=1500,cancelled=cancelled,progress=progress)
+    search=Search(service,seconds=12,evaluations=600,cancelled=cancelled,progress=progress)
     base['model']=search.model.data['version'] if search.model.data else 'heuristic-baseline'
     if state['ball_in_hand']=='head' and not state['is_break']:
         targets=[b for b in state['scene']['balls'] if b['id'] in legal_ids(state) and b['pocket'] is None]
@@ -76,7 +76,7 @@ def decide(service, state, *, cancelled=lambda: False, progress=lambda value: No
     if result['routes'] and result['routes'][0]['steps'][0]['cost']<5.:
         return {**base,**result,'action':{'action':'shoot','shot':result['routes'][0]['steps'][0]['shot']}}
     from .tactics import choose_contact
-    progress({'stage':'进攻后备：检查多库解球、K球与防守','evaluations':search.count})
+    progress({'stage':'进攻后备：可直达时检查防守，被遮挡时检查解球','evaluations':search.count})
     fallback=choose_contact(service,state,cancelled=cancelled)
     if result['routes'] and (fallback.get('tactic')=='best_effort' or
                              fallback.get('tactic')=='safety' and fallback.get('hidden_fraction',0)<.5):
