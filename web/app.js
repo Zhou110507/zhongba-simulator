@@ -14,6 +14,7 @@ let background=null,backgroundKey='',trailLayer=null,trailSource=null,guideCache
 let aimFrame=0,queuedAim=null,animationFrame=0,lastUiFrame=0;
 const ballSprites=new Map();
 let guideRecord = null, guideKey = '', guideController = null;
+let cueStroke=null;
 
 function announce(text, error = false) { $('message').textContent = text; $('message').classList.toggle('error', error); }
 function ballName(id) { return id === 'cue' ? '白球' : `${id} 号球`; }
@@ -33,6 +34,7 @@ async function api(path, data, signal) {
 }
 
 function invalidate() {
+  cueStroke=null;
   clearTimeout(launchTimer); guideController?.abort(); guideController=null; guideRecord=null; guideKey='';
   $('guide-info').textContent='方向线实时更新；正在计算实际接触位置…'; $('contact-analysis').textContent='';
   revision++; requestNumber++; requestController?.abort(); requestController = null; busy = false;
@@ -100,7 +102,8 @@ function refreshUI() {
   if (!config || !scene) return;
   const duration = record?.result.duration || 0, completeTime = fired && time >= duration;
   const cueMissing = !active(cueBall());
-  $('phase').textContent = busy ? '正在计算…' : fired ? (playing ? '球在运动中' : completeTime ? (record.complete ? '本杆结束' : '计算已中止') : '已暂停') : pending ? (pending === 'cue' ? '等待摆放白球' : '点击空位添加目标球') : record ? '路线已预览' : mode === 'edit' ? '摆球中' : cueMissing ? '白球需要重新摆放' : '准备出杆';
+  const preparing=cueStroke&&CueVisual.pose(cueStroke.elapsed,cueStroke.speed).phase!=='follow-through';
+  $('phase').textContent = busy ? '正在计算…' : fired ? (playing ? preparing?'运杆准备出杆':'球在运动中' : completeTime ? (record.complete ? '本杆结束' : '计算已中止') : '已暂停') : pending ? (pending === 'cue' ? '等待摆放白球' : '点击空位添加目标球') : record ? '路线已预览' : mode === 'edit' ? '摆球中' : cueMissing ? '白球需要重新摆放' : '准备出杆';
   $('instruction').textContent = fired ? '拖动时间轴查看任意时刻 · 本杆结束后可继续' : pending ? `点击球桌空位，放置${ballName(pending)}` : mode === 'edit' ? '拖动球的位置，或使用下方数值输入' : '点击或拖动球桌确定方向 · 空格出杆';
   $('aim-mode').setAttribute('aria-pressed', String(mode === 'aim'));
   $('edit-mode').setAttribute('aria-pressed', String(mode === 'edit'));
@@ -117,7 +120,7 @@ function refreshUI() {
   const balls = fired ? stateAt(time) : scene.balls;
   const currentCue = balls.find(ball => ball.id === 'cue');
   const motion=ShotGuide.motionState(currentCue),phaseNames={sliding:'滑动',rolling:'纯滚动',spinning:'原地侧旋',stationary:'静止',pocketed:'已落袋'};
-  $('shot-summary').textContent = record ? `${record.result.duration.toFixed(2)} s · ${fired ? `白球 ${Math.hypot(currentCue.velocity.x,currentCue.velocity.y).toFixed(2)} m/s · ${phaseNames[motion.phase]}${motion.phase==='sliding'?`（底部滑速 ${motion.slip.toFixed(2)} m/s）`:''} · 侧旋 ${currentCue.omega.z.toFixed(1)} rad/s` : '路线预览'}` : '调整方向、力度和击点，再试一杆';
+  $('shot-summary').textContent = preparing ? '瞄准与运杆 · 白球静止，杆头触球后开始走球' : record ? `${record.result.duration.toFixed(2)} s · ${fired ? `白球 ${Math.hypot(currentCue.velocity.x,currentCue.velocity.y).toFixed(2)} m/s · ${phaseNames[motion.phase]}${motion.phase==='sliding'?`（底部滑速 ${motion.slip.toFixed(2)} m/s）`:''} · 侧旋 ${currentCue.omega.z.toFixed(1)} rad/s` : '路线预览'}` : '调整方向、力度和击点，再试一杆';
   $('ball-count').textContent = `${balls.filter(active).length} / ${balls.length} 球在台`;
   const nextPotted=balls.filter(ball=>!active(ball)).map(b=>b.id+':'+b.pocket).join('|');
   if(pottedKey!==nextPotted){pottedKey=nextPotted;$('potted').replaceChildren(...balls.filter(ball => !active(ball)).map(ball => {
@@ -174,9 +177,11 @@ function statusText(status) {
   return names[status] || `计算未完成：${status}`;
 }
 
-function startReplay() {
+function startReplay(options={}) {
+  const animate=options.cueAnimation??Boolean(record?.ai_execution||record?.ai_analysis);
+  cueStroke=animate?CueVisual.begin(scene.shot.cue_speed):null;
   fired = true; playing = true; requestFrame(); time = 0; lastFrame = 0; finishedAnnounced = false;
-  announce(record.complete ? '这一杆正在回放。可暂停、慢放或拖动时间轴。' : statusText(record.result.status), !record.complete);
+  announce(record.complete ? animate?'正在运杆，杆头触球后开始走球。':'这一杆正在回放。可暂停、慢放或拖动时间轴。' : statusText(record.result.status), !record.complete);
   refreshUI(); draw();
 }
 
@@ -339,10 +344,15 @@ function draw(){
   }
   const balls=fired?stateAt(time):scene.balls;
   if(!fired&&mode==='aim'&&active(cueBall())&&!window.TableModes?.locksAction()){
-    const cue=cueBall(),angle=scene.shot.angle_deg*Math.PI/180,direction={x:Math.cos(angle),y:Math.sin(angle)};
     drawContactGuide(map);
-    ctx.strokeStyle='#c6a675';ctx.lineCap='round';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(X(cue.position.x-direction.x*.36),Y(cue.position.y-direction.y*.36));ctx.lineTo(X(cue.position.x-direction.x*.075),Y(cue.position.y-direction.y*.075));ctx.stroke();ctx.strokeStyle='#d9ddd0';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(X(cue.position.x-direction.x*.075),Y(cue.position.y-direction.y*.075));ctx.lineTo(X(cue.position.x-direction.x*.045),Y(cue.position.y-direction.y*.045));ctx.stroke();ctx.lineCap='butt';
+    CueVisual.draw(ctx,map,cueBall(),scene.shot);canvas.dataset.cuePhase='aim';
+  }else if(cueStroke){
+    const pose=CueVisual.pose(cueStroke.elapsed,cueStroke.speed);
+    CueVisual.draw(ctx,map,cueBall(),scene.shot,pose);canvas.dataset.cuePhase=pose.phase;
+  }else{
+    canvas.dataset.cuePhase='hidden';
   }
+  canvas.dataset.cueLengthMetres=String(CueVisual.length);
   for(const ball of balls)drawBall(drag?.id===ball.id?{...ball,position:drag.position}:ball,map,drag?.id===ball.id);
   if(record&&!fired){ctx.fillStyle='#d7e8bc';ctx.font='18px "Microsoft YaHei", sans-serif';ctx.textAlign='left';ctx.fillText('计算预览 · 点击出杆播放',X(.08),Y(table.width-.07));}
   updateContactReadout();
@@ -437,7 +447,7 @@ $('center-tip').onclick=()=>setTip(0,0);document.querySelectorAll('[data-tip]').
 $('preview').onclick=()=>calculate(false);$('shoot').onclick=()=>calculate(true);
 $('play').onclick=()=>{if(!record)return;if(time>=record.result.duration){startReplay();return;}playing=!playing;lastFrame=0;if(playing)requestFrame();refreshUI();};
 $('replay').onclick=startReplay;
-$('seek').oninput=event=>{playing=false;time=Number(event.target.value)/1000*record.result.duration;if(time>=record.result.duration)reportFinish();else announce(`已暂停在 ${time.toFixed(2)} 秒，可继续播放或查看这一时刻。`);refreshUI();draw();};
+$('seek').oninput=event=>{cueStroke=null;playing=false;time=Number(event.target.value)/1000*record.result.duration;if(time>=record.result.duration)reportFinish();else announce(`已暂停在 ${time.toFixed(2)} 秒，可继续播放或查看这一时刻。`);refreshUI();draw();};
 $('trails').onchange=draw;
 $('before').onclick=()=>{if(window.TableModes?.before())return;invalidate();announce('已回到出杆前，可重新调整这一杆。');refreshLaunch();refreshUI();draw();};
 $('next').onclick=()=>{if(window.TableModes?.isRules())return;if(!record?.complete||time<record.result.duration)return;const next=record.next_scene;setScene(next);if(!active(cueBall())){mode='edit';pending='cue';announce('白球落袋。点击台面空位重新摆放白球后继续。');}else announce('已应用本杆停球位置，可以继续下一杆。');refreshUI();draw();};
@@ -464,8 +474,13 @@ function requestFrame(){if(!animationFrame)animationFrame=requestAnimationFrame(
 function tick(now){
   animationFrame=0;
   if(playing&&record){
-    const elapsed=lastFrame?Math.min(.15,(now-lastFrame)/1000):0;time=Math.min(record.result.duration,time+elapsed*Number($('speed').value));
-    if(time>=record.result.duration)reportFinish();
+    const elapsed=(lastFrame?Math.min(.15,(now-lastFrame)/1000):0)*Number($('speed').value);
+    let replayElapsed=elapsed;
+    if(cueStroke){const before=CueVisual.pose(cueStroke.elapsed,cueStroke.speed),motion=CueVisual.advance(cueStroke,elapsed);replayElapsed=motion.replayDelta;
+      if(before.phase!=='follow-through'&&motion.phase==='follow-through')announce('这一杆正在回放。可暂停、慢放或拖动时间轴。');
+      if(motion.finished)cueStroke=null;}
+    time=Math.min(record.result.duration,time+replayElapsed);
+    if(time>=record.result.duration&&(!cueStroke||CueVisual.pose(cueStroke.elapsed,cueStroke.speed).phase==='follow-through'))reportFinish();
     if(now-lastUiFrame>=100||!playing){refreshUI();lastUiFrame=now;}
     draw();lastFrame=now;if(playing)requestFrame();
   }else lastFrame=0;

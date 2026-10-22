@@ -16,7 +16,7 @@ from .pockets import geometry_dict, outline
 from .shot_analysis import first_contact_analysis, cue_motion_report
 
 ROOT = Path(__file__).resolve().parents[1]
-APP_VERSION = 'pot-preserving-continuation-v13'
+APP_VERSION = 'wood-cue-stroke-v14'
 
 
 def _number(value, name):

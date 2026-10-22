@@ -14,7 +14,7 @@ async function harness(){
     active:b=>b.pocket==null,cueBall:()=>c.scene.balls[0],color:()=>'',textRule(){},announce:message=>c.message=message,draw(){},refreshSelection(){},refreshUI(){c.window.TableModes?.refresh();},populateEvents(){},
     invalidate(){c.record=null;c.fired=false;c.time=0;c.playing=false;},
     setScene(value){setCount++;c.invalidate();c.scene=structuredClone(value);},
-    startReplay(){c.fired=true;c.playing=true;c.time=0;},
+    startReplay(options){c.replayOptions=options;c.fired=true;c.playing=true;c.time=0;},
     api:async(path,data)=>{requests.push({path,data});return path==='/api/rules/config'?config:structuredClone(game);},
   };
   vm.createContext(c);vm.runInContext(fs.readFileSync('web/table-modes.js','utf8'),c);await Promise.resolve();await $('rules-mode').onclick();
@@ -63,6 +63,18 @@ test('preview or incomplete computation never advances the match',async()=>{
     c.record={...record,game_after:game,result:{duration:1}};c.fired=true;c.time=1;
     assert.equal(flow.finish(),false);assert.equal(count(),n);
   }
+});
+
+test('AI acceptance animates its actual executed shot before starting ball motion',async()=>{
+  const {c,game,flow,requests}=await harness();c.syncShotControls=()=>{};c.cachedKey='';
+  const shot={angle_deg:37.1,cue_speed:1.8,tip_x:.2,tip_y:.3};
+  const value={complete:true,rule_committed:true,snapshot:{shot},
+    result:{initial:[{id:'cue',velocity:{x:1,y:0}}]},game_after:{...game,revision:1}};
+  const n=requests.length;assert.equal(flow.acceptAI(value,game),true);
+  assert.equal(c.replayOptions.cueAnimation,true);assert.deepEqual(c.scene.shot,shot);
+  assert.equal(requests.length,n); // visual sequence never sends another shot
+  c.replayOptions=null;flow.acceptAI({...value,complete:false,rule_committed:false},game);
+  assert.equal(c.replayOptions,null);
 });
 
 test('rules never render trails, and returning to free preserves its checkbox preference',async()=>{

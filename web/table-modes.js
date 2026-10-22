@@ -90,7 +90,7 @@ window.TableModes=(()=>{
       invalidate();scene.shot=clone(value.snapshot.shot);syncShotControls();
       record=value;cachedKey=JSON.stringify(scene);populateEvents();
       const cue=value.result.initial.find(b=>b.id==='cue');$('launch-speed').textContent=Math.hypot(cue.velocity.x,cue.velocity.y).toFixed(2)+' m/s';
-      if(value.complete&&value.rule_committed)startReplay();
+      if(value.complete&&value.rule_committed)startReplay({cueAnimation:true});
       else announce('AI 此杆未完整仿真，未推进对局。',true);
     }else adopt(value);
     return true;
