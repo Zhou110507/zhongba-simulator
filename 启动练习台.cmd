@@ -1,4 +1,4 @@
 @echo off
 cd /d "%~dp0"
-python -m billiards.webapp --port 8766 --open
+python -m billiards.launcher
 if errorlevel 1 pause
