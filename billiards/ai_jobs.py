@@ -15,7 +15,7 @@ from .pockets import unsupported_pocket
 from .rules import HEAD, legal_ids
 from .runout import Search, shot_options
 from .ai_cache import model_stamp,matches,continuation,public_analysis
-from .ai_rolling import HORIZON,endpoint,extend,append
+from .ai_rolling import HORIZON,endpoint,extend,append,readiness
 from .ai_difficulty import realize
 
 
@@ -148,12 +148,18 @@ class AIJobs:
             try:
                 result=decide(self.games.service,state,cancelled=entry['cancel'].is_set,progress=progress)
                 if entry['cancel'].is_set():result={**result,'status':'cancelled','routes':[]};result.pop('action',None)
-                with self.lock:entry.update(status=result['status'],analysis=result)
+                with self.lock:
+                    entry.update(status=result['status'],analysis=result)
+                    if result['status']=='found' and endpoint(result) is not None and not entry['cancel'].is_set():
+                        self.continuations[state['id']]={'cancel':Event(),'extending':False,'stamp':entry['stamp'],
+                            'expected':deepcopy(state),'revision':state['revision'],'created':monotonic(),'analysis':deepcopy(result)}
             except Exception:
                 import traceback
                 traceback.print_exc()
                 with self.lock:entry.update(status='error',error='AI 计算失败，请查看本机日志')
-            finally:self.slots.release()
+            finally:
+                self.slots.release()
+                self._extend(state['id'])
         Thread(target=run,daemon=True,name='runout-ai').start()
         return {'id':key,'status':'running'}
 
@@ -253,12 +259,17 @@ class AIJobs:
             public={k:v for k,v in entry.items() if k not in ('created','cancel','stamp','source','analysis') and not k.startswith('_')}
             if entry.get('analysis'):
                 public['analysis']=public_analysis(entry['analysis'])
+                gate=readiness(entry['analysis'],entry['source'])
                 if current:
                     last=endpoint(lane['analysis'])
                     public['analysis']['rolling']={'target':HORIZON,'remaining':self._length(lane),
                                                   'extending':lane.get('extending',False),
                                                   'exhausted':bool(last and lane.get('failed_anchor') and matches(last,lane['failed_anchor'])),
                                                   'progress':lane.get('progress',{})}
+                    gate=readiness(lane['analysis'] or entry['analysis'],entry['source'])
+                exhausted=bool(current and public['analysis'].get('rolling',{}).get('exhausted')) or endpoint(entry['analysis']) is None
+                gate.update(waiting=not gate['ready'] and not exhausted,blocked=not gate['ready'] and exhausted)
+                public['analysis']['execution_gate']=gate
             public=deepcopy(public)
         if not cancel:self._extend(entry['game_id'])
         return public
@@ -280,6 +291,9 @@ class AIJobs:
                 current=self.games.ai_snapshot({'id':entry['game_id'],'revision':entry['revision']})
                 if entry.get('source') is not None and (not matches(entry['source'],current) or entry.get('stamp')!=model_stamp(self.games.service)):
                     raise ValueError('台面或模型与 AI 快照不一致，请重新计算')
+                gate=readiness(analysis,current)
+                if not gate['ready']:
+                    raise ValueError(f"等待前瞻补齐：已验证 {gate['available']}/{gate['required']} 杆，当前杆尚未执行")
                 action=deepcopy(analysis['action']);execution=None
                 if action['action']=='shoot':
                     action['shot'],execution=realize(self.games.service,current,action['shot'])

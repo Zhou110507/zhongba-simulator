@@ -129,10 +129,11 @@ function rollingRoute(targets){return {clear_verified:false,reasons:[],steps:tar
   target,pocket:'top-right',cue_final:{x:1,y:.6},shot:{cue_speed:1.,tip_x:0,tip_y:0},
   cut_degrees:20,distance_mm:500,object_distance_mm:400,human:{notes:[]}}))};}
 
-test('ready prefix stays executable while the rolling suffix updates without another start',async()=>{
+test('two-shot prefix waits for the third verified shot without another start',async()=>{
   const h=harness();h.setAnalysis({routes:[rollingRoute(['2','3'])],evaluations:0,elapsed:0,
     rolling:{target:3,remaining:2,extending:true,exhausted:false}});
-  await h.flow.think();assert.equal(h.$('ai-execute').disabled,false);
+  await h.flow.think();assert.equal(h.$('ai-execute').disabled,true);
+  await h.$('ai-execute').onclick();assert.equal(h.calls.some(c=>c.path.endsWith('/execute')),false);
   assert.match(h.$('ai-status').textContent,/后台继续补算/);
   const task=[...h.scheduled].find(t=>t.ms===750);assert.ok(task);
   h.setAnalysis({routes:[rollingRoute(['2','3','4'])],extended_steps:1,extension_evaluations:50,
@@ -143,6 +144,60 @@ test('ready prefix stays executable while the rolling suffix updates without ano
   assert.equal(h.$('ai-execute').disabled,false);
   assert.equal(h.calls.filter(c=>c.path.endsWith('/start')).length,1);
   assert.equal(h.calls.some(c=>c.path.endsWith('/execute')),false);
+});
+
+test('automatic play cannot overtake a slow suffix and executes once when the queue fills',async()=>{
+  const h=harness();h.$('ai-auto').checked=true;
+  const waiting={routes:[rollingRoute(['2','3'])],evaluations:0,elapsed:0,
+    execution_gate:{kind:'offense',available:2,required:3,ready:false,waiting:true},
+    rolling:{target:3,remaining:2,extending:true,exhausted:false}};
+  h.setAnalysis(waiting);await h.flow.think();
+  await new Promise(resolve=>setImmediate(resolve));
+  for(let i=0;i<3;i++){
+    const task=[...h.scheduled].find(t=>t.ms===750);assert.ok(task);h.scheduled.delete(task);await task.fn();
+    h.flow.refresh();await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(h.$('ai-execute').disabled,true);
+    assert.equal(h.calls.some(c=>c.path.endsWith('/execute')),false);
+  }
+  assert.match(h.$('ai-status').textContent,/等待队尾补算，暂不出杆/);
+  const task=[...h.scheduled].find(t=>t.ms===750);h.scheduled.delete(task);
+  h.setAnalysis({routes:[rollingRoute(['2','3','4'])],
+    execution_gate:{kind:'offense',available:3,required:3,ready:true},
+    rolling:{target:3,remaining:3,extending:false,exhausted:false}});
+  await task.fn();await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(h.calls.filter(c=>c.path.endsWith('/execute')).length,1);
+  assert.equal(h.calls.filter(c=>c.path.endsWith('/start')).length,1);
+});
+
+test('pausing automatic play during the wait preserves the filled plan without shooting',async()=>{
+  const h=harness();h.$('ai-auto').checked=true;
+  h.setAnalysis({routes:[rollingRoute(['2','3'])],
+    execution_gate:{kind:'offense',ready:false,available:2,required:3},
+    rolling:{target:3,remaining:2,extending:true}});
+  await h.flow.think();h.flow.pause();
+  const task=[...h.scheduled].find(t=>t.ms===750);h.scheduled.delete(task);
+  h.setAnalysis({routes:[rollingRoute(['2','3','4'])],
+    execution_gate:{kind:'offense',ready:true,available:3,required:3},
+    rolling:{target:3,remaining:3,extending:false}});
+  await task.fn();await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(h.$('ai-execute').disabled,false);
+  assert.equal(h.calls.some(c=>c.path.endsWith('/execute')),false);
+  assert.equal(h.calls.filter(c=>c.path.endsWith('/start')).length,1);
+});
+
+test('a verified finish with fewer than three strokes is executable but an exhausted partial route is not',async()=>{
+  const h=harness();const finish=rollingRoute(['2','8']);finish.clear_verified=true;
+  h.setAnalysis({routes:[finish],execution_gate:{kind:'offense',ready:true,required:2,available:2}});
+  await h.flow.think();assert.equal(h.$('ai-execute').disabled,false);
+  const q=harness();q.$('ai-auto').checked=true;
+  q.setAnalysis({routes:[rollingRoute(['2','3'])],
+    execution_gate:{kind:'offense',ready:false,required:3,available:2,blocked:true},
+    rolling:{target:3,remaining:2,extending:false,exhausted:true}});
+  await q.flow.think();await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(q.$('ai-execute').disabled,true);
+  assert.match(q.$('ai-status').textContent,/未找到足够续接/);
+  assert.equal(q.calls.some(c=>c.path.endsWith('/execute')),false);
+  assert.equal([...q.scheduled].some(t=>t.ms===750),false);
 });
 
 test('late rolling status cannot restore a plan after the layout changes',async()=>{

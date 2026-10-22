@@ -4,7 +4,7 @@
 window.AIOpponent=(()=>{
   let generation=0,job=null,thinking=false,executing=false,analysis=null,binding=null;
   let source=null,future=null,layoutEpoch=0;
-  let scheduled=null,rollingTimer=null,attempted='',viewKey='',failed=false;
+  let scheduled=null,rollingTimer=null,executionTimer=null,attempted='',viewKey='',failed=false;
   const context=()=>window.TableModes?.aiContext()||{game:null,idle:false};
   function ownsTurn(){const {game:g}=context();return Boolean(window.TableModes?.isRules()&&g&&g.ai_player!=null&&['playing','choice'].includes(g.phase)&&(g.phase==='choice'?g.chooser:g.turn)===g.ai_player);}
   const identity=g=>g?`${g.id}:${g.revision}`:'';
@@ -14,10 +14,25 @@ window.AIOpponent=(()=>{
     const p=e.planned_shot,a=e.actual_shot;
     return `${e.label}：计划方向 ${p.angle_deg.toFixed(3)}°、杆头 ${p.cue_speed.toFixed(3)} m/s；实际方向 ${a.angle_deg.toFixed(3)}°、杆头 ${a.cue_speed.toFixed(3)} m/s。方向偏差 ${e.angle_error_deg.toFixed(3)}°，杆头速度偏差 ${(e.speed_error_fraction*100).toFixed(2)}%。`;
   }
-  function pause(){ $('ai-auto').checked=false;clearTimeout(scheduled);scheduled=null;refresh(); }
+  function canExecute(){
+    if(!analysis?.action)return false;
+    if(analysis.execution_gate)return analysis.execution_gate.ready===true;
+    if(analysis.routes?.length)return analysis.routes[0].clear_verified||analysis.routes[0].steps.length>=3;
+    return analysis.action.action!=='shoot'||analysis.rack_read===false||['safety','escape','best_effort'].includes(analysis.tactic);
+  }
+  function scheduleExecution(){
+    if(executionTimer||!$('ai-auto').checked||!canExecute()||!ownsTurn()||!context().idle||thinking||executing||identity(binding)!==identity(context().game))return;
+    const token=generation,key=job,expected=identity(binding);
+    executionTimer=setTimeout(()=>{
+      executionTimer=null;
+      if(token===generation&&key===job&&identity(context().game)===expected&&$('ai-auto').checked&&canExecute())execute();
+    },1600);
+  }
+  function pause(){ $('ai-auto').checked=false;clearTimeout(scheduled);scheduled=null;clearTimeout(executionTimer);executionTimer=null;refresh(); }
   function cancelForChange(){
     generation++;layoutEpoch++;clearTimeout(scheduled);scheduled=null;
     clearTimeout(rollingTimer);rollingTimer=null;
+    clearTimeout(executionTimer);executionTimer=null;
     if(job)api('/api/ai/cancel',{id:job}).catch(()=>{});
     if(future)api('/api/ai/cancel',{id:future.id}).catch(()=>{});
     future=null;
@@ -35,11 +50,16 @@ window.AIOpponent=(()=>{
       if(action?.action==='place')text+=` 白球位置 ${Math.round(action.x*1000)}, ${Math.round(action.y*1000)} mm。`;
       if(action?.action==='shoot'){const s=action.shot;text+=` 杆头 ${s.cue_speed.toFixed(2)} m/s，高低击点 ${s.tip_y.toFixed(2)} R、侧击点 ${s.tip_x.toFixed(2)} R${value.cue_cushions!=null?`；白球预计 ${value.cue_cushions} 库`:''}。`;}
       if(value.predicted_fouls?.length)text+=' 预计风险：'+value.predicted_fouls.join('、');
+      if(value.execution_gate?.ready===false)text+=' 前瞻尚未补齐，暂不出杆。';
       message(text);return;
     }
     const rolling=value.rolling;
     message(`${value.cache_hit?'球位符合预期，复用后续路线 · ':''}${value.routes[0].clear_verified?'已验证清台路线':'找到部分续接'} · ${value.evaluations} 次模拟 · ${value.elapsed} 秒${rolling?.extending?` · 保留后续 ${rolling.remaining} 杆，后台继续补算`:''}${value.extended_steps?` · 已从队尾新增 ${value.extended_steps} 杆（${value.extension_evaluations} 次模拟）`:''}`);
     if(value.requested_depth!=null&&!value.cache_hit)message($('ai-status').textContent+` · 前瞻 ${value.verified_depth}/${value.requested_depth} 杆${value.horizon_complete?'（已满足）':value.horizon_limit==='budget_exhausted'?'（预算用尽，深度尚未满足）':'（尚未找到更长的宽容错续接）'}`);
+    if(value.execution_gate?.kind==='offense'){
+      const gate=value.execution_gate;
+      message($('ai-status').textContent+` · 出杆前队列 ${gate.available}/${gate.required} 杆${gate.ready?'（可出杆）':gate.blocked?'（未找到足够续接，保留原路线，暂不出杆）':'（等待队尾补算，暂不出杆）'}`);
+    }
     for(const [index,route]of value.routes.entries()){
       const card=document.createElement('details'),title=document.createElement('summary');
       card.open=index===0;title.textContent=`${index===0?'推荐':'备选 '+index}：${route.steps.map(s=>s.target).join(' → ')}${route.clear_verified?' · 含黑八清台':' · 后续待规划'}`;card.append(title);
@@ -82,14 +102,15 @@ window.AIOpponent=(()=>{
     if(viewKey&&viewKey!==g?.id){$('ai-routes').replaceChildren();analysis=null;binding=null;}
     viewKey=g?.id||'';
     $('ai-think').disabled=!ownsTurn()||!idle||thinking||executing;
-    $('ai-execute').disabled=!ownsTurn()||!idle||thinking||executing||!analysis?.action||identity(binding)!==key;
+    $('ai-execute').disabled=!ownsTurn()||!idle||thinking||executing||!canExecute()||identity(binding)!==key;
     $('ai-cancel').disabled=executing||(!thinking&&!scheduled&&!future&&!$('ai-auto').checked);
     $('ai-export').disabled=!analysis;
     if(g?.ai_player==null){message('选择 AI 对手后开始；也可体验三球＋黑八残局。');return;}
     if(g?.phase==='setup'){message('摆好你自己的残局，再点击“完成摆球，开始分析”。');return;}
     if(!ownsTurn()){if(!thinking)message(g.phase==='finished'?'本局结束。可回看上一杆或开始下一局。':future?'球运动中，AI 已预先计算下一回合；球停后才会执行。':'轮到你击球，AI 等待中。');return;}
     if(!thinking&&!executing&&!analysis&&!failed)message('AI 回合：可先查看清台思路，或勾选自动对打。');
-    if($('ai-auto').checked&&idle&&!thinking&&!executing&&attempted!==key&&!scheduled){
+    if($('ai-auto').checked&&idle&&!thinking&&!executing&&analysis&&identity(binding)===key)scheduleExecution();
+    else if($('ai-auto').checked&&idle&&!thinking&&!executing&&attempted!==key&&!scheduled){
       scheduled=setTimeout(()=>{scheduled=null;if(ownsTurn()&&context().idle&&$('ai-auto').checked)think();},600);
     }
   }
@@ -114,17 +135,14 @@ window.AIOpponent=(()=>{
         analysis=status.analysis;
         if(started.reused_job&&started.status==='found')analysis={...analysis,cache_hit:true,cached_from_evaluations:analysis.evaluations,evaluations:0,elapsed:0};
         thinking=false;render(analysis);refreshUI();watchRolling(token,expected,job);
-        if($('ai-auto').checked&&analysis.action){
-          await new Promise(resolve=>setTimeout(resolve,1600));
-          if(token===generation&&$('ai-auto').checked)await execute();
-        }
+        scheduleExecution();
         return;
       }
     }catch(e){if(token===generation){failed=true;if(/计算繁忙|已有 AI 在思考/.test(e.message)&&$('ai-auto').checked)attempted='';message(e.message);}}
     finally{if(token===generation){thinking=false;refreshUI();}}
   }
   async function execute(){
-    const {game:g,idle}=context();if(!job||!analysis?.action||!idle||!ownsTurn()||executing||identity(g)!==identity(binding))return;
+    const {game:g,idle}=context();if(!job||!canExecute()||!idle||!ownsTurn()||executing||identity(g)!==identity(binding))return;
     const expected={...binding},token=generation;executing=true;clearTimeout(rollingTimer);rollingTimer=null;window.TableModes.setAIExecuting?.(true);message('正在执行 AI 当前这一杆…');refreshUI();
     try{
       const value=await api('/api/ai/execute',{id:job,prefetch:true});

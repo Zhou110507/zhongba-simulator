@@ -1,0 +1,132 @@
+{
+  "version": "three-shot-execution-gate-v10",
+  "source_fixture": "training/ai_stage3/integrated-audit.json",
+  "source_sha256": "3e0225116f3fa7bd4c1d0c1a3dbd0a8a9bbbfff4fa3dd91334bee38503516441",
+  "schedule": "Hold the fourth-stroke worker until three attempts to execute the second are rejected; then release it.",
+  "scope": "Frozen real-physics/rules shots test queue timing; not new training or a strategy-quality/latency benchmark.",
+  "game_id": "940645a72bef4d079845e72067796c00",
+  "physical_fixture_checks": 4,
+  "denied_early_execution": [
+    {
+      "attempt": 1,
+      "message": "等待前瞻补齐：已验证 2/3 杆，当前杆尚未执行",
+      "revision": 1
+    },
+    {
+      "attempt": 2,
+      "message": "等待前瞻补齐：已验证 2/3 杆，当前杆尚未执行",
+      "revision": 1
+    },
+    {
+      "attempt": 3,
+      "message": "等待前瞻补齐：已验证 2/3 杆，当前杆尚未执行",
+      "revision": 1
+    }
+  ],
+  "tail_workers": [
+    {
+      "anchor_matches_after_third": true,
+      "depth": 1
+    }
+  ],
+  "executions": [
+    {
+      "revision_after": 1,
+      "queue_before": [
+        "3",
+        "1",
+        "2"
+      ],
+      "gate_before": {
+        "ready": true,
+        "required": 3,
+        "available": 3,
+        "kind": "offense",
+        "clear_verified": false,
+        "waiting": false,
+        "blocked": false
+      },
+      "potted": [
+        "3"
+      ],
+      "fouls": []
+    },
+    {
+      "revision_after": 2,
+      "queue_before": [
+        "1",
+        "2",
+        "8"
+      ],
+      "gate_before": {
+        "ready": true,
+        "required": 3,
+        "available": 3,
+        "kind": "offense",
+        "clear_verified": true,
+        "waiting": false,
+        "blocked": false
+      },
+      "potted": [
+        "1"
+      ],
+      "fouls": []
+    },
+    {
+      "revision_after": 3,
+      "queue_before": [
+        "2",
+        "8"
+      ],
+      "gate_before": {
+        "ready": true,
+        "required": 2,
+        "available": 2,
+        "kind": "offense",
+        "clear_verified": true,
+        "waiting": false,
+        "blocked": false
+      },
+      "potted": [
+        "2"
+      ],
+      "fouls": []
+    },
+    {
+      "revision_after": 4,
+      "queue_before": [
+        "8"
+      ],
+      "gate_before": {
+        "ready": true,
+        "required": 1,
+        "available": 1,
+        "kind": "offense",
+        "clear_verified": true,
+        "waiting": false,
+        "blocked": false
+      },
+      "potted": [
+        "8"
+      ],
+      "fouls": []
+    }
+  ],
+  "metrics": {
+    "cache_hits": 3,
+    "prefetches": 3,
+    "searches": 0,
+    "invalidations": 0,
+    "extensions": 1,
+    "extended_steps": 1
+  },
+  "finished": true,
+  "prefix_preserved": true,
+  "initial_gate": {
+    "ready": true,
+    "required": 3,
+    "available": 3,
+    "kind": "offense",
+    "clear_verified": false
+  }
+}

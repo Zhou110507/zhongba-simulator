@@ -120,11 +120,17 @@ def prepared(service,level):
     games=GameStore(service);state=games.new({'scenario':'ai_endgame','ai_level':level})
     games.games[state['id']]['ai_noise_seed']='0';state=games.get({'id':state['id']})
     shot=first_shot(service);search=Search(service,seconds=10,evaluations=4)
-    after=search.forward(state,ShotInput(**shot))[1]
-    # Only the first forecast is needed to establish that this tail must expire.
-    steps=[{'target':'3','shot':shot,'cost':1.},{'target':'1','shot':shot,'cost':1.}]
+    audit=json.loads((service.root/'training'/'ai_stage3'/'integrated-audit.json').read_text(encoding='utf8'))
+    actions=next(r for r in audit['rows'] if r['case']=='endgame-cache')['actions'][:3]
+    node=state;steps=[];forecasts=[]
+    for action in actions:
+        current=action['action']['shot'];trial=search.forward(node,ShotInput(**current));assert trial
+        successor=trial[1]
+        steps.append({'target':successor['last_decision']['first_contacts'][0],'shot':current,'cost':1.,'position_effort':.1})
+        forecasts.append((node,successor));node=successor
+    after=forecasts[0][1]
     analysis={'status':'found','action':{'action':'shoot','shot':shot},
-              'routes':[{'steps':steps,'reasons':[]}],'_forecasts':[[(state,after),(after,after)]]}
+              'routes':[{'steps':steps,'reasons':[]}],'_forecasts':[forecasts]}
     jobs=AIJobs(games,BoundedSemaphore(1))
     jobs.jobs['ready']={'id':'ready','status':'found','created':monotonic(),'cancel':Event(),
                         'source':state,'game_id':state['id'],'revision':0,'stamp':model_stamp(service),'analysis':analysis}

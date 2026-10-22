@@ -1,0 +1,166 @@
+{
+  "version": "three-shot-execution-gate-v10",
+  "scope": "Independent localhost UI auto-play on the default three-ball plus black-eight demo; one game, not a training result or human success probability. Slow-worker gating is separately verified by the deterministic queue audit.",
+  "game_id": "d61a8d9d3926414d8281e20cfe639ef8",
+  "revision": 4,
+  "level": "expert",
+  "winner": 1,
+  "automatic": true,
+  "finished": true,
+  "history": [
+    {
+      "shooter": 1,
+      "first_contacts": [
+        "3"
+      ],
+      "potted": [
+        "3"
+      ],
+      "fouls": [],
+      "clauses": [],
+      "outcome": "合法进本组球，继续击球",
+      "winner": null,
+      "respot_eight": false,
+      "ai_execution": {
+        "version": "execution-gaussian-v1",
+        "level": "expert",
+        "label": "最强（训练原版）",
+        "angle_sigma_deg": 0,
+        "speed_sigma_fraction": 0,
+        "planned_shot": {
+          "angle_deg": 127.35657273031781,
+          "cue_speed": 2.2,
+          "tip_x": 0,
+          "tip_y": -0.45
+        },
+        "actual_shot": {
+          "angle_deg": 127.35657273031781,
+          "cue_speed": 2.2,
+          "tip_x": 0,
+          "tip_y": -0.45
+        },
+        "angle_error_deg": 0,
+        "speed_error_fraction": 0,
+        "speed_error_mps": 0,
+        "angle_projection_scale": 1,
+        "speed_bound_redraws": 0
+      }
+    },
+    {
+      "shooter": 1,
+      "first_contacts": [
+        "1"
+      ],
+      "potted": [
+        "1"
+      ],
+      "fouls": [],
+      "clauses": [],
+      "outcome": "合法进本组球，继续击球",
+      "winner": null,
+      "respot_eight": false,
+      "ai_execution": {
+        "version": "execution-gaussian-v1",
+        "level": "expert",
+        "label": "最强（训练原版）",
+        "angle_sigma_deg": 0,
+        "speed_sigma_fraction": 0,
+        "planned_shot": {
+          "angle_deg": 234.0063445418646,
+          "cue_speed": 1.6,
+          "tip_x": 0,
+          "tip_y": 0.3
+        },
+        "actual_shot": {
+          "angle_deg": 234.0063445418646,
+          "cue_speed": 1.6,
+          "tip_x": 0,
+          "tip_y": 0.3
+        },
+        "angle_error_deg": 0,
+        "speed_error_fraction": 0,
+        "speed_error_mps": 0,
+        "angle_projection_scale": 1,
+        "speed_bound_redraws": 0
+      }
+    },
+    {
+      "shooter": 1,
+      "first_contacts": [
+        "2"
+      ],
+      "potted": [
+        "2"
+      ],
+      "fouls": [],
+      "clauses": [],
+      "outcome": "合法进本组球，继续击球",
+      "winner": null,
+      "respot_eight": false,
+      "ai_execution": {
+        "version": "execution-gaussian-v1",
+        "level": "expert",
+        "label": "最强（训练原版）",
+        "angle_sigma_deg": 0,
+        "speed_sigma_fraction": 0,
+        "planned_shot": {
+          "angle_deg": 26.419644619489084,
+          "cue_speed": 2.5,
+          "tip_x": 0.3,
+          "tip_y": 0.3
+        },
+        "actual_shot": {
+          "angle_deg": 26.419644619489084,
+          "cue_speed": 2.5,
+          "tip_x": 0.3,
+          "tip_y": 0.3
+        },
+        "angle_error_deg": 0,
+        "speed_error_fraction": 0,
+        "speed_error_mps": 0,
+        "angle_projection_scale": 1,
+        "speed_bound_redraws": 0
+      }
+    },
+    {
+      "shooter": 1,
+      "first_contacts": [
+        "8"
+      ],
+      "potted": [
+        "8"
+      ],
+      "fouls": [],
+      "clauses": [
+        "1 / 27"
+      ],
+      "outcome": "合法打进8号，本局获胜",
+      "winner": 1,
+      "respot_eight": false,
+      "ai_execution": {
+        "version": "execution-gaussian-v1",
+        "level": "expert",
+        "label": "最强（训练原版）",
+        "angle_sigma_deg": 0,
+        "speed_sigma_fraction": 0,
+        "planned_shot": {
+          "angle_deg": 333.1644861876291,
+          "cue_speed": 1.1,
+          "tip_x": 0.25,
+          "tip_y": 0
+        },
+        "actual_shot": {
+          "angle_deg": 333.1644861876291,
+          "cue_speed": 1.1,
+          "tip_x": 0.25,
+          "tip_y": 0
+        },
+        "angle_error_deg": 0,
+        "speed_error_fraction": 0,
+        "speed_error_mps": 0,
+        "angle_projection_scale": 1,
+        "speed_bound_redraws": 0
+      }
+    }
+  ]
+}

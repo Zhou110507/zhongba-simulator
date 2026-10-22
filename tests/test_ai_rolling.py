@@ -63,7 +63,8 @@ def test_execution_one_adds_four_and_execution_two_adds_five_without_replanning_
         value=jobs.execute({'id':'initial','prefetch':True});key=value['prefetch']['id']
         assert entered[0].wait(1) and calls==[(3,1)] and committed==[1]
         ready=jobs.status({'id':key});assert ready['status']=='found'
-        assert ready['analysis']['routes'][0]['steps']==steps[1:3]  # immediately executable
+        assert ready['analysis']['routes'][0]['steps']==steps[1:3]  # retained, not executable yet
+        assert not ready['analysis']['execution_gate']['ready']
         assert ready['analysis']['rolling']['extending']
         again=jobs.start({'id':states[1]['id'],'revision':1});assert again['id']==key
         assert len(calls)==1 and games.games[states[0]['id']]['revision']==1
@@ -81,7 +82,7 @@ def test_execution_one_adds_four_and_execution_two_adds_five_without_replanning_
         for e in release:e.set()
 
 
-def test_execution_can_overtake_extension_and_join_it_at_endpoint(monkeypatch):
+def test_execution_cannot_overtake_extension_or_consume_the_remaining_prefix(monkeypatch):
     _,jobs,states,steps,segment,committed=pipeline(monkeypatch)
     entered=Event();release=Event();calls=[]
     def extend(service,state,depth,**kwargs):
@@ -90,16 +91,16 @@ def test_execution_can_overtake_extension_and_join_it_at_endpoint(monkeypatch):
     monkeypatch.setattr('billiards.ai_jobs.extend',extend)
     try:
         key=jobs.execute({'id':'initial','prefetch':True})['prefetch']['id'];assert entered.wait(1)
-        key=jobs.execute({'id':key,'prefetch':True})['prefetch']['id']
-        value=jobs.execute({'id':key,'prefetch':True});key=value['prefetch']['id']
-        assert committed==[1,2,3] and value['prefetch']['status']=='running'
-        assert jobs.start({'id':states[3]['id'],'revision':3})['id']==key
+        for _ in range(3):
+            with pytest.raises(ValueError,match='等待前瞻补齐'):jobs.execute({'id':key,'prefetch':True})
+        assert committed==[1]
+        assert jobs.start({'id':states[1]['id'],'revision':1})['id']==key
         assert calls==[3]  # no duplicate search while waiting
         release.set()
         wait_for(lambda:jobs.status({'id':key})['status']=='found')
         wait_for(lambda:len(jobs.status({'id':key})['analysis']['routes'][0]['steps'])==3)
-        assert jobs.status({'id':key})['analysis']['routes'][0]['steps']==steps[3:6]
-        assert calls==[3,4] and jobs.metrics['searches']==0
+        assert jobs.status({'id':key})['analysis']['routes'][0]['steps']==steps[1:4]
+        assert calls==[3] and jobs.metrics['searches']==0
     finally:release.set()
 
 
@@ -123,40 +124,37 @@ def test_late_suffix_cannot_resurrect_cancelled_or_changed_table(monkeypatch,cha
     finally:release.set()
 
 
-def test_no_suffix_keeps_ready_prefix_and_uses_tactics_only_at_actual_endpoint(monkeypatch):
+def test_no_suffix_keeps_prefix_and_cannot_use_tactics_at_an_unreached_endpoint(monkeypatch):
     _,jobs,states,steps,_,committed=pipeline(monkeypatch)
     entered=Event();release=Event();fallback=Event()
     def extend(*a,**k):entered.set();assert release.wait(3);return {'status':'not_found','routes':[]}
-    def decide(service,state,**kwargs):
-        assert matches(state,states[3]) and committed==[1,2,3];fallback.set()
-        return {'status':'found','routes':[],'action':{'action':'shoot','shot':steps[3]['shot']},'tactic':'safety'}
+    def decide(service,state,**kwargs):fallback.set();pytest.fail('Must not pretend the future endpoint was reached')
     monkeypatch.setattr('billiards.ai_jobs.extend',extend);monkeypatch.setattr('billiards.ai_jobs.decide',decide)
     try:
         key=jobs.execute({'id':'initial','prefetch':True})['prefetch']['id'];assert entered.wait(1)
-        key=jobs.execute({'id':key,'prefetch':True})['prefetch']['id']
-        key=jobs.execute({'id':key,'prefetch':True})['prefetch']['id']
-        release.set();assert fallback.wait(1)
-        wait_for(lambda:jobs.status({'id':key})['status']=='found')
-        assert jobs.status({'id':key})['analysis']['tactic']=='safety'
+        with pytest.raises(ValueError,match='等待前瞻补齐'):jobs.execute({'id':key,'prefetch':True})
+        release.set()
+        wait_for(lambda:jobs.status({'id':key})['analysis']['execution_gate']['blocked'])
+        assert not fallback.is_set() and committed==[1]
+        assert jobs.status({'id':key})['analysis']['routes'][0]['steps']==steps[1:3]
     finally:release.set()
 
 
-def test_cancelling_an_overtaken_extension_releases_waiter_and_allows_new_think(monkeypatch):
+def test_cancelling_a_waiting_extension_releases_worker_and_allows_new_think(monkeypatch):
     _,jobs,states,_,segment,_=pipeline(monkeypatch)
     entered=Event();release=Event()
     def extend(*a,**k):entered.set();assert release.wait(3);return segment(3,4)
     monkeypatch.setattr('billiards.ai_jobs.extend',extend)
     try:
         key=jobs.execute({'id':'initial','prefetch':True})['prefetch']['id'];assert entered.wait(1)
-        key=jobs.execute({'id':key,'prefetch':True})['prefetch']['id']
-        key=jobs.execute({'id':key,'prefetch':True})['prefetch']['id']
         jobs.status({'id':key},cancel=True);release.set()
-        wait_for(lambda:jobs.status({'id':key})['status']=='cancelled')
+        wait_for(lambda:not jobs.continuations[states[0]['id']]['extending'])
+        assert jobs.jobs[key]['cancel'].is_set()
         assert jobs.slots.acquire(timeout=1);jobs.slots.release()
         called=Event()
         def fresh(*a,**k):called.set();return {'status':'found','routes':[]}
         monkeypatch.setattr('billiards.ai_jobs.decide',fresh)
-        again=jobs.start({'id':states[3]['id'],'revision':3})
+        again=jobs.start({'id':states[1]['id'],'revision':1})
         assert again['id']!=key and called.wait(1)
     finally:release.set()
 

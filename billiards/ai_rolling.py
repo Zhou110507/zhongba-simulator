@@ -1,10 +1,29 @@
 """Extend only the unsearched endpoint of an already verified shot queue."""
 from copy import deepcopy
+from time import monotonic
 
 from .ai_cache import matches
+from .rules import legal_ids
 from .runout import Search
 
 HORIZON=3
+
+
+def readiness(analysis,state):
+    """A shot consumes a queue slot only after the verified horizon is full."""
+    action=analysis.get('action',{});routes=analysis.get('routes',[])
+    if action.get('action')!='shoot' or state['is_break'] or (not routes and analysis.get('tactic') in ('safety','escape','best_effort')):
+        return {'ready':True,'required':0,'available':0,'kind':'rule_or_tactic'}
+    own=legal_ids(state)
+    required=min(HORIZON,1 if own==['8'] else len(own)+1) if state['groups'][state['turn']] else HORIZON
+    forecasts=analysis.get('_forecasts',[])
+    chain=forecasts[0] if forecasts and routes and len(forecasts[0])==len(routes[0]['steps']) else []
+    valid=bool(chain) and matches(chain[0][0],state)
+    valid &= all(matches(a[1],b[0]) for a,b in zip(chain,chain[1:]))
+    clear=bool(valid and chain[-1][1]['phase']=='finished' and chain[-1][1]['winner']==state['turn'])
+    available=len(chain) if valid else 0
+    ready=valid and (clear or available>=required and required==HORIZON)
+    return {'ready':bool(ready),'required':required,'available':available,'kind':'offense','clear_verified':clear}
 
 
 def endpoint(analysis):
@@ -16,7 +35,16 @@ def endpoint(analysis):
 
 def extend(service,state,depth,*,cancelled,progress):
     # Never replay/re-search the prefix: start at its certified final state.
-    return Search(service,seconds=24,evaluations=1500,cancelled=cancelled,progress=progress).plan(state,max_depth=depth)
+    search=Search(service,seconds=24,evaluations=1500,cancelled=cancelled,progress=progress)
+    result=search.plan(state,max_depth=depth);rounds=0
+    while not result.get('routes') and result.get('horizon_limit')=='budget_exhausted' and not cancelled():
+        # A time slice ending is not proof that the endpoint has no route.
+        # Keep this worker and its exact candidate/probe caches, not a new job.
+        rounds+=1;search.deadline=monotonic()+24;search.search_deadline=search.deadline-3
+        search.cap+=1500;search.search_cap=search.cap-24
+        result=search.solve(state,max_depth=depth)
+    if rounds:result['budget_continuations']=rounds
+    return result
 
 
 def append(prefix,suffix,anchor):

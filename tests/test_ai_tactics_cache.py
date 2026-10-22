@@ -139,7 +139,14 @@ def test_no_verified_contact_still_produces_a_shot_without_claiming_legality(ser
 
 
 def test_cache_miss_prefetch_runs_before_next_client_turn_without_duplicate_worker(service,planned,monkeypatch):
-    games,jobs=prepared(service,planned);jobs.jobs['ready']['analysis'].pop('_forecasts')
+    games,jobs=prepared(service,planned)
+    original=games.action
+    def changed_endpoint(*args,**kwargs):
+        value=original(*args,**kwargs)
+        actual=value['game_after'];next(b for b in actual['scene']['balls'] if b['id']=='9')['position']['y']+=.002
+        games.games[actual['id']]=deepcopy(actual)
+        return value
+    monkeypatch.setattr(games,'action',changed_endpoint)
     called=Event();release=Event()
     def background(service,state,**kwargs):
         called.set();release.wait(2)
@@ -153,6 +160,148 @@ def test_cache_miss_prefetch_runs_before_next_client_turn_without_duplicate_work
         assert again['id']==value['prefetch']['id'] and again['reused_job']
         assert jobs.metrics['searches']==1
     finally:release.set()
+
+
+def test_playback_cannot_consume_second_shot_until_the_fourth_is_verified(service,planned,monkeypatch):
+    state,full=deepcopy(planned);prefix=deepcopy(full)
+    prefix['routes'][0].update(steps=prefix['routes'][0]['steps'][:3],clear_verified=False)
+    prefix['_forecasts'][0]=prefix['_forecasts'][0][:3]
+    games,jobs=prepared(service,(state,prefix));entered=Event();release=Event();calls=[]
+    def slow_suffix(service,anchor,depth,**kwargs):
+        calls.append((deepcopy(anchor),depth));entered.set();assert release.wait(5)
+        assert not kwargs['cancelled']()
+        suffix=deepcopy(full);suffix['routes'][0]['steps']=suffix['routes'][0]['steps'][3:]
+        suffix['_forecasts'][0]=suffix['_forecasts'][0][3:]
+        return suffix
+    monkeypatch.setattr('billiards.ai_jobs.extend',slow_suffix)
+    monkeypatch.setattr('billiards.ai_jobs.decide',lambda *a,**k:pytest.fail('Repeated root planning'))
+    try:
+        first=jobs.execute({'id':'ready','prefetch':True});key=first['prefetch']['id']
+        assert entered.wait(1)
+        expected_tail=deepcopy(prefix['routes'][0]['steps'][1:])
+        assert matches(calls[0][0],full['_forecasts'][0][2][1]) and calls[0][1]==1
+        for _ in range(3):
+            status=jobs.status({'id':key});gate=status['analysis']['execution_gate']
+            assert not gate['ready'] and gate['waiting'] and gate['available']==2 and gate['required']==3
+            assert status['analysis']['routes'][0]['steps']==expected_tail
+            with pytest.raises(ValueError,match='等待前瞻补齐'):jobs.execute({'id':key,'prefetch':True})
+            assert jobs.start({'id':state['id'],'revision':1})['id']==key
+            assert games.games[state['id']]['revision']==1
+        assert len(calls)==1 and jobs.metrics['searches']==0
+        release.set();deadline=monotonic()+2
+        while monotonic()<deadline:
+            status=jobs.status({'id':key})
+            if status['analysis']['execution_gate']['ready']:break
+            sleep(.005)
+        assert status['analysis']['execution_gate']['ready']
+        assert status['analysis']['routes'][0]['steps'][:2]==expected_tail
+        assert [s['target'] for s in status['analysis']['routes'][0]['steps']]==['1','2','8']
+        # Two/one remaining strokes are allowed only because the black-eight
+        # finish is already physically certified, not because search is slow.
+        for remaining in (3,2,1):
+            gate=jobs.status({'id':key})['analysis']['execution_gate']
+            assert gate['ready'] and gate['required']==remaining
+            value=jobs.execute({'id':key,'prefetch':True})
+            assert not value['game_after']['last_decision']['fouls']
+            if remaining>1:key=value['prefetch']['id']
+        assert value['game_after']['phase']=='finished'
+        assert len(calls)==1 and jobs.metrics['searches']==0 and jobs.metrics['extensions']==1
+    finally:release.set()
+
+
+def test_initial_partial_plan_starts_tail_worker_before_any_shot(service,planned,monkeypatch):
+    state,full=deepcopy(planned);games=GameStore(service);games.games[state['id']]=state
+    jobs=AIJobs(games,BoundedSemaphore(1));entered=Event();release=Event();calls=[]
+    initial=deepcopy(full);initial['routes'][0].update(steps=initial['routes'][0]['steps'][:2],clear_verified=False)
+    initial['_forecasts'][0]=initial['_forecasts'][0][:2]
+    initial['action']={'action':'shoot','shot':initial['routes'][0]['steps'][0]['shot']}
+    monkeypatch.setattr('billiards.ai_jobs.decide',lambda *a,**k:deepcopy(initial))
+    def suffix(service,anchor,depth,**kwargs):
+        calls.append((anchor,depth));entered.set();assert release.wait(5)
+        result=deepcopy(full);result['routes'][0].update(steps=result['routes'][0]['steps'][2:3],clear_verified=False)
+        result['_forecasts'][0]=result['_forecasts'][0][2:3]
+        return result
+    monkeypatch.setattr('billiards.ai_jobs.extend',suffix)
+    try:
+        job=jobs.start({'id':state['id'],'revision':0});assert entered.wait(1)
+        gate=jobs.status(job)['analysis']['execution_gate']
+        assert gate['waiting'] and gate['available']==2
+        with pytest.raises(ValueError,match='等待前瞻补齐'):jobs.execute(job)
+        assert games.games[state['id']]['revision']==0 and not games.games[state['id']]['history']
+        assert matches(calls[0][0],full['_forecasts'][0][1][1]) and calls[0][1]==1
+        release.set();deadline=monotonic()+2
+        while monotonic()<deadline:
+            status=jobs.status(job)
+            if status['analysis']['execution_gate']['ready']:break
+            sleep(.005)
+        assert status['analysis']['execution_gate']['ready']
+        assert status['analysis']['routes'][0]['steps'][:2]==initial['routes'][0]['steps']
+        assert len(calls)==1 and jobs.metrics['searches']==1
+    finally:release.set()
+
+
+def test_unextendable_queue_is_reported_without_consuming_or_restarting_prefix(service,planned,monkeypatch):
+    state,result=deepcopy(planned);result['routes'][0].update(steps=result['routes'][0]['steps'][:3],clear_verified=False)
+    result['_forecasts'][0]=result['_forecasts'][0][:3]
+    games,jobs=prepared(service,(state,result));calls=[]
+    def missing(*a,**k):calls.append(1);return {'status':'not_found','routes':[],'horizon_limit':'no_robust_continuation_found'}
+    monkeypatch.setattr('billiards.ai_jobs.extend',missing)
+    first=jobs.execute({'id':'ready','prefetch':True});key=first['prefetch']['id'];deadline=monotonic()+2
+    while monotonic()<deadline:
+        status=jobs.status({'id':key})
+        if status['analysis']['execution_gate']['blocked']:break
+        sleep(.005)
+    assert status['analysis']['execution_gate']['blocked']
+    for _ in range(3):
+        with pytest.raises(ValueError,match='等待前瞻补齐'):jobs.execute({'id':key})
+        jobs.status({'id':key})
+    assert len(calls)==1 and jobs.metrics['searches']==0
+    assert games.games[state['id']]['revision']==1
+
+
+def test_route_without_certified_forecasts_cannot_bypass_queue_gate(service,planned):
+    games,jobs=prepared(service,planned);jobs.jobs['ready']['analysis'].pop('_forecasts')
+    with pytest.raises(ValueError,match='等待前瞻补齐'):jobs.execute({'id':'ready'})
+    state=games.games[planned[0]['id']]
+    assert state['revision']==0 and not state['history']
+
+
+def test_cancelling_during_slow_suffix_cannot_publish_or_shoot_later(service,planned,monkeypatch):
+    state,result=deepcopy(planned);result['routes'][0].update(steps=result['routes'][0]['steps'][:3],clear_verified=False)
+    result['_forecasts'][0]=result['_forecasts'][0][:3]
+    games,jobs=prepared(service,(state,result));entered=Event();release=Event()
+    def slow(*args,**kwargs):
+        entered.set();assert release.wait(5)
+        return {'status':'cancelled','routes':[]}
+    monkeypatch.setattr('billiards.ai_jobs.extend',slow)
+    try:
+        first=jobs.execute({'id':'ready','prefetch':True});key=first['prefetch']['id'];assert entered.wait(1)
+        jobs.status({'id':key},cancel=True);release.set();deadline=monotonic()+2
+        while jobs.continuations[state['id']]['extending'] and monotonic()<deadline:sleep(.005)
+        with pytest.raises(ValueError):jobs.execute({'id':key})
+        assert games.games[state['id']]['revision']==1
+        assert jobs._length(jobs.continuations[state['id']])==2
+        assert not jobs.continuations[state['id']]['extending']
+    finally:release.set()
+
+
+def test_endpoint_budget_continuation_reuses_one_search_and_its_caches(monkeypatch):
+    from billiards import ai_rolling
+    instances=[];calls=[]
+    class BudgetSearch:
+        def __init__(self,*a,**k):
+            instances.append(self);self.cap=1500;self.memo={'verified':'retained'}
+        def plan(self,state,**kwargs):
+            calls.append(('plan',state,kwargs));return {'routes':[],'horizon_limit':'budget_exhausted'}
+        def solve(self,state,**kwargs):
+            assert self.memo=={'verified':'retained'}
+            calls.append(('solve',state,kwargs))
+            return {'routes':[],'horizon_limit':'budget_exhausted' if len(calls)==2 else 'no_robust_continuation_found'}
+    monkeypatch.setattr(ai_rolling,'Search',BudgetSearch)
+    result=ai_rolling.extend(None,{'endpoint':'fourth'},1,cancelled=lambda:False,progress=lambda _:None)
+    assert len(instances)==1 and [c[0] for c in calls]==['plan','solve','solve']
+    assert all(c[1:]==({'endpoint':'fourth'},{'max_depth':1}) for c in calls)
+    assert result['budget_continuations']==2 and instances[0].cap==4500
 
 
 def test_legal_k_still_pots_but_cluster_credit_cannot_override_precise_collision_risk(service):
