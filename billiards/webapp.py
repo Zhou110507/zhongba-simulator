@@ -1,16 +1,29 @@
 """Local practice UI and bounded stateless shot API. Run: python -m billiards.webapp."""
 
 import argparse
+import errno
 import gzip
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import mimetypes
+import socket
 import threading
 from urllib.parse import unquote, urlsplit
 
 from .play import APP_VERSION, PlayService, ROOT
 
 MAX_BODY = 65536
+
+
+class LocalHTTPServer(ThreadingHTTPServer):
+    # Windows SO_REUSEADDR permits two live listeners on the same endpoint.
+    # The browser may then keep reaching an older process after an "upgrade".
+    allow_reuse_address=not hasattr(socket,'SO_EXCLUSIVEADDRUSE')
+
+    def server_bind(self):
+        if hasattr(socket,'SO_EXCLUSIVEADDRUSE'):
+            self.socket.setsockopt(socket.SOL_SOCKET,socket.SO_EXCLUSIVEADDRUSE,1)
+        super().server_bind()
 
 
 def reject_constant(value):
@@ -175,7 +188,38 @@ def make_handler(service):
 
 def create_server(port=8766, root=ROOT):
     service = PlayService(root)
-    return ThreadingHTTPServer(('127.0.0.1',port),make_handler(service))
+    return LocalHTTPServer(('127.0.0.1',port),make_handler(service))
+
+
+def running_version(port):
+    from http.client import HTTPConnection,HTTPException
+    connection=HTTPConnection('127.0.0.1',port,timeout=.25)
+    try:
+        connection.request('GET','/api/health')
+        response=connection.getresponse();data=json.loads(response.read(4096))
+        if response.status==200 and isinstance(data,dict) and data.get('status')=='ok':return data.get('app_version')
+    except (OSError,ValueError,HTTPException):pass
+    finally:connection.close()
+
+
+def launch_server(port,open_browser):
+    # A previous process can serve new HTML from disk with an old API. Reuse
+    # only the running version of this code, leaving old services untouched.
+    if open_browser and port:
+        candidates=range(port,min(65535,port+10)+1)
+        versions={candidate:running_version(candidate) for candidate in candidates}
+        for candidate in candidates:
+            if versions[candidate]==APP_VERSION:
+                import webbrowser
+                webbrowser.open(f'http://127.0.0.1:{candidate}/')
+                return None
+        for candidate in candidates:
+            if versions[candidate] is not None:continue
+            try:return create_server(candidate)
+            except OSError as error:
+                if error.errno!=errno.EADDRINUSE and getattr(error,'winerror',None)!=10048:raise
+        raise ValueError('附近端口均被占用，请使用 --port 指定其他端口')
+    return create_server(port)
 
 
 def main():
@@ -185,22 +229,10 @@ def main():
     options = parser.parse_args()
     if not 0 <= options.port <= 65535:
         parser.error('port must be between 0 and 65535')
-    if options.open_browser and options.port:
-        from http.client import HTTPConnection
-        connection = HTTPConnection('127.0.0.1',options.port,timeout=.5)
-        try:
-            connection.request('GET','/api/health')
-            response = connection.getresponse()
-            data = json.loads(response.read())
-            if response.status==200 and data.get('app_version')==APP_VERSION:
-                import webbrowser
-                webbrowser.open(f'http://127.0.0.1:{options.port}/')
-                return
-        except (OSError,ValueError):
-            pass
-        finally:
-            connection.close()
-    with create_server(options.port) as server:
+    try:server=launch_server(options.port,options.open_browser)
+    except ValueError as error:parser.error(str(error))
+    if server is None:return
+    with server:
         url = f'http://127.0.0.1:{server.server_address[1]}/'
         print('ZHONGBA practice: '+url,flush=True)
         print('Local service running. Press Ctrl+C to stop.',flush=True)
