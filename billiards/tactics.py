@@ -3,7 +3,7 @@ from copy import deepcopy
 from dataclasses import asdict
 from itertools import product
 import json
-from math import asin,atan2,cos,degrees,radians,sin,sqrt,pi
+from math import acos,asin,atan2,cos,degrees,radians,sin,sqrt,pi
 
 import numpy as np
 
@@ -11,7 +11,9 @@ from .cue import ShotInput
 from .model import Vec2
 from .planner_routes import RAILS,image,segment_distance
 from .rules import legal_ids,group
+from .pockets import outline
 from .runout import Search,shot_options,cluster_pressure
+from .shot_difficulty import geometric_tolerance
 from .shot_prior import contact_cost,planning_policy,human_pot_cost
 
 VERSION='escape-safety-value-v1'
@@ -131,6 +133,27 @@ def kick_rays(service,state,max_rails=3):
     return sorted(rays,key=lambda r:(r['clearance']<0,r['rails'],-r['clearance'],r['length']))
 
 
+def recovered_pot_option(service,ray,result,target):
+    """Describe an actually potted contact/kick for the shared position queue."""
+    pocket=next(p for p in outline(service.table).pockets if p.id==target.pocket)
+    contact=next((e for e in result.events if e.kind=='ball_ball' and target.id in e.actors),None)
+    if contact is None:return None
+    initial=next(b for b in contact.before if b.id==target.id)
+    delta=(pocket.fall_center or pocket.gate)-initial.position
+    if delta.norm()<1e-8:return None
+    desired=delta*(1/delta.norm())
+    striker=next(i for i in contact.actors if i!=target.id)
+    incoming=next(b for b in contact.before if b.id==striker).velocity
+    cosine=max(-1.,min(1.,incoming.dot(desired)/max(1e-8,incoming.norm())))
+    cut=degrees(acos(cosine));distance=ray['length']
+    tolerance=geometric_tolerance(pocket.half_width,desired.dot(pocket.outward),target.spec.radius,
+                                  distance,delta.norm(),cut)
+    return {'target':target.id,'pocket':target.pocket,'distance':distance,
+            'object_distance':delta.norm(),'cut':cut,'desired':desired,
+            'cost':1.8*tolerance['pot_difficulty']+.30*abs(distance-.55)+.25*(1-cosine),
+            **tolerance}
+
+
 def contact_candidates(service,state,search,*,attempts=320):
     direct=direct_contact_rays(service,state)
     # Centre-contact rays are not potting aims. Explicit pocket/ghost-ball
@@ -174,6 +197,7 @@ def contact_candidates(service,state,search,*,attempts=320):
                 cue_others={b if a=='cue' else a for a,b in secondary if 'cue' in (a,b) and first_target not in (a,b)}
                 jaws=sum(e.kind=='ball_cushion' and 'cue' in e.actors and e.detail.startswith('jaw:') for e in result.events)
                 risk=contact_cost(secondary,first_target,[])+planning_policy()['cue_jaw_contact_cost']*jaws
+                position_step=None
                 if x[1]>0 or x[15]:
                     potted=after['last_decision']['potted']
                     target=next((b for b in result.final if b.id in potted and b.id in legal_ids(state)),None)
@@ -187,10 +211,16 @@ def contact_candidates(service,state,search,*,attempts=320):
                     # Keep a robust pot even if it cannot promise another easy
                     # pot; intentional K still requires all four broad leaves.
                     if not margin or not margin['allowed']:continue
+                    if not after['last_decision']['fouls'] and first:
+                        option=recovered_pot_option(service,ray,result,target)
+                        value=search.certify_pot(state,option,shot,trial,combination=True) if option else None
+                        if value:
+                            position_step={k:v for k,v in value[1].items() if k!='_forecast_key'}
                 rows.append({'shot':asdict(shot),'x':x.tolist(),'after':after,
                              'human':access,'cushions':int(round(x[11]*8)),
                              'first_contact_cushions':approach,
                              'control_risk':risk,
+                             'position_step':position_step,
                              'legal':bool(x[0]) and not bool(x[4]),'pot':bool(x[1]>0 or x[15])})
     return rows
 
@@ -260,12 +290,15 @@ def choose_contact(service,state,*,cancelled=lambda:False,seconds=8,evaluations=
                 return (c['complete'] and c['legal']==c['expected'],
                         -c['worst_easy_options'],c['easiest_reply_cost'],rank(row))
             best=max(shortlist,key=safety_rank)
+        elif pots:
+            positioned=[row for row in pots if row.get('position_step')]
+            best=min(positioned,key=lambda row:search.route_cost((row['after'],[row['position_step']],row['position_step']['cost']))) if positioned else max(pots,key=rank)
         else:best=max(candidates,key=rank)
         if cancelled():return {'status':'cancelled','routes':[]}
         after=best['after'];x=best['x']
         escape=best['first_contact_cushions']>0
         kind=('kick_attack' if escape else 'attack') if best['pot'] and best['legal'] else ('escape' if escape else 'safety') if best['legal'] else 'best_effort'
-        return {'status':'found','routes':[],'model':VERSION,'tactic':kind,'planning_mode':'single_shot_tactic',
+        analysis={'status':'found','routes':[],'model':VERSION,'tactic':kind,'planning_mode':'single_shot_tactic',
                 'action':{'action':'shoot','shot':best['shot']},'evaluations':search.count,
                 'safety_check':best.get('safety_check'),'safety_evaluations':safety_evaluations,
                 'predicted_fouls':after['last_decision']['fouls'],'hidden_fraction':x[8],
@@ -278,6 +311,21 @@ def choose_contact(service,state,*,cancelled=lambda:False,seconds=8,evaluations=
                            ('直打防守：完成合法触球；对手仍可能有进攻机会' if best.get('safety_check',{}).get('worst_easy_options',1)>0 else
                             '直打防守：完成合法触球，所检查的落点未见普通直接进袋机会') if kind=='safety' else
                            '有限搜索未找到无犯规解法，仍完成当前杆；已明确列出预计犯规，未宣称合法')}
+        if best['legal'] and best['pot'] and best.get('position_step'):
+            # A recovered attack re-enters the ordinary offensive queue. Its
+            # real endpoint is extended/repaired before execution, rather than
+            # inheriting the single-shot exemption used for a safety or escape.
+            step=best['position_step'];won=after['winner']==state['turn']
+            own=legal_ids(state)
+            depth=(1 if own==['8'] else len(own)+1) if state['groups'][state['turn']] and len(own)<=3 else 3
+            analysis.update(planning_mode='offensive_recovery',requested_depth=depth,verified_depth=1,
+                            horizon_complete=won,horizon_limit=None if won else 'continuation_pending',
+                            routes=[{'steps':[step],'clear_verified':won,'reasons':[
+                                '重新找到合法进球，按实际白球停点恢复多杆走位规划；后续仍需物理与规则复验'],
+                                'mean_cost':step['cost'],'max_shot_cost':step['cost']-step['position_effort'],
+                                'mean_position_effort':step['position_effort']}],
+                            _forecasts=[[(deepcopy(state),deepcopy(after))]])
+        return analysis
     # Every live, non-cancelled turn still produces a bounded shot. Pathological
     # fully surrounded white balls may foul: never claim guaranteed legality.
     balls,_=service.decode(state['scene']);cue=next(b for b in balls if b.id=='cue')

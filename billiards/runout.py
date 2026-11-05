@@ -246,52 +246,8 @@ class Search:
             result, after, access = trial
             event = next((e for e in result.events if e.kind == 'ball_ball' and 'cue' in e.actors), None)
             if not event or option['target'] not in event.actors: break
-            target = next(b for b in result.final if b.id == option['target'])
-            cue = next(b for b in result.final if b.id == 'cue')
-            d = after['last_decision']
-            cue_hits=[e for e in result.events if e.kind=='ball_ball' and 'cue' in e.actors]
-            target_hits=[e for e in result.events if e.kind=='ball_ball' and option['target'] in e.actors]
-            banks=sum(e.kind=='ball_cushion' and 'cue' in e.actors for e in result.events)
-            simple=(self.policy['allow_secondary_ball_contacts'] or len(cue_hits)==len(target_hits)==1)
-            simple &= banks<=self.policy['max_normal_cushions']
-            if simple and target.pocket == option['pocket'] and not d['fouls'] and (
-                    after['turn'] == state['turn'] and after['phase'] == 'playing'
-                    or after['winner'] == state['turn']):
-                pocket=next(p for p in outline(self.service.table).pockets if p.id==target.pocket)
-                jaw_hits=sum(e.kind=='ball_cushion' and option['target'] in e.actors and e.detail.startswith('jaw:') for e in result.events)
-                entry=next(e for e in result.events if e.kind=='ball_pocket' and option['target'] in e.actors)
-                entry_ball=next(b for b in entry.before if b.id==option['target'])
-                offset=abs((entry_ball.position-pocket.mouth).dot(pocket.tangent))
-                pocket_cost=self.policy['jaw_contact_cost']*min(2,jaw_hits)+self.policy['pocket_offset_cost']*min(1.,offset/pocket.half_width)
-                step = {'target': option['target'], 'pocket': target.pocket, 'shot': asdict(shot),
-                        'cue_final': asdict(cue.position), 'cut_degrees': round(option['cut'], 1),
-                        'distance_mm': round(option['distance']*1000), 'human': access,
-                        'object_distance_mm':round(option['object_distance']*1000),
-                        'aim_half_window_deg':round(option['aim_half_window_deg'],4),
-                        'pot_difficulty':round(option['pot_difficulty'],5),
-                        'potted': d['potted'], 'verified': True,
-                        'cue_cushions':banks,'cue_ball_contacts':len(cue_hits),
-                        'jaw_contacts':jaw_hits,'clean_pot':jaw_hits==0,'pocket_offset_mm':round(offset*1000,2),
-                        'pocket_entry_cost':round(pocket_cost,5),
-                        'position_effort':round(.035*speed+.08*abs(tip_y)+.16*abs(tip_x)+.025*banks,5),
-                        'cost': human_pot_cost(option)+.035*speed+.08*abs(tip_y)+.16*abs(tip_x)+.025*banks+pocket_cost}
-                contacts=[list(e.actors) for e in result.events if e.kind=='ball_ball' and e is not event and e.time>=event.time]
-                gain=max(0,cluster_pressure(state,option['target'])-cluster_pressure(after,option['target'])) if contacts else 0
-                next_options=shot_options(self.service,after,self.policy) if after['winner'] is None else []
-                before_options=shot_options(self.service,state,self.policy) if contacts else []
-                opened=sorted(({o['target'] for o in next_options}-{o['target'] for o in before_options}-{option['target']})&set(legal_ids(state)),key=int) if contacts else []
-                cue_others={b if a=='cue' else a for a,b in contacts if 'cue' in (a,b) and option['target'] not in (a,b)}
-                cue_jaws=sum(e.kind=='ball_cushion' and 'cue' in e.actors and e.detail.startswith('jaw:') for e in result.events)
-                collision_cost=contact_cost(contacts,option['target'],opened)
-                link_cost=continuation_cost(next_options,after['winner']==state['turn'])
-                margin=self.human_margin(state,shot,option['target'],target.pocket,require_leaf=bool(cue_others)) if not cue_others or opened else None
-                step.update(secondary_contacts=contacts,breakout_gain=gain,opened_targets=opened,cue_jaw_contacts=cue_jaws,human_margin=margin,
-                            contact_cost=collision_cost,continuation_cost=link_cost)
-                step['cost']+=collision_cost+link_cost+planning_policy()['cue_jaw_contact_cost']*cue_jaws+planning_policy()['object_jaw_contact_cost']*jaw_hits
-                step['next_shot']=({k:next_options[0][k] for k in ('target','pocket','cost','distance','object_distance','cut','rear_restricted')}
-                                   if next_options else None)
-                key=len(self.forecasts);self.forecasts[key]=(state,after);step['_forecast_key']=key
-                if margin and margin['allowed']:best = (after, step)
+            value=self.certify_pot(state,option,shot,trial)
+            if value is not None:best=value
             outgoing = next(b for b in event.after if b.id == option['target']).velocity
             if outgoing.norm() < 1e-8: break
             desired = option['desired']
@@ -305,6 +261,64 @@ class Search:
                 previous = (angle, error)
                 angle += max(-.4, min(.4, -error/derivative)) if abs(derivative)>1e-6 else .035
         return best
+
+    def certify_pot(self,state,option,shot,trial,*,combination=False):
+        """Retain the physical forecast and position cost for a verified pot.
+
+        Ordinary aiming and tactical recovery share the same access, contact,
+        pocket and perturbation checks before joining the offensive queue.
+        """
+        result,after,access=trial
+        event=next((e for e in result.events if e.kind=='ball_ball' and 'cue' in e.actors),None)
+        if not event or (not combination and option['target'] not in event.actors):return None
+        speed,tip_y,tip_x=shot.cue_speed,shot.tip_y,shot.tip_x
+        target = next(b for b in result.final if b.id == option['target'])
+        cue = next(b for b in result.final if b.id == 'cue')
+        d = after['last_decision']
+        cue_hits=[e for e in result.events if e.kind=='ball_ball' and 'cue' in e.actors]
+        target_hits=[e for e in result.events if e.kind=='ball_ball' and option['target'] in e.actors]
+        banks=sum(e.kind=='ball_cushion' and 'cue' in e.actors for e in result.events)
+        simple=(self.policy['allow_secondary_ball_contacts'] or len(cue_hits)==len(target_hits)==1)
+        simple &= banks<=self.policy['max_normal_cushions']
+        if simple and target.pocket == option['pocket'] and not d['fouls'] and (
+                after['turn'] == state['turn'] and after['phase'] == 'playing'
+                or after['winner'] == state['turn']):
+            pocket=next(p for p in outline(self.service.table).pockets if p.id==target.pocket)
+            jaw_hits=sum(e.kind=='ball_cushion' and option['target'] in e.actors and e.detail.startswith('jaw:') for e in result.events)
+            entry=next(e for e in result.events if e.kind=='ball_pocket' and option['target'] in e.actors)
+            entry_ball=next(b for b in entry.before if b.id==option['target'])
+            offset=abs((entry_ball.position-pocket.mouth).dot(pocket.tangent))
+            pocket_cost=self.policy['jaw_contact_cost']*min(2,jaw_hits)+self.policy['pocket_offset_cost']*min(1.,offset/pocket.half_width)
+            step = {'target': option['target'], 'pocket': target.pocket, 'shot': asdict(shot),
+                    'cue_final': asdict(cue.position), 'cut_degrees': round(option['cut'], 1),
+                    'distance_mm': round(option['distance']*1000), 'human': access,
+                    'object_distance_mm':round(option['object_distance']*1000),
+                    'aim_half_window_deg':round(option['aim_half_window_deg'],4),
+                    'pot_difficulty':round(option['pot_difficulty'],5),
+                    'potted': d['potted'], 'verified': True,
+                    'cue_cushions':banks,'cue_ball_contacts':len(cue_hits),
+                    'jaw_contacts':jaw_hits,'clean_pot':jaw_hits==0,'pocket_offset_mm':round(offset*1000,2),
+                    'pocket_entry_cost':round(pocket_cost,5),
+                    'position_effort':round(.035*speed+.08*abs(tip_y)+.16*abs(tip_x)+.025*banks,5),
+                    'cost': human_pot_cost(option)+.035*speed+.08*abs(tip_y)+.16*abs(tip_x)+.025*banks+pocket_cost}
+            contacts=[list(e.actors) for e in result.events if e.kind=='ball_ball' and e is not event and e.time>=event.time]
+            gain=max(0,cluster_pressure(state,option['target'])-cluster_pressure(after,option['target'])) if contacts else 0
+            next_options=shot_options(self.service,after,self.policy) if after['winner'] is None else []
+            before_options=shot_options(self.service,state,self.policy) if contacts else []
+            opened=sorted(({o['target'] for o in next_options}-{o['target'] for o in before_options}-{option['target']})&set(legal_ids(state)),key=int) if contacts else []
+            cue_others={b if a=='cue' else a for a,b in contacts if 'cue' in (a,b) and option['target'] not in (a,b)}
+            cue_jaws=sum(e.kind=='ball_cushion' and 'cue' in e.actors and e.detail.startswith('jaw:') for e in result.events)
+            collision_cost=contact_cost(contacts,option['target'],opened)
+            link_cost=continuation_cost(next_options,after['winner']==state['turn'])
+            margin=self.human_margin(state,shot,option['target'],target.pocket,require_leaf=bool(cue_others)) if not cue_others or opened else None
+            step.update(secondary_contacts=contacts,breakout_gain=gain,opened_targets=opened,cue_jaw_contacts=cue_jaws,human_margin=margin,
+                        contact_cost=collision_cost,continuation_cost=link_cost)
+            step['cost']+=collision_cost+link_cost+planning_policy()['cue_jaw_contact_cost']*cue_jaws+planning_policy()['object_jaw_contact_cost']*jaw_hits
+            step['next_shot']=({k:next_options[0][k] for k in ('target','pocket','cost','distance','object_distance','cut','rear_restricted')}
+                               if next_options else None)
+            key=len(self.forecasts);self.forecasts[key]=(state,after);step['_forecast_key']=key
+            if margin and margin['allowed']:return after,step
+        return None
 
     def candidates(self, state, *, attempts=48):
         options = shot_options(self.service, state, self.policy)
@@ -325,7 +339,7 @@ class Search:
                 delta=(pocket.fall_center or pocket.gate)+pocket.tangent*offset-target.position
                 biased.append({**base,'desired':delta*(1/delta.norm()),'pocket_bias_m':offset})
         settings = stroke_settings()
-        pool = []; tried = 0
+        pool = []; recoveries = []; tried = 0
         tasks=[(o,(speed,side,tip)) for index,(speed,side,tip) in enumerate(settings)
                for o in chosen+(biased if index==5 else [])]
         if self.prior and self.prior.data:
@@ -338,14 +352,22 @@ class Search:
                 if key not in lines:selected.append(task);lines.add(key)
             tasks=selected+[task for _,task in ranked if task not in selected]
         for o,(speed,tip_x,tip_y) in tasks:
-            if self.stopped() or self.count >= self.search_cap or tried >= attempts:return pool
-            tried+=1
+            if self.stopped() or self.count >= self.search_cap or tried >= attempts:return pool or recoveries
+            reused=self.reused_candidate_trials
             value=self.aimed(state,o,speed,tip_y,tip_x)
+            # Cached failures must not consume a new exploration slice. After
+            # a safety, the useful stroke can be outside the first shortlist.
+            if self.reused_candidate_trials==reused:tried+=1
             if value is not None:
                 after,step=value
                 if after['winner']==state['turn'] or step['human_margin']['leaf_passed']>=3:pool.append(value)
-                else:self.rejected['human:fragile_next_position']=self.rejected.get('human:fragile_next_position',0)+1
-        return pool
+                else:
+                    # An awkward next shot is a position-planning problem, not
+                    # proof that this robust legal pot is unavailable. Keep it
+                    # only when the existing comfortable candidates run out;
+                    # the ordinary depth search and rolling repair still run.
+                    step['position_recovery']=True;recoveries.append(value)
+        return pool or recoveries
 
     def position_value(self, state):
         if state['phase'] == 'finished': return 10. if state['winner'] == state['turn'] else -10.
@@ -368,7 +390,7 @@ class Search:
         result=self.solve(state,max_depth=max_depth)
         # Latency is not a reason to publish a shallower plan. Continue once
         # with the same exact candidate cache if the first budget stopped short.
-        if (result.get('routes') and not result.get('horizon_complete',True) and not self.cancelled()
+        if (not result.get('horizon_complete',True) and not self.cancelled()
                 and (self.stopped() or monotonic()>=self.search_deadline)):
             duration=self.deadline-self.started
             self.deadline=self.started+2*duration;self.search_deadline=self.deadline-3.
@@ -426,6 +448,11 @@ class Search:
                 if self.stopped() or monotonic() >= self.search_deadline: break
                 self.expanded += 1
                 candidates = self.candidates(node, attempts=72 if level == 0 else 36)
+                while (level==0 and not candidates and not self.stopped() and
+                       monotonic()<self.search_deadline):
+                    cached=len(self.aimed_trials)
+                    candidates=self.candidates(node,attempts=72)
+                    if len(self.aimed_trials)==cached:break
                 for after, step in candidates:
                     route = path+[step]; total = cost+step['cost']
                     entry = (after, route, total)

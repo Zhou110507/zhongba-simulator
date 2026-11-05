@@ -109,13 +109,15 @@ def test_narrow_pot_collision_stop_and_cue_jaw_position_have_large_costs():
     assert planning_policy()['cue_jaw_contact_cost']>=4.
 
 
-def test_a_stable_pot_with_a_fragile_next_position_is_not_recommended(service,monkeypatch):
+def test_a_stable_pot_with_a_fragile_next_position_is_retained_for_recovery(service,monkeypatch):
     state=GameStore(service).new({'scenario':'ai_endgame'})
     search=Search(service,trained=False,seconds=10,evaluations=100)
     option={'target':'1','pocket':'top-right','angle':0.,'desired':Vec2(1,0)}
     monkeypatch.setattr('billiards.runout.shot_options',lambda *a:[option])
-    value=(state,{'human_margin':{'pot_passed':4,'leaf_passed':2}})
+    value=(state,{'human_margin':{'pot_passed':4,'leaf_passed':2,'allowed':True}})
     monkeypatch.setattr(search,'aimed',lambda *a,**k:deepcopy(value))
-    assert search.candidates(state,attempts=1)==[]
+    candidates=search.candidates(state,attempts=1)
+    assert len(candidates)==1 and candidates[0][1]['position_recovery']
+    assert candidates[0][1]['human_margin']['pot_passed']==4
     value[1]['human_margin']['leaf_passed']=3
     assert len(search.candidates(state,attempts=1))==1
