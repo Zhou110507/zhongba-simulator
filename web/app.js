@@ -296,10 +296,17 @@ function drawTable(map){
   const table=config.model.table,{X,Y,scale}=map;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   const outer=.145;
-  const wood=ctx.createLinearGradient(0,Y(table.width+outer),0,Y(-outer));wood.addColorStop(0,'#66523d');wood.addColorStop(.48,'#493c30');wood.addColorStop(1,'#352e27');
+  const wood=ctx.createLinearGradient(0,Y(table.width+outer),0,Y(-outer));wood.addColorStop(0,'#66513a');wood.addColorStop(.12,'#433626');wood.addColorStop(.5,'#322b22');wood.addColorStop(.88,'#433626');wood.addColorStop(1,'#594630');
   ctx.shadowColor='#0007';ctx.shadowBlur=30;ctx.shadowOffsetY=18;ctx.fillStyle=wood;ctx.beginPath();ctx.roundRect(X(-outer),Y(table.width+outer),(table.length+2*outer)*scale,(table.width+2*outer)*scale,24);ctx.fill();ctx.shadowBlur=0;ctx.shadowOffsetY=0;
-  ctx.strokeStyle='#a18d66';ctx.lineWidth=1.5;ctx.stroke();
-  const cloth=ctx.createLinearGradient(0,Y(table.width),0,Y(0));cloth.addColorStop(0,'#286949');cloth.addColorStop(1,'#1d573d');ctx.fillStyle=cloth;ctx.fillRect(X(0),Y(table.width),table.length*scale,table.width*scale);
+  ctx.strokeStyle='#aa906366';ctx.lineWidth=1.5;ctx.stroke();
+  // Inlaid frame and cloth shading are visual only; pocket and cushion paths
+  // continue to use the shared physical geometry below. This layer is cached.
+  ctx.strokeStyle='#b39c7130';ctx.lineWidth=1;
+  ctx.beginPath();ctx.roundRect(X(-outer+.012),Y(table.width+outer-.012),(table.length+2*outer-.024)*scale,(table.width+2*outer-.024)*scale,20);ctx.stroke();
+  const cloth=ctx.createRadialGradient(X(table.length*.42),Y(table.width*.62),0,X(table.length*.5),Y(table.width*.5),table.length*.67*scale);cloth.addColorStop(0,'#237957');cloth.addColorStop(.6,'#1a6548');cloth.addColorStop(1,'#134d36');ctx.fillStyle=cloth;ctx.fillRect(X(0),Y(table.width),table.length*scale,table.width*scale);
+  // A fine deterministic weave is drawn once with the table background.
+  ctx.save();ctx.strokeStyle='#c5dfb807';ctx.lineWidth=.6;
+  ctx.beginPath();for(let row=.008;row<table.width;row+=.008){ctx.moveTo(X(0),Y(row));ctx.lineTo(X(table.length),Y(row));}ctx.stroke();ctx.restore();
   ctx.save();ctx.beginPath();ctx.roundRect(X(-outer),Y(table.width+outer),(table.length+2*outer)*scale,(table.width+2*outer)*scale,24);ctx.clip();
   for(const pocket of config.geometry.pockets){
     if(!pocket.fall_center)continue;
@@ -310,7 +317,7 @@ function drawTable(map){
   ctx.save();ctx.beginPath();ctx.roundRect(X(-.075),Y(table.width+.075),(table.length+.15)*scale,(table.width+.15)*scale,12);
   for(const pocket of config.geometry.pockets)if(pocket.fall_center){const c=pocket.fall_center,r=(pocket.fall_radius+.022)*scale;ctx.moveTo(X(c.x)+r,Y(c.y));ctx.arc(X(c.x),Y(c.y),r,0,Math.PI*2);}
   ctx.clip();
-  const rubber=ctx.createLinearGradient(0,Y(table.width+.075),0,Y(-.075));rubber.addColorStop(0,'#397b59');rubber.addColorStop(1,'#2d674b');ctx.fillStyle=rubber;ctx.strokeStyle=rubber;
+  const rubber=ctx.createLinearGradient(0,Y(table.width+.075),0,Y(-.075));rubber.addColorStop(0,'#3b8561');rubber.addColorStop(.45,'#286c4d');rubber.addColorStop(1,'#225b40');ctx.fillStyle=rubber;ctx.strokeStyle=rubber;
   for(const surface of config.geometry.surfaces){
     if(surface.radius===0){
       const normal=surface.id.startsWith('bottom')?{x:0,y:-1}:surface.id.startsWith('top')?{x:0,y:1}:surface.id==='left'?{x:-1,y:0}:{x:1,y:0};
@@ -409,7 +416,7 @@ function updateContactReadout() {
 function drawTip() {
   const key=scene.shot.tip_x+'|'+scene.shot.tip_y+'|'+config.limits.max_tip_offset;if(key===tipKey)return;tipKey=key;
   const context=tipCtx, center={x:140,y:119},radius=82;
-  context.clearRect(0,0,280,250);context.fillStyle='#90a98e';context.font='11px "Microsoft YaHei",sans-serif';context.textAlign='center';context.fillText('高杆',140,16);context.fillText('低杆',140,237);context.fillText('左',22,123);context.fillText('右',258,123);
+  context.clearRect(0,0,280,250);context.fillStyle='#bac6b9';context.font='20px "Microsoft YaHei",sans-serif';context.textAlign='center';context.fillText('高杆',140,20);context.fillText('低杆',140,243);context.fillText('左',22,126);context.fillText('右',258,126);
   const gradient=context.createRadialGradient(116,93,8,140,119,84);gradient.addColorStop(0,'#fffef1');gradient.addColorStop(.6,'#e6e6d6');gradient.addColorStop(1,'#a5b19a');context.beginPath();context.arc(center.x,center.y,radius,0,Math.PI*2);context.fillStyle=gradient;context.fill();
   context.strokeStyle='#65775b';context.lineWidth=1;context.setLineDash([3,4]);context.beginPath();context.arc(center.x,center.y,radius*config.limits.max_tip_offset,0,Math.PI*2);context.stroke();context.beginPath();context.moveTo(center.x-radius*.7,center.y);context.lineTo(center.x+radius*.7,center.y);context.moveTo(center.x,center.y-radius*.7);context.lineTo(center.x,center.y+radius*.7);context.stroke();context.setLineDash([]);
   const x=center.x+scene.shot.tip_x*radius,y=center.y-scene.shot.tip_y*radius;context.beginPath();context.arc(x,y,7,0,Math.PI*2);context.fillStyle='#294f36';context.fill();context.strokeStyle='#d4e7a9';context.lineWidth=2;context.stroke();
