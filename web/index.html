@@ -34,6 +34,7 @@
   <link rel="stylesheet" href="/assets/motion.css">
   <link rel="stylesheet" href="/assets/arena.css">
   <script src="/assets/arena-camera.js" defer></script>
+  <meta name="arena-camera" content="2026.11-sight-1">
   <meta name="arena-equipment" content="2026.11-pocket-2">
   <script src="/assets/arena-table.js" defer></script>
   <script src="/assets/arena-cue.js" defer></script>
@@ -140,7 +141,7 @@
   <dialog id="room-dialog" aria-labelledby="room-dialog-title"><div class="dialog-title"><h2 id="room-dialog-title">对局设置</h2><button id="room-close" class="icon-btn" aria-label="关闭" title="关闭"><i data-icon="close" aria-hidden="true"></i></button></div>
     <section id="dialog-settings"><div data-slot="rule-panel"></div><div data-slot="free-setup"></div><div id="room-presets"><label for="preset">练习场景</label><div data-slot="preset"></div><div data-slot="trails-control"></div><div data-slot-class="editor"></div></div><div class="save-actions"><span data-slot="save"></span><span data-slot="import"></span></div></section>
     <section id="dialog-log" hidden><div data-slot-class="events"></div><p id="room-last-result"></p><ol id="room-history"></ol></section>
-    <section id="dialog-help" hidden><h3>控制球杆与镜头</h3><dl><dt>环绕视角</dt><dd>点击台呢定方向。拖动转动镜头，滚轮缩放，手机可双指缩放。</dd><dt>杆后视角</dt><dd>从白球后方观察，左右拖动调整方向。按住 Shift 拖动可精瞄。</dd><dt>键盘</dt><dd>1 / 2 / 3 切换环绕、杆后、俯视。左右键微调方向，Shift 可进一步细调，空格出杆或暂停。</dd><dt>自由球</dt><dd>点击「摆放白球」，再点击台呢确定位置。开球线后的范围由裁判检查。</dd></dl><h3>本房规则</h3><p>采用 CBSA 2017 中八规则。开球后球组开放，随后按合法进球分组。打完本组再合法打进黑八获胜。可选连续计局、单局和抢局制。</p><p>三维镜头用于观察和瞄准。击球模型支持台面内运动与三轴自旋，球杆保持水平。</p></section>
+    <section id="dialog-help" hidden><h3>控制球杆与镜头</h3><dl><dt>环绕视角</dt><dd>点击台呢定方向。拖动转动镜头，滚轮缩放，手机可双指缩放。</dd><dt>杆后视角</dt><dd>左右拖动调整方向，按住 Shift 精瞄。按住右键上下拖动可调整视线高度。滚轮放大时，白球留在原位。</dd><dt>键盘</dt><dd>1 / 2 / 3 切换环绕、杆后、俯视。左右键微调方向，Shift 可进一步细调，空格出杆或暂停。</dd><dt>自由球</dt><dd>点击「摆放白球」，再点击台呢确定位置。开球线后的范围由裁判检查。</dd></dl><h3>本房规则</h3><p>采用 CBSA 2017 中八规则。开球后球组开放，随后按合法进球分组。打完本组再合法打进黑八获胜。可选连续计局、单局和抢局制。</p><p>各视角会分别记住本次使用的缩放倍率。球杆会根据库边和邻球抬高，击球模型计算台面内运动与三轴自旋。</p></section>
   </dialog>
 </div>
 </body>

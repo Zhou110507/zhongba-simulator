@@ -59,8 +59,36 @@ if(document.documentElement.dataset.arena==='on'){
       }
       if(type===3)impact(135,.13,.19);else if(type===2)impact(1140,.037,.14);else if(type)impact(275,.062,.11);audioTime=time;
     }
-    let surface,renderer,frame,screenKey='',boardKey='',rotation=null,track=null,resizeFrame=0;
+    let surface,renderer,frame,screenKey='',boardKey='',rotation=null,track=null,viewFrame=0;
+    let pointerView=false,wheelView=false,wheelEnd=0;
+    const softwareMotionPixels=210000;
+    function queueViewDraw(){
+      if(!viewFrame)viewFrame=requestAnimationFrame(()=>{
+        viewFrame=0;
+        if(queuedAim?.source===scene&&!busy&&!locked())flushAim();else draw();
+      });
+    }
+    function beginViewMotion(wheel=false){
+      if(stage.dataset.renderer!=='software-3d')return;
+      if(wheel){
+        wheelView=true;clearTimeout(wheelEnd);
+        wheelEnd=setTimeout(()=>{wheelView=false;wheelEnd=0;if(!pointerView)queueViewDraw();},140);
+      }else pointerView=true;
+    }
+    function endPointerView(){
+      if(!pointerView)return;
+      pointerView=false;if(!wheelView)queueViewDraw();
+    }
+    function settleView(){
+      if(wheelEnd)clearTimeout(wheelEnd);
+      pointerView=false;wheelView=false;wheelEnd=0;
+    }
+    function zoomBy(factor,wheel=false){
+      const before=camera.zoom;camera.magnify(factor);if(camera.zoom===before)return;
+      beginViewMotion(wheel);queueViewDraw();
+    }
     function initRenderer(software=false){
+      settleView();
       if(!software){try{surface=$('room-gl');renderer=new ArenaRenderer.Renderer(surface,CueVisual);stage.dataset.renderer='webgl';}
         catch{software=true;}}
       if(software){surface=$('room-soft');renderer=new ArenaSoftware(surface);stage.dataset.renderer='software-3d';}
@@ -70,11 +98,11 @@ if(document.documentElement.dataset.arena==='on'){
     $('room-gl').addEventListener('webglcontextrestored',()=>{initRenderer();draw();});
     function cameraLabels(){
       document.querySelectorAll('[data-camera]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.camera===camera.mode)));
-      put('room-gesture',pending?'点击台呢放下球':mode==='edit'?'拖动球摆位':camera.mode==='cue'?'左右拖动瞄准 · Shift 精瞄':camera.mode==='top'?'点击台呢瞄准 · 滚轮缩放':'点击瞄准 · 拖动环绕');
+      put('room-gesture',pending?'点击台呢放下球':mode==='edit'?'拖动球摆位':camera.mode==='cue'?(fired?'右键上下调视高 · 滚轮缩放':'左右拖动瞄准 · Shift 精瞄 · 右键上下调视高'):camera.mode==='top'?'点击台呢瞄准 · 滚轮缩放':'点击瞄准 · 拖动环绕');
     }
-    function selectView(m){camera.select(m);cameraLabels();draw();}
+    function selectView(m){finishPointerAim();settleView();camera.select(m);cameraLabels();draw();}
     document.querySelectorAll('[data-camera]').forEach(b=>b.onclick=()=>selectView(b.dataset.camera));
-    $('room-reset').onclick=()=>{Object.assign(camera,new ArenaMath.Camera());cameraLabels();draw();};
+    $('room-reset').onclick=()=>{finishPointerAim();settleView();Object.assign(camera,new ArenaMath.Camera());cameraLabels();draw();};
     $('room-full').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await stage.requestFullscreen();}catch{notice('本窗口未提供全屏，可用浏览器全屏。');}};
     $('room-center').onclick=()=>$('center-tip').click();
     $('room-guide').onchange=()=>{remember('guide',$('room-guide').checked);draw();};
@@ -169,12 +197,17 @@ if(document.documentElement.dataset.arena==='on'){
     }
     function render(){
       if(!ready())return;
-      const rect=stage.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1),w=Math.max(1,Math.round(rect.width*dpr)),h=Math.max(1,Math.round(rect.height*dpr));
+      if(viewFrame){cancelAnimationFrame(viewFrame);viewFrame=0;}
+      const rect=stage.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1);
+      const moving=(pointerView||wheelView)&&stage.dataset.renderer==='software-3d';
+      const scale=moving?Math.min(dpr,Math.sqrt(softwareMotionPixels/Math.max(1,rect.width*rect.height))):dpr;
+      const round=scale<dpr?Math.floor:Math.round;
+      const w=Math.max(1,round(rect.width*scale)),h=Math.max(1,round(rect.height*scale));
       if(surface.width!==w||surface.height!==h){surface.width=w;surface.height=h;}
       const snapshot=fired?record?.snapshot:null,shot=snapshot?.shot||scene.shot;
       const cue=(snapshot?.balls||scene.balls).find(b=>b.id==='cue');
-      const key=[w,h,camera.mode,camera.azimuth,camera.pitch,camera.zoom,config.model_signature,...(camera.mode==='cue'?[cue.position.x,cue.position.y,shot.angle_deg]:[])].join('|');
-      if(key!==screenKey){frame=camera.frame(w,h,config.model.table,cue.position,shot);screenKey=key;}
+      const key=[w,h,camera.mode,camera.azimuth,camera.pitch,camera.zoom,config.model_signature,...(camera.mode==='cue'?[cue.position.x,cue.position.y,cue.spec.radius,shot.angle_deg,camera.cueHeight]:[])].join('|');
+      if(key!==screenKey){frame=camera.frame(w,h,config.model.table,cue.position,shot,cue.spec.radius);screenKey=key;}
       const balls=(fired?stateAt(time):scene.balls).map(b=>drag?.id===b.id?{...b,position:drag.position}:b);
       const aiming=!fired&&mode==='aim'&&active(cue)&&!TableModes.locksAction();
       const stroke=cueStroke?CueVisual.pose(cueStroke.elapsed,cueStroke.speed):aiming?{gap:.018,alpha:1}:null;
@@ -189,6 +222,34 @@ if(document.documentElement.dataset.arena==='on'){
     const pointers=new Map();let gesture=null,pinch=0;
     function point(e){const r=surface.getBoundingClientRect();return {x:(e.clientX-r.left)*surface.width/r.width,y:(e.clientY-r.top)*surface.height/r.height};}
     function separation(){const [a,b]=pointers.values();return Math.hypot(a.x-b.x,a.y-b.y);}
+    function moveCueAim(g,e,previousX,previousY){
+      const gain=e.shiftKey?.14:1;
+      if(!g.aim||g.aim.gain!==gain){
+        const rect=surface.getBoundingClientRect(),angle=g.aim?.angle??scene.shot.angle_deg;
+        g.aim={gain,fromX:previousX,fromY:previousY,fromAngle:angle,angle,frame,width:rect.width,height:rect.height};
+      }
+      const a=g.aim,turn=a.frame.aimDrag(e.clientX-a.fromX,e.clientY-a.fromY,a.width,a.height);
+      const angle=a.fromAngle+turn*a.gain;
+      if(!Number.isFinite(angle)||a.angle===angle)return;
+      a.angle=angle;g.hasAim=true;beginViewMotion();
+      const radians=angle*Math.PI/180,cue=cueBall().position;
+      // Reuse the main aim queue: one preview/render per animation frame, one save at release.
+      queueAim({x:cue.x+Math.cos(radians),y:cue.y+Math.sin(radians)});
+    }
+    function finishPointerAim(g=gesture){
+      if(!g?.hasAim||g.scene!==scene||locked()||busy)return;
+      g.hasAim=false;flushAim();storeScene();
+    }
+    function aimAtPixel(p){
+      const ball=frame.hitBall(p.x,p.y,scene.balls);
+      if(ball?.id==='cue')return;
+      const pos=frame.pick(p.x,p.y,ball?.spec.radius??0);if(!pos)return;
+      const table=config.model.table;
+      const onTable=pos.x>=0&&pos.x<=table.length&&pos.y>=0&&pos.y<=table.width;
+      const inPocket=()=>config.geometry.pockets.some(b=>Math.hypot(pos.x-b.fall_center.x,pos.y-b.fall_center.y)<=b.fall_radius);
+      if(!ball&&!onTable&&!inPocket())return;
+      setAim(pos);storeScene();
+    }
     function nearest(p){let found=null,best=Infinity;
       for(const b of scene.balls.filter(active)){const c=frame.project([b.position.x,b.position.y,b.spec.radius]);if(!c)continue;
         const d=Math.hypot(c.x-p.x,c.y-p.y),r=b.spec.radius*frame.height/2/(frame.ortho||c.depth/frame.lens);
@@ -198,43 +259,56 @@ if(document.documentElement.dataset.arena==='on'){
     function down(e){
       if(!ready()||!frame||![0,2].includes(e.button))return;
       surface.focus({preventScroll:true});surface.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-      if(pointers.size>1){pinch=separation();gesture=null;drag=null;draw();return;}
+      if(pointers.size>1){finishPointerAim();pinch=separation();gesture=null;if(drag){drag=null;queueViewDraw();}return;}
       const ball=mode==='edit'&&!pending&&!locked()&&!busy&&e.button===0?nearest(point(e)):null;
       gesture={id:e.pointerId,x:e.clientX,y:e.clientY,px:e.clientX,py:e.clientY,moved:false,ball,right:e.button===2,scene};
       if(ball){selected=ball.id;refreshSelection();draw();}
     }
     function move(e){
       if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-      if(pointers.size===2){const d=separation();if(pinch>0&&d>0)camera.magnify(d/pinch);pinch=d;draw();return;}
+      if(pointers.size===2){const d=separation();if(pinch>0&&d>0)zoomBy(d/pinch);pinch=d;return;}
       const g=gesture;if(!g||g.id!==e.pointerId||g.scene!==scene)return;
       if(!g.moved&&Math.hypot(e.clientX-g.x,e.clientY-g.y)<4)return;
-      g.moved=true;const dx=e.clientX-g.px,dy=e.clientY-g.py;g.px=e.clientX;g.py=e.clientY;
-      if(g.ball&&!locked()&&!busy){const p=point(e),pos=frame.pick(p.x,p.y,g.ball.spec.radius);if(pos)drag={id:g.ball.id,position:pos};}
-      else if(camera.mode==='cue'&&!g.right&&!locked()&&!busy&&!pending&&mode==='aim'){nudge(-dx*(e.shiftKey?.015:.13));return;}
-      else{camera.orbit(dx,dy);cameraLabels();}draw();
+      const previousX=g.px,previousY=g.py;g.moved=true;g.px=e.clientX;g.py=e.clientY;
+      if(g.ball&&!locked()&&!busy){const p=point(e),pos=frame.pick(p.x,p.y,g.ball.spec.radius);if(pos){drag={id:g.ball.id,position:pos};draw();}}
+      else if(camera.mode==='cue'&&!g.right&&!locked()&&!busy&&!pending&&mode==='aim')moveCueAim(g,e,previousX,previousY);
+      else if(camera.mode==='cue'&&g.right&&e.clientY!==previousY){
+        const before=camera.cueHeight;camera.raise(e.clientY-previousY,surface.getBoundingClientRect().height);
+        if(camera.cueHeight!==before){beginViewMotion();queueViewDraw();}
+      }else if(camera.mode==='orbit'&&!pending){
+        const yaw=camera.azimuth,pitch=camera.pitch;camera.orbit(e.clientX-previousX,e.clientY-previousY);
+        if(camera.azimuth!==yaw||camera.pitch!==pitch){beginViewMotion();queueViewDraw();}
+      }
     }
     function end(e,cancel=false){
-      if(!pointers.has(e.pointerId))return;pointers.delete(e.pointerId);pinch=0;
+      if(!pointers.has(e.pointerId))return;
+      if(!cancel&&gesture?.id===e.pointerId&&(e.clientX!==gesture.px||e.clientY!==gesture.py))move(e);
+      pointers.delete(e.pointerId);pinch=0;if(pointers.size<2)endPointerView();
       const g=gesture;gesture=null;if(!g||g.id!==e.pointerId)return;
-      const moving=drag;drag=null;if(cancel||g.scene!==scene||locked()||busy||g.right){draw();return;}
+      const moving=drag;drag=null;finishPointerAim(g);
+      if(cancel||g.scene!==scene||locked()||busy||g.right){if(moving)draw();return;}
       if(g.ball&&moving){placeBall(g.ball.id,moving.position);draw();return;}if(g.moved)return;
       const p=point(e);
       if(pending){const pos=frame.pick(p.x,p.y);if(pos)placeBall(pending,pos,!scene.balls.some(b=>b.id===pending));}
-      else if(mode==='aim'){const pos=frame.pick(p.x,p.y,config.ball_spec.radius);if(pos){setAim(pos);storeScene();}}
-      draw();
+      else if(mode==='aim')aimAtPixel(p);
     }
     for(const c of [$('room-gl'),$('room-soft')]){
       c.addEventListener('pointerdown',down);c.addEventListener('pointermove',move);
       c.addEventListener('pointerup',e=>end(e));c.addEventListener('pointercancel',e=>end(e,true));c.addEventListener('contextmenu',e=>e.preventDefault());
-      c.addEventListener('wheel',e=>{e.preventDefault();camera.magnify(Math.exp(-Math.max(-400,Math.min(400,e.deltaY))*.001));draw();},{passive:false});
+      c.addEventListener('lostpointercapture',e=>end(e,true));
+      c.addEventListener('wheel',e=>{e.preventDefault();zoomBy(Math.exp(-Math.max(-400,Math.min(400,e.deltaY))*.001),true);},{passive:false});
     }
     document.addEventListener('keydown',e=>{
       if(dialog.open||e.ctrlKey||e.metaKey||e.altKey||e.target.closest?.('input,select,button,a,summary,textarea'))return;
+      if(e.code==='Space'||e.code==='ArrowLeft'||e.code==='ArrowRight')finishPointerAim();
       const m=({Digit1:'orbit',Digit2:'cue',Digit3:'top'})[e.code];
       if(m){e.preventDefault();selectView(m);}else if(mode==='aim'&&['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();nudge((e.key==='ArrowLeft'?1:-1)*(e.shiftKey?.02:.2));}
     },true);
-    new ResizeObserver(()=>{if(!resizeFrame)resizeFrame=requestAnimationFrame(()=>{resizeFrame=0;draw();});}).observe(stage);
+    new ResizeObserver(queueViewDraw).observe(stage);
     if(ready())queueMicrotask(()=>{refresh();draw();notice($('message').textContent);});
-    return {render,refresh,notice,obstructed};
+    return {render,refresh,notice,obstructed(){
+      if(pointerView||wheelView){settleView();queueViewDraw();}
+      finishPointerAim();return obstructed();
+    }};
   })();
 }

@@ -13,6 +13,47 @@ const deadline=async(fn,label,ms=45000)=>{
   while(Date.now()<end){try{const v=await fn();if(v)return v;}catch(e){last=e;}await delay(100);}
   throw Error('Timed out: '+label+(last?' / '+last.message:''));
 };
+// Observe the frame that actually reaches the selected renderer without changing any camera controls.
+function installCameraProbe(){
+  const software=document.getElementById('room-stage').dataset.renderer==='software-3d';
+  const proto=software?ArenaSoftware.prototype:ArenaRenderer.Renderer.prototype;
+  const original=proto.render,canvas=document.getElementById(software?'room-soft':'room-gl');
+  let lastFrame,lastState;
+  function clientPoint(p){
+    const rect=canvas.getBoundingClientRect();
+    return {x:rect.left+p.x*rect.width/lastFrame.width,y:rect.top+p.y*rect.height/lastFrame.height};
+  }
+  const probe={sample:null,
+    aimTarget(kind){
+      const ball=lastState.balls.find(b=>b.id==='1'),cue=lastState.balls.find(b=>b.id==='cue');
+      const pocket=lastState.config.geometry.pockets.find(p=>p.id==='top-right');
+      const dest=kind==='ball'?ball.position:pocket.fall_center,z=kind==='ball'?ball.spec.radius:0;
+      return {point:clientPoint(lastFrame.project([dest.x,dest.y,z])),
+        angle:Math.atan2(dest.y-cue.position.y,dest.x-cue.position.x)*180/Math.PI};
+    },
+    restore(){proto.render=original;delete window.__cameraProbe;}
+  };
+  proto.render=function(frame,state){
+    lastFrame=frame;lastState=state;
+    const cue=state.balls.find(ball=>ball.id==='cue');
+    if(cue&&!cue.pocket){
+      const {x,y}=cue.position,r=cue.spec.radius,angle=state.shot.angle_deg*Math.PI/180;
+      const center=frame.project([x,y,r]),edge=frame.project([x+r*frame.right[0],y+r*frame.right[1],r+r*frame.right[2]]);
+      const ahead=frame.project([x+.48*Math.cos(angle),y+.48*Math.sin(angle),r]);
+      if(center&&edge&&ahead){
+        probe.sample={view:[...frame.eye,...frame.right,...frame.up,...frame.forward,frame.lens,frame.ortho],
+          radius:Math.hypot(edge.x-center.x,edge.y-center.y),width:frame.width,cueX:center.x,
+          point:clientPoint(ahead),position:[x,y]};
+      }
+    }
+    return original.call(this,frame,state);
+  };
+  window.__cameraProbe=probe;
+}
+function sameView(a,b,label){
+  assert.equal(a.length,b.length);
+  a.forEach((v,i)=>assert.ok(Math.abs(v-b[i])<1e-6,label+' / camera component '+i+': '+v+' vs '+b[i]));
+}
 async function run(){
  const tmp=await fs.mkdtemp(path.join(os.tmpdir(),'zhongba-browser-'));
  const python=process.env.PYTHON||'python',chrome=process.env.CHROME_BIN||(process.platform==='win32'?path.join(process.env.ProgramFiles,'Google','Chrome','Application','chrome.exe'):'google-chrome');
@@ -73,10 +114,46 @@ async function run(){
    await click('room-settings');await js("(()=>{const p=document.getElementById('preset');p.value='corner';p.dispatchEvent(new Event('change'));})()");
    await click('room-right');assert.ok(+(await js("document.getElementById('angle').value"))>45);
    await js("(()=>{const a=document.getElementById('angle');a.value=45;a.dispatchEvent(new Event('input'));})()");
+   await js('('+installCameraProbe.toString()+')()');
+   const view=mode=>js("document.querySelector('[data-camera="+mode+"]').click()");
+   const cameraSample=()=>js('window.__cameraProbe.sample');
+   await view('cue');
+   const initial=await cameraSample();
+   const wheelAt=await js("(()=>{const r=document.getElementById('"+canvas+"').getBoundingClientRect();return {x:r.left+r.width*.5,y:r.top+r.height*.5};})()");
+   await call('Input.dispatchMouseEvent',{type:'mouseWheel',...wheelAt,deltaX:0,deltaY:-175});
+   const zoomed=await deadline(async()=>{const sample=await cameraSample();return sample.radius>initial.radius*1.03&&sample;},'visible cue-view zoom');
+   await view('top');await view('cue');
+   const restored=await cameraSample();
+   sameView(restored.view,zoomed.view,'returning from overhead preserves cue view');
+   assert.ok(Math.abs(restored.cueX-restored.width/2)<.75,'cue ball lies on the sight line');
+   // Click a known point on the current sight line through the canvas at CSS-pixel precision.
+   const clickPoint=async point=>{
+     await call('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',buttons:1,clickCount:1,...point});
+     await call('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',buttons:0,clickCount:1,...point});
+   };
+   await clickPoint(restored.point);
+   assert.ok(Math.abs(+(await js("document.getElementById('angle').value"))-45)<.25,'centerline click preserves the aim');
+   // At 17 degrees off-axis, confusing the slate and ball-center heights caused ~1 degree of aim error.
+   for(const kind of ['pocket','ball']){
+     await js("(()=>{const a=document.getElementById('angle');a.value=62;a.dispatchEvent(new Event('input'));})()");
+     const target=await js('window.__cameraProbe.aimTarget('+JSON.stringify(kind)+')');
+     await clickPoint(target.point);
+     const angle=Number(await js("document.getElementById('angle').value"));
+     assert.ok(Math.abs(angle-target.angle)<.25,kind+' center should select its world bearing: '+angle+' vs '+target.angle);
+   }
+   await js("(()=>{const a=document.getElementById('angle');a.value=45;a.dispatchEvent(new Event('input'));})()");
+   const addressView=await cameraSample();
    await click('preview');await wait("document.getElementById('room-note').textContent.includes('预览已完成')",'practice route');
+   sameView((await cameraSample()).view,addressView.view,'preview preserves address');
    await click('shoot');await wait("!document.getElementById('seek').disabled",'practice playback');
+   const rolling=await deadline(async()=>{
+     const sample=await cameraSample();
+     return Math.hypot(sample.position[0]-addressView.position[0],sample.position[1]-addressView.position[1])>.015&&sample;
+   },'cue ball actually rolls in the original view',75000);
+   sameView(rolling.view,addressView.view,'shot and moving ball share the address camera');
    await js("(()=>{const s=document.getElementById('seek');s.value=1000;s.dispatchEvent(new Event('input'));})()");
    assert.ok(await js("document.getElementById('potted').textContent.includes('1')"));await click('next');
+   await js('window.__cameraProbe.restore()');await click('room-reset');
    // Place a ball frozen behind the cue ball and exercise both the button and the shared keyboard action.
    await js("(()=>{const s=structuredClone(config.presets.find(p=>p.id==='corner').scene);s.shot.angle_deg=0;s.shot.tip_x=0;s.shot.tip_y=0;const cue=s.balls.find(b=>b.id==='cue'),b=s.balls.find(b=>b.id!=='cue');cue.position={x:1.30,y:.60};b.position={x:1.30-2*cue.spec.radius-.0001,y:.60};setScene(s);})()");
    assert.ok(await js("document.getElementById('shoot').disabled&&document.getElementById('preview').disabled&&document.getElementById('room-turn').textContent.includes('出杆受阻')"));
