@@ -58,9 +58,29 @@ def test_launcher_opens_browser_only_after_service_is_ready(monkeypatch):
     events=[]
     monkeypatch.setattr(launcher.sys,'argv',['billiards.launcher'])
     monkeypatch.setattr(launcher,'ensure_running',lambda port:(events.append('ready') or 'http://127.0.0.1:8767/'))
-    monkeypatch.setattr(launcher.webbrowser,'open',lambda url:events.append(url))
+    def open_browser(url):
+        events.append(url)
+        return True
+    monkeypatch.setattr(launcher.webbrowser,'open',open_browser)
     launcher.main()
     assert events==['ready','http://127.0.0.1:8767/']
+
+
+@pytest.mark.parametrize('error', [False, True])
+def test_failed_browser_open_reports_the_working_address(monkeypatch, capsys, error):
+    url = 'http://127.0.0.1:8772/'
+    monkeypatch.setattr(launcher.sys, 'argv', ['billiards.launcher'])
+    monkeypatch.setattr(launcher, 'ensure_running', lambda port: url)
+    def open_browser(address):
+        assert address == url
+        if error:
+            raise launcher.webbrowser.Error('no browser')
+        return False
+    monkeypatch.setattr(launcher.webbrowser, 'open', open_browser)
+    with pytest.raises(SystemExit) as result:
+        launcher.main()
+    assert result.value.code == 1
+    assert url in capsys.readouterr().err
 
 
 def test_no_open_launch_can_verify_service_without_opening_a_browser(monkeypatch):

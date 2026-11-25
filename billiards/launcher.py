@@ -45,7 +45,13 @@ def main():
     except (OSError,ValueError,RuntimeError) as error:parser.exit(1,str(error)+'\n')
     print('中八练习台：'+url,flush=True)
     print('本地服务已在后台运行，关闭启动窗口不影响练习台。',flush=True)
-    if not args.no_open:webbrowser.open(url)
+    if not args.no_open:
+        try:
+            opened = webbrowser.open(url)
+        except (OSError, webbrowser.Error):
+            opened = False
+        if not opened:
+            parser.exit(1, f'球房已就绪。默认浏览器未打开，请在浏览器中打开 {url}\n')
 
 
 if __name__=='__main__':main()

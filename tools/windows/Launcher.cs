@@ -28,8 +28,15 @@ internal static class Launcher
                     throw new ArgumentException("Supported options: --no-open and --port NUMBER.");
             }
 
-            ProcessStartInfo info = new ProcessStartInfo(
-                Path.Combine(root, "runtime", "python.exe"), arguments.ToString());
+            string interpreter = Path.Combine(root, "runtime", "python.exe");
+            if (!File.Exists(interpreter))
+            {
+                if (!File.Exists(Path.Combine(root, "pyproject.toml")) ||
+                    !File.Exists(Path.Combine(root, "billiards", "launcher.py")))
+                    throw new FileNotFoundException("缺少内置 Python。请先完整解压 Windows 便携包。");
+                interpreter = "python.exe";
+            }
+            ProcessStartInfo info = new ProcessStartInfo(interpreter, arguments.ToString());
             info.WorkingDirectory = root;
             info.UseShellExecute = false;
             info.CreateNoWindow = true;
@@ -46,7 +53,7 @@ internal static class Launcher
         }
         catch (Exception failure)
         {
-            string message = "中八球房未能启动。请将整个压缩包解压至可写文件夹。\n\n" + failure.Message;
+            string message = failure.Message;
             if (Array.IndexOf(args, "--no-open") < 0)
                 MessageBox.Show(message, "中八球房", MessageBoxButtons.OK, MessageBoxIcon.Error);
             else

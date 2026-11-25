@@ -3,6 +3,8 @@
 import argparse
 import errno
 import gzip
+from html.parser import HTMLParser
+from http.client import HTTPConnection, HTTPException
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import mimetypes
@@ -191,15 +193,46 @@ def create_server(port=8766, root=ROOT):
     return LocalHTTPServer(('127.0.0.1',port),make_handler(service))
 
 
+class _RoomPage(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.version = None
+        self.has_table = False
+
+    def handle_starttag(self, tag, attrs):
+        fields = dict(attrs)
+        if tag == 'meta' and fields.get('name') == 'arena-version':
+            self.version = fields.get('content')
+        if fields.get('id') == 'room-stage':
+            self.has_table = True
+
+
 def running_version(port):
-    from http.client import HTTPConnection,HTTPException
-    connection=HTTPConnection('127.0.0.1',port,timeout=.25)
+    """An empty string reserves a responding port with the wrong room page."""
+    connection = HTTPConnection('127.0.0.1', port, timeout=.4)
+    version = None
     try:
-        connection.request('GET','/api/health')
-        response=connection.getresponse();data=json.loads(response.read(4096))
-        if response.status==200 and isinstance(data,dict) and data.get('status')=='ok':return data.get('app_version')
-    except (OSError,ValueError,HTTPException):pass
-    finally:connection.close()
+        connection.request('GET', '/api/health')
+        response = connection.getresponse()
+        data = json.loads(response.read(4096))
+        if response.status != 200 or not isinstance(data, dict) or data.get('status') != 'ok':
+            return None
+        version = data.get('app_version')
+        if version != APP_VERSION:
+            return version
+        connection.request('GET', '/')
+        response = connection.getresponse()
+        if response.status == 200 and response.headers.get_content_type() == 'text/html':
+            page = _RoomPage()
+            page.feed(response.read(256 * 1024).decode('utf-8'))
+            page.close()
+            if page.has_table and page.version == version:
+                return version
+        return ''
+    except (OSError, ValueError, HTTPException):
+        return '' if version == APP_VERSION else None
+    finally:
+        connection.close()
 
 
 def launch_server(port,open_browser):
