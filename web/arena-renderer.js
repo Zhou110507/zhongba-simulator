@@ -27,74 +27,9 @@
      for(let i=0;i<48;i++)this.tri([x,y,z],p(i),p(i+1),col,mat,[0,0,1]);
    }
  }
- // Tile the slate into six rectangular patches, each with a round aperture.
- // The outer ring includes each rectangle corner so adjacent patches meet.
- function pocketPatch(mesh,p,box){
-   const {x,y}=p.fall_center,r=p.fall_radius,[x0,y0,x1,y1]=box;
-   const angles=Array.from({length:48},(_,i)=>i*TAU/48);
-   for(const X of [x0,x1])for(const Y of [y0,y1])angles.push((Math.atan2(Y-y,X-x)+TAU)%TAU);
-   angles.sort((a,b)=>a-b);
-   const ring=angles.map(a=>{
-     const dx=Math.cos(a),dy=Math.sin(a);
-     const tx=Math.abs(dx)<1e-9?Infinity:((dx<0?x0:x1)-x)/dx,ty=Math.abs(dy)<1e-9?Infinity:((dy<0?y0:y1)-y)/dy;
-     const d=Math.min(tx,ty);
-     return {edge:[x+d*dx,y+d*dy,0],rim:[x+r*dx,y+r*dy,0],bottom:[x+r*.80*dx,y+r*.8*dy,-.085]};
-   });
-   for(let i=0;i<ring.length;i++){
-     const a=ring[i],b=ring[(i+1)%ring.length];
-     mesh.quad(a.rim,a.edge,b.edge,b.rim,rgb('#168668'),cloth,[0,0,1]);
-     mesh.quad(a.rim,b.rim,b.bottom,a.bottom,rgb('#202923'),well);
-   }
-   mesh.disk(x,y,-.085,r*.81,rgb('#091110'),well);
- }
- function tableMesh(config){
-   const mesh=new Mesh(),{length:l,width:w}=config.model.table;
-   const timber=rgb('#76513b'),gold=rgb('#b69b60'),dark=rgb('#242825'),green=rgb('#1f735b'),ivory=rgb('#eee3c1');
-   mesh.box(-13,-13,-.84,l+13,w+13,-.83,rgb('#333b36'),floor);
-   for(const x of [.13,l-.13])for(const y of [.09,w-.09]){
-     const rings=[[-.83,.078],[-.806,.090],[-.78,.083],[-.76,.065],[-.63,.054],[-.55,.072],[-.53,.086],[-.50,.080],[-.48,.068],[-.39,.091],[-.35,.099],[-.18,.096]];
-     for(let i=1;i<rings.length;i++){const [z,r]=rings[i],[a,b]=rings[i-1],brass=i===2||i===7;mesh.tube([x,y,a],[x,y,z],b,r,brass?gold:timber,brass?metal:wood);}
-   }
-   mesh.box(-.115,-.107,-.225,l+.115,w+.107,-.092,timber,wood);
-   mesh.box(-.118,-.11,-.202,l+.118,w+.11,-.197,gold,metal);
-   for(const y of [-.11,w+.11])for(let i=0;i<3;i++){
-     const x=.09+i*l/3;mesh.box(x,y-.001,-.168,x+l/3-.18,y+.001,-.121,rgb('#503629'),wood);
-   }
-   const rim=(x,y,X,Y)=>{
-     mesh.box(x,y,-.10,X,Y,.01,dark,leather);mesh.box(x,y,-.054,X,Y,-.05,gold,metal);mesh.box(x,y,.012,X,Y,.048,timber,wood);
-   };
-   for(const y of [-.136,w+.052])for(const [x,X] of [[.060,l/2-.08],[l/2+.08,l-.060]])rim(x,y,X,y+.084);
-   for(const x of [-.14,l+.052])rim(x,.06,x+.088,w-.06);
-   const xs=[-.096,l*.25,l*.75,l+.096],ys=[-.096,w*.5,w+.096];
-   for(const p of config.geometry.pockets){
-     const col=p.outward.x<-.1?0:p.outward.x>.1?2:1,row=p.outward.y<0?0:1;
-     pocketPatch(mesh,p,[xs[col],ys[row],xs[col+1],ys[row+1]]);
-     const x=col===1?l/2:col===0?-.08:l+.08,y=row===0?-.105:w+.105;
-     const hw=col===1?.087:.060;
-     mesh.box(x-hw,y-.025,.01,x+hw,y+.025,.052,rgb('#ab915e'),metal);
-   }
-   for(const rail of config.geometry.surfaces){
-     const a=rail.start,b=rail.end;
-     if(rail.radius){
-       const angle=Math.atan2(b.y-a.y,b.x-a.x),outline=[];
-       for(const [p,start] of [[b,angle-Math.PI/2],[a,angle+Math.PI/2]])for(let i=0;i<=12;i++){
-         const t=start+Math.PI*i/12;outline.push([p.x+rail.radius*Math.cos(t),p.y+rail.radius*Math.sin(t)]);
-       }
-       const center=[(a.x+b.x)/2,(a.y+b.y)/2,.036];
-       outline.forEach((p,i)=>{const q=outline[(i+1)%outline.length];mesh.tri(center,[...p,.036],[...q,.036],green,rubber,[0,0,1]);mesh.quad([...p,.001],[...q,.001],[...q,.036],[...p,.036],green,rubber);});
-     }else{
-       const out=rail.id.startsWith('bottom')?[0,-1]:rail.id.startsWith('top')?[0,1]:rail.id==='left'?[-1,0]:[1,0];
-       const edge=(p,d,z)=>[p.x+d*out[0],p.y+d*out[1],z];
-       mesh.quad(edge(a,0,.033),edge(b,0,.033),edge(b,.058,.046),edge(a,.058,.046),green,rubber,[-out[0]*.22,-out[1]*.22,.975]);
-       mesh.quad(edge(a,.003,0),edge(b,.003,0),edge(b,0,.033),edge(a,0,.033),green,rubber,[-out[0],-out[1],0]);
-     }
-   }
-   function sight(x,y,dx,dy){mesh.quad([x-dx,y,.049],[x,y-dy,.049],[x+dx,y,.049],[x,y+dy,.049],ivory,metal,[0,0,1]);}
-   for(let k=1;k<8;k++)if(k!==4)for(const y of [-.09,w+.09])sight(l*k/8,y,.009,.004);
-   for(let k=1;k<4;k++)for(const x of [-.09,l+.09])sight(x,w*k/4,.004,.009);
-   for(const x of [l*.25,l*.75])mesh.disk(x,w/2,.001,.003,ivory,ink);
-   return mesh;
- }
+ const models=new WeakMap();
+ function table(config){if(!models.has(config))models.set(config,ArenaTable.geometry(config,Mesh));return models.get(config);}
+ function tableMesh(config){return table(config).mesh;}
  function sphere(){
    const mesh=new Mesh(),stacks=22,slices=40,point=(i,j)=>{const a=i*Math.PI/stacks,b=j*TAU/slices;return [Math.sin(a)*Math.cos(b),Math.sin(a)*Math.sin(b),Math.cos(a)];};
    for(let i=0;i<stacks;i++)for(let j=0;j<slices;j++){
@@ -103,18 +38,7 @@
    }
    return mesh;
  }
- function cueParts(cue,shot,stroke){
-   const a=shot.angle_deg*Math.PI/180,dx=Math.cos(a),dy=Math.sin(a),r=cue.spec.radius;
-   const gap=r*Math.sqrt(Math.max(0,1-shot.tip_x**2-shot.tip_y**2))+stroke.gap,side=r*shot.tip_x;
-   return {position:[cue.position.x-dx*gap+dy*side,cue.position.y-dy*gap-dx*side,r*(1+shot.tip_y)],axis:[dx,dy,0,-dy,dx,0,0,0,1]};
- }
- function cueMesh(dim){
-   const mesh=new Mesh(),l=dim.length,tip=dim.tipDiameter/2,butt=dim.buttDiameter/2;
-   const bands=[[0,'#607a72'],[.004,'#c6ab80'],[.013,'#deb97e'],[.91,'#a68151'],[1.08,'#46392e'],[1.12,'#b09c68'],[1.126,'#392e28'],[l-.014,'#222724'],[l,null]];
-   const radius=t=>tip+(butt-tip)*(t/l)**.78;
-   for(let i=0;i<bands.length-1;i++){const [x,col]=bands[i],end=bands[i+1][0];mesh.tube([-x,0,0],[-end,0,0],radius(x),radius(end),rgb(col),i===1||i===5?metal:wood,24);}
-   return mesh;
- }
+ function cueMesh(){return ArenaCue.mesh(Mesh);}
  function marks(state){
    const data=[],seg=(a,b,c)=>{for(const v of [a,b])data.push(...v,0,0,1,...c,ink);};
    const ring=(p,r,z,col)=>{const v=i=>[p.x+r*Math.cos(i*TAU/48),p.y+r*Math.sin(i*TAU/48),z];for(let i=0;i<48;i++)seg(v(i),v(i+1),col);};
@@ -135,12 +59,16 @@
   'if(ortho>0.)gl_Position=vec4(fly/ortho,2.*(depth-.025)/39.975-1.,1.);else gl_Position=vec4(fly*lens,1.001251*depth-.050031,depth);}'
  ].join('\n');
  const fragment=[
-  'precision highp float;varying vec3 c,n,world,local;varying float mat;uniform vec3 eye,tint;uniform vec2 size;uniform float number,opacity;uniform sampler2D atlas;',
+  'precision highp float;varying vec3 c,n,world,local;varying float mat;uniform vec3 eye,tint;uniform vec2 size;uniform float number,opacity;uniform sampler2D atlas,grain,finish;',
   'float noise(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}',
+  'float swatch(float row,vec2 p){return texture2D(finish,vec2(fract(p.x),(row+(fract(p.y)*127.+.5)/128.)*.25)).r*1.16972;}',
   'void main(){vec3 col=c,N=normalize(n),V=normalize(eye-world);float gloss=.03;',
-  'if(mat>.5&&mat<1.5){col*=1.13-.30*length((world.xy/size-.5)*vec2(.85,1.));col+=.008*(noise(floor(world.xy*1400.))-.5);}',
-  'if(mat>1.5&&mat<2.5){float across=abs(N.z)>.7?(abs(world.x-size.x*.5)>size.x*.5?world.x:world.y):world.z;col*=.95+.075*sin(across*825.+3.1*sin((world.x+world.y)*7.));gloss=.14;}',
-  'if(mat>2.5&&mat<3.5)gloss=.38;',
+  'if(mat>.5&&mat<1.5){vec2 edge=min(world.xy,size-world.xy);float rail=.94+.06*smoothstep(0.,.055,min(edge.x,edge.y));col*=(1.14-.30*length((world.xy/size-.5)*vec2(.85,1.)))*rail*swatch(0.,world.xy/.097);}',
+  'if(mat>1.5&&mat<2.5){bool end=min(world.x,size.x-world.x)<min(world.y,size.y-world.y);float along=end?world.y:world.x;float across=abs(N.z)>.65?(end?world.x:world.y):world.z;col*=swatch(1.,vec2(along/.78,across/.062));gloss=.18;}',
+  'if(mat>2.5&&mat<3.5)gloss=.34;',
+  'if(mat>10.5){float t=atan(local.z,local.y)/6.2831853;col=texture2D(grain,vec2(clamp(-local.x/1.475,0.,1.),fract(t))).rgb;gloss=.075;}',
+  'if(mat>3.5&&mat<4.5){col*=swatch(2.,(world.xy+world.z*.8)/.057);gloss=.08;}',
+  'if(mat>9.5&&mat<10.5){col*=swatch(0.,(world.xy+world.z*.85)/.097);}',
   'if(mat>4.5&&mat<5.5){vec3 p=normalize(local),pole=vec3(0.,-.64,.768375),band=vec3(0.,.768375,.64);float side=dot(p,pole);col=tint;',
   'if(number>8.5)col=mix(col,vec3(.96,.93,.84),smoothstep(.51,.55,abs(dot(p,band))));',
   'if(number>.5&&abs(side)>.85){vec2 uv=vec2(p.x*sign(side),-dot(p,band))/.99+.5;vec2 cell=vec2(mod(number,4.),floor(number/4.));col=mix(col,texture2D(atlas,(cell+clamp(uv,.01,.99))/4.).rgb,smoothstep(.85,.88,abs(side)));}',
@@ -166,12 +94,22 @@
      }
      gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));gl.useProgram(program);
      this.a=['pos','normal','color','material'].map(k=>gl.getAttribLocation(program,k));this.a.forEach(i=>gl.enableVertexAttribArray(i));
-     this.u=Object.fromEntries('eye right up forward shift basis quat lens aspect ortho tint number opacity atlas size'.split(' ').map(k=>[k,gl.getUniformLocation(program,k)]));
+     this.u=Object.fromEntries('eye right up forward shift basis quat lens aspect ortho tint number opacity atlas grain finish size'.split(' ').map(k=>[k,gl.getUniformLocation(program,k)]));
      this.ball=this.upload(sphere());this.cue=this.upload(cueMesh(dim));
      const disk=new Mesh();disk.disk(0,0,0,1,[1,1,1],shadow);this.shadow=this.upload(disk);
      this.dynamic=gl.createBuffer();this.traces=gl.createBuffer();
      gl.bindTexture(gl.TEXTURE_2D,gl.createTexture());gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,atlas());gl.generateMipmap(gl.TEXTURE_2D);
      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+     gl.uniform1i(this.u.atlas,0);
+     const grain=ArenaCue.woodTexture();gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,gl.createTexture());
+     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,grain.width,grain.height,0,gl.RGB,gl.UNSIGNED_BYTE,grain.bytes);
+     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.REPEAT);
+     gl.generateMipmap(gl.TEXTURE_2D);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+     gl.uniform1i(this.u.grain,1);
+     const finish=ArenaTable.finishes();gl.activeTexture(gl.TEXTURE2);gl.bindTexture(gl.TEXTURE_2D,gl.createTexture());
+     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,finish.width,finish.height,0,gl.RGB,gl.UNSIGNED_BYTE,finish.bytes);
+     gl.generateMipmap(gl.TEXTURE_2D);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+     gl.uniform1i(this.u.finish,2);gl.activeTexture(gl.TEXTURE0);
      gl.enable(gl.DEPTH_TEST);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
    }
    upload(m){const gl=this.gl,buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(m.data),gl.STATIC_DRAW);return {buffer,count:m.data.length/10};}
@@ -193,8 +131,8 @@
      balls.forEach((b,i)=>{if(b.pocket)return;const r=b.spec.radius,num=Number(b.id)||0;
        this.pose([b.position.x,b.position.y,r],[r,0,0,0,r,0,0,0,r],rotations?.[i]||Q);
        gl.uniform3fv(u.tint,rgb(palette[num?(num-1)%8+1:0]));gl.uniform1f(u.number,num);gl.drawArrays(gl.TRIANGLES,0,this.ball.count);});
-     if(state.stroke&&state.cue&&!state.cue.pocket){const v=cueParts(state.cue,state.shot,state.stroke);this.pose(v.position,v.axis);gl.uniform1f(u.opacity,state.stroke.alpha);this.draw(this.cue);}
+     if(state.cuePose){const v=state.cuePose;this.pose(v.position,v.axis);gl.uniform1f(u.opacity,state.stroke.alpha);this.draw(this.cue);}
    }
  }
- root.ArenaRenderer={Renderer,palette,tableMesh,cueMesh,cueParts,marks};
+ root.ArenaRenderer={Renderer,palette,table,tableMesh,cueMesh,marks};
 })(globalThis);

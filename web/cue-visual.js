@@ -83,5 +83,5 @@ window.CueVisual=(()=>{
     ctx.drawImage(sprite,0,0,LENGTH*1600,76,(surface+gap)*map.scale,-38/1600*map.scale,LENGTH*map.scale,76/1600*map.scale);
     ctx.restore();
   }
-  return {length:LENGTH,tipDiameter:TIP,buttDiameter:BUTT,pose,begin,advance,draw};
+  return {length:LENGTH,tipDiameter:TIP,buttDiameter:BUTT,timing,pose,begin,advance,draw};
 })();

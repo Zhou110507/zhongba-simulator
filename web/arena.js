@@ -114,6 +114,13 @@ if(document.documentElement.dataset.arena==='on'){
       }
       $('room-seat-'+i).classList.toggle('active',g?g.phase!=='finished'&&(g.phase==='choice'?g.chooser:g.turn)===i:i===0);
     }
+    let lastCueKey='',lastCuePlan=null;
+    function cuePlan(cue,shot,balls){
+      const key=[config.model_signature,shot.angle_deg,shot.tip_x,shot.tip_y,shot.cue_speed,...balls.filter(active).flatMap(b=>[b.id,b.position.x,b.position.y,b.spec.radius])].join('|');
+      if(key!==lastCueKey){lastCuePlan=ArenaCue.plan(cue,shot,balls,ArenaRenderer.table(config).obstacles);lastCueKey=key;}
+      return lastCuePlan;
+    }
+    function obstructed(){const cue=scene&&cueBall();return Boolean(cue&&active(cue)&&cuePlan(cue,scene.shot,scene.balls).blocked);}
     function refresh(){
       if(!ready())return;
       const rule=rules(),g=match(),setup=TableModes.isSetup(),ai=g?.ai_player!=null&&(g.phase==='choice'?g.chooser:g.turn)===g.ai_player;
@@ -140,6 +147,9 @@ if(document.documentElement.dataset.arena==='on'){
       $('room-match').disabled=$('rules-mode').disabled||busy||Boolean(fired&&playing);$('room-practice').disabled=$('free-mode').disabled||busy||Boolean(fired&&playing);
       put('room-power',Math.round(100*scene.shot.cue_speed/config.limits.max_cue_speed)+'%');
       put('room-side',scene.shot.tip_x.toFixed(2));put('room-height',scene.shot.tip_y.toFixed(2));cameraLabels();
+      const blocked=!fired&&!busy&&!pending&&!setup&&!ai&&active(cueBall())&&obstructed();
+      stage.dataset.cueClearance=blocked?'blocked':'clear';
+      if(blocked){$('shoot').disabled=true;$('preview').disabled=true;put('room-turn','出杆受阻，请调整击点或方向');}
       if(config.app_version!==document.querySelector('meta[name=arena-version]').content)notice('页面与服务版本不一致，请使用启动器打开新版球房。',true);
     }
     // Preview paths are sampled from the stored simulator result, never fed
@@ -170,7 +180,9 @@ if(document.documentElement.dataset.arena==='on'){
       const stroke=cueStroke?CueVisual.pose(cueStroke.elapsed,cueStroke.speed):aiming?{gap:.018,alpha:1}:null;
       if(fired&&rotation?.result!==record.result)rotation=new ArenaMath.BallRotation(record.result);
       const trace=record&&TableModes.showTrails()?trail(record.result,fired?time:record.result.duration):null;
-      renderer.render(frame,{config,balls,cue,shot,stroke,rotations:fired?rotation.at(time):null,guide:aiming&&$('room-guide').checked?currentGuide():null,
+      const plan=stroke&&active(cue)?cuePlan(cue,shot,snapshot?.balls||scene.balls):null;
+      const cuePose=plan?ArenaCue.frame(plan,stroke,balls,ArenaRenderer.table(config).obstacles):null;
+      renderer.render(frame,{config,balls,cue,shot,stroke,cuePose,rotations:fired?rotation.at(time):null,guide:aiming&&$('room-guide').checked?currentGuide():null,
         head:match()?.ball_in_hand==='head'&&!fired,selected:!fired&&mode==='edit'?selected:null,trace});
       if(!record){rotation=null;track=null;}sounds();
     }
@@ -223,6 +235,6 @@ if(document.documentElement.dataset.arena==='on'){
     },true);
     new ResizeObserver(()=>{if(!resizeFrame)resizeFrame=requestAnimationFrame(()=>{resizeFrame=0;draw();});}).observe(stage);
     if(ready())queueMicrotask(()=>{refresh();draw();notice($('message').textContent);});
-    return {render,refresh,notice};
+    return {render,refresh,notice,obstructed};
   })();
 }

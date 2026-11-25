@@ -44,6 +44,7 @@ async function run(){
    const wait=(expression,label)=>deadline(()=>js(expression),label);
    await call('Page.navigate',{url});await wait("document.getElementById('room-turn')?.textContent.includes('开球')",'match boot');
    assert.equal(await text('room-version'),health.app_version);assert.equal(await js("document.getElementById('room-stage').dataset.renderer"),software?'software-3d':'webgl');
+   assert.equal(await js("document.querySelector('meta[name=arena-equipment]').content"),'2026.11-pocket-2');
    for(const cam of ['cue','top','orbit']){await js("document.querySelector('[data-camera="+cam+"]').click()");assert.equal(await js("document.querySelector('[data-camera="+cam+"]').getAttribute('aria-pressed')"),'true');}
    const canvas=software?'room-soft':'room-gl';
    // Check the actual composited frame, including drivers that silently produce a blank canvas.
@@ -76,6 +77,12 @@ async function run(){
    await click('shoot');await wait("!document.getElementById('seek').disabled",'practice playback');
    await js("(()=>{const s=document.getElementById('seek');s.value=1000;s.dispatchEvent(new Event('input'));})()");
    assert.ok(await js("document.getElementById('potted').textContent.includes('1')"));await click('next');
+   // Place a ball frozen behind the cue ball and exercise both the button and the shared keyboard action.
+   await js("(()=>{const s=structuredClone(config.presets.find(p=>p.id==='corner').scene);s.shot.angle_deg=0;s.shot.tip_x=0;s.shot.tip_y=0;const cue=s.balls.find(b=>b.id==='cue'),b=s.balls.find(b=>b.id!=='cue');cue.position={x:1.30,y:.60};b.position={x:1.30-2*cue.spec.radius-.0001,y:.60};setScene(s);})()");
+   assert.ok(await js("document.getElementById('shoot').disabled&&document.getElementById('preview').disabled&&document.getElementById('room-turn').textContent.includes('出杆受阻')"));
+   await js("calculate(true)");assert.ok(await js("!fired&&!record&&document.getElementById('room-note').textContent.includes('出杆受阻')"));
+   await js("(()=>{const a=document.getElementById('angle');a.value=90;a.dispatchEvent(new Event('input'));})()");
+   assert.ok(await js("!document.getElementById('shoot').disabled&&document.getElementById('room-stage').dataset.cueClearance==='clear'"));
    await click('room-match');await wait("document.getElementById('room-rack').textContent.includes('抢 3')",'match resumes from practice');
    let aiResult=null;
    if(!software){

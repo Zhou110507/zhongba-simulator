@@ -154,6 +154,7 @@ function populateEvents() {
 }
 
 async function calculate(commit) {
+  if(window.ArenaRoom?.obstructed()){announce('出杆受阻，请调整击点或方向后再出杆。',true);return;}
   if(window.TableModes?.isRules())return window.TableModes.calculate(commit);
   if (fired || busy || !active(cueBall())) return;
   if (commit && record && cachedKey === JSON.stringify(scene)) { startReplay(); return; }
