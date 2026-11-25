@@ -15,7 +15,7 @@
     if(location.protocol==='file:'){
       document.documentElement.style.cssText='background:#102219;color:#e9f0e6;font:17px/1.8 system-ui,sans-serif';
       document.addEventListener('DOMContentLoaded',()=>{
-        document.body.innerHTML='<main style="max-width:620px;margin:12vh auto;padding:36px;border:1px solid #45604a;border-radius:20px;background:#192f22"><div style="color:#c7dd9c">中八练习台</div><h1 style="font-size:28px;margin:12px 0">请从启动器打开练习台</h1><p>你现在直接打开了 HTML 文件。球桌和计算功能需要本地服务，因此不能从这里直接运行。</p><p>请返回上一级项目文件夹，双击 <strong>启动练习台.cmd</strong>。启动器会自动打开正确的网页地址。</p><p style="font-size:14px;color:#b5c4af">已有对局记录仍保存在本机，无需删除文件或重装。</p></main>';
+        document.body.innerHTML='<main style="max-width:620px;margin:12vh auto;padding:36px;border:1px solid #45604a;border-radius:20px;background:#192f22"><div style="color:#c7dd9c">中八练习台</div><h1 style="font-size:28px;margin:12px 0">请从启动器打开练习台</h1><p>你现在直接打开了 HTML 文件。球桌和计算功能需要本地服务，因此不能从这里直接运行。</p><p>请返回上一级文件夹。Windows 便携版双击 <strong>Zhongba3D.exe</strong>，源码版双击 <strong>启动中八3D.cmd</strong> 或 <strong>启动练习台.cmd</strong>。启动器会打开本机球房。</p><p style="font-size:14px;color:#b5c4af">已有对局记录仍保存在本机，无需删除文件或重装。</p></main>';
       },{once:true});
     }
   </script>
@@ -105,15 +105,15 @@
 </main>
 <div id="arena">
   <header class="room-header">
-    <div class="room-brand"><span class="room-emblem" aria-hidden="true">8</span><div><strong>中八球房</strong><small>ZHONGBA BILLIARDS</small></div></div>
+    <div class="room-brand"><span class="room-emblem" aria-hidden="true">8</span><div><strong>中八球房</strong></div></div>
     <nav class="room-nav" aria-label="球房模式"><button id="room-match" aria-pressed="true">比赛球台</button><button id="room-practice" aria-pressed="false">自由练习</button><a href="/play">训练工作台</a></nav>
     <div class="room-utils"><button id="room-sound" class="icon-btn" aria-label="击球音效" title="击球音效"><i data-icon="sound" aria-hidden="true"></i></button><button id="room-help" class="icon-btn" aria-label="操作与规则" title="操作与规则"><i data-icon="help" aria-hidden="true"></i></button></div>
   </header>
   <main class="room-main">
-    <div class="room-title"><div><p id="room-eyebrow">MATCH ROOM</p><h2 id="room-title">中式八球</h2></div><button id="room-settings"><i data-icon="settings" aria-hidden="true"></i><span id="room-settings-label">对局设置</span></button></div>
+    <div class="room-title"><h1 id="room-title">中式八球</h1><button id="room-settings"><i data-icon="settings" aria-hidden="true"></i><span id="room-settings-label">对局设置</span></button></div>
     <div class="room-layout">
       <section class="room-board" aria-label="三维比赛球台">
-        <div class="game-strip"><div class="seat " id="room-seat-0"><span class="seat-symbol">1</span><div><b id="room-name-0">玩家 1</b><div id="room-group-0" class="seat-group">未分组</div></div></div><div class="scoreboard"><span id="room-rack">第 1 局</span><strong id="room-score">0 : 0</strong></div><div class="seat away" id="room-seat-1"><span class="seat-symbol">2</span><div><b id="room-name-1">玩家 2</b><div id="room-group-1" class="seat-group">未分组</div></div></div></div>
+        <div class="game-strip"><div class="seat" id="room-seat-0"><span class="seat-symbol">1</span><div><b id="room-name-0">玩家 1</b><div id="room-group-0" class="seat-group">未分组</div></div></div><div class="scoreboard"><span id="room-rack">第 1 局</span><strong id="room-score">0 : 0</strong></div><div class="seat away" id="room-seat-1"><span class="seat-symbol">2</span><div><b id="room-name-1">玩家 2</b><div id="room-group-1" class="seat-group">未分组</div></div></div></div>
         <div id="room-stage" class="room-stage">
           <canvas id="room-gl" tabindex="0" aria-label="三维中八桌，点击瞄准，拖动环绕，滚轮缩放"></canvas>
           <canvas id="room-soft" tabindex="0" hidden aria-label="三维中八桌，点击瞄准，拖动环绕，滚轮缩放"></canvas>

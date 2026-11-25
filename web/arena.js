@@ -119,7 +119,7 @@ if(document.documentElement.dataset.arena==='on'){
       const rule=rules(),g=match(),setup=TableModes.isSetup(),ai=g?.ai_player!=null&&(g.phase==='choice'?g.chooser:g.turn)===g.ai_player;
       const key=[rule,g?.id,g?.revision,g?.phase,scene.balls.map(b=>b.id+(b.pocket||'')).join(),$('preset').value].join('|');
       if(key!==boardKey){
-        boardKey=key;seat(0,g);seat(1,g);put('room-title',rule?'中式八球':'自由练习');put('room-eyebrow',rule?'MATCH ROOM':'PRACTICE ROOM');
+        boardKey=key;seat(0,g);seat(1,g);put('room-title',rule?'中式八球':'自由练习');
         put('room-settings-label',rule?'对局设置':'练习设置');
         put('room-rack',g?'第 '+g.rack_number+' 局'+(g.race_to?' · 抢 '+g.race_to:''):'练习台');put('room-score',g?g.scores.join(' : '):'∞');
         put('room-spec',(rule?'CBSA 2017':'自由练习')+' · '+Math.round(config.model.table.length*1000)+' × '+Math.round(config.model.table.width*1000)+' mm · 球径 '+Number((config.ball_spec.radius*2000).toFixed(3))+' mm');

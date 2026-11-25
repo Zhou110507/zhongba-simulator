@@ -23,10 +23,15 @@ def check(source):
     env.pop('PYTHONPATH', None)
     env.pop('PYTHONHOME', None)
     python = str(app/'runtime'/'python.exe')
-    version = subprocess.check_output([python, '-X', 'utf8', '-c',
-        "import numpy; from pathlib import Path; import sys; from billiards.play import APP_VERSION; "
-        "assert Path(numpy.__file__).resolve().is_relative_to(Path(sys.executable).parent); print(APP_VERSION)"],
-        cwd=scratch, env=env, text=True).strip()
+    details = json.loads(subprocess.check_output([python, '-X', 'utf8', '-c',
+        "import json, numpy, billiards, sys; from billiards.play import APP_VERSION; "
+        "print(json.dumps([sys.executable,numpy.__file__,billiards.__file__,APP_VERSION]))"],
+        cwd=scratch, env=env, encoding='utf-8'))
+    executable, numpy_module, game_module, version = details
+    # Normalize both paths because an extracted directory may have a DOS short alias.
+    assert Path(executable).samefile(python), details
+    assert Path(numpy_module).resolve().is_relative_to((app/'runtime').resolve()), details
+    assert Path(game_module).resolve().is_relative_to((app/'billiards').resolve()), details
     command = [str(app/'Zhongba3D.exe'), '--no-open', '--port', str(port)]
     base = f'http://127.0.0.1:{port}'
 

@@ -7,7 +7,9 @@ test('opening the HTML file explains the launcher instead of leaving a dead conn
   let loaded;const document={documentElement:{style:{}},body:{innerHTML:'正在连接本地物理服务…'},
     addEventListener(name,fn){assert.equal(name,'DOMContentLoaded');loaded=fn;}};
   vm.runInNewContext(script,{location:{protocol:'file:'},document});loaded();
-  assert.match(document.body.innerHTML,/启动练习台.cmd/);
+  assert.match(document.body.innerHTML,/Zhongba3D\.exe/);
+  assert.match(document.body.innerHTML,/启动中八3D\.cmd/);
+  assert.match(document.body.innerHTML,/启动练习台\.cmd/);
   assert.match(document.body.innerHTML,/不能从这里直接运行/);
   assert.doesNotMatch(document.body.innerHTML,/正在连接本地物理服务/);
 });
