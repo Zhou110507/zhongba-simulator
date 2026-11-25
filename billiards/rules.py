@@ -64,6 +64,22 @@ def _first_contacts(events):
     return sorted({next(i for i in e['actors'] if i!='cue') for e in hits if abs(e['time']-time)<1e-8}),time
 
 
+def _ball_path(result, actor):
+    """Yield start, end, position, velocity and acceleration in either replay format."""
+    if result.get('detail') == 'playback-v2':
+        index = next(i for i, ball in enumerate(result['initial']) if ball['id'] == actor)
+        for start, end, balls, motion in result['segments']:
+            x, y, vx, vy = balls[index][:4]
+            _, ax, ay = motion[index][:3]
+            yield start, end, Vec2(x, y), Vec2(vx, vy), Vec2(ax, ay)
+    else:
+        for segment in result['segments']:
+            index = next(i for i, ball in enumerate(segment['balls']) if ball['id'] == actor)
+            ball = segment['balls'][index]
+            yield (segment['start'], segment['end'], Vec2(**ball['position']),
+                   Vec2(**ball['velocity']), Vec2(**segment['motion'][index]['acceleration']))
+
+
 def _new_cushion_contact(event,response,service):
     actor=event['actors'][0]
     ball=next(b for b in response['snapshot']['balls'] if b['id']==actor)
@@ -73,14 +89,11 @@ def _new_cushion_contact(event,response,service):
     position=Vec2(**ball['position'])
     if (position-surface.closest(position)).norm()>radius+1e-8:return True
     # A pre-declared frozen ball must leave that cushion before its return counts.
-    for segment in response['result']['segments']:
-        if segment['start']>=event['time']-1e-10:break
-        index=next(i for i,b in enumerate(segment['balls']) if b['id']==actor)
-        b=segment['balls'][index];m=segment['motion'][index]
-        duration=min(segment['end'],event['time'])-segment['start']
+    for start, end, pos, vel, acc in _ball_path(response['result'], actor):
+        if start >= event['time']-1e-10:break
+        duration = min(end, event['time'])-start
         for dt in (0,duration/2,duration):
-            p=Vec2(b['position']['x']+b['velocity']['x']*dt+.5*m['acceleration']['x']*dt*dt,
-                   b['position']['y']+b['velocity']['y']*dt+.5*m['acceleration']['y']*dt*dt)
+            p = pos + vel*dt + acc*(.5*dt*dt)
             if (p-surface.closest(p)).norm()>radius+1e-7:return True
     return False
 
@@ -105,10 +118,10 @@ def adjudicate(state,response,service):
             (Vec2(**b['position'])-Vec2(**cue['position'])).norm()<=b['spec']['radius']+cue['spec']['radius']+1e-8]
     for ball in frozen:
         moved=ball['id'] in potted
-        for segment in response['result']['segments']:
-            b=next(b for b in segment['balls'] if b['id']==ball['id'])
-            if segment['end']>segment['start'] and (Vec2(**b['velocity']).norm()>1e-7 or
-                    (Vec2(**b['position'])-Vec2(**ball['position'])).norm()>1e-7):moved=True
+        for start, end, pos, vel, _ in _ball_path(response['result'], ball['id']):
+            if end > start and (vel.norm()>1e-7 or (pos-Vec2(**ball['position'])).norm()>1e-7):
+                moved=True
+                break
         final=next(b for b in response['result']['final'] if b['id']==ball['id'])
         moved|=(Vec2(**final['position'])-Vec2(**ball['position'])).norm()>1e-7
         if not moved:foul('与白球相贴的合法目标球未移动','13.1')
@@ -123,12 +136,12 @@ def adjudicate(state,response,service):
         if initial['velocity']['x']<=0:foul('线后自由球须向顶库方向击打','5.3 / 5.5')
         if first and all(next(b for b in state['scene']['balls'] if b['id']==i)['position']['x']<HEAD-1e-9 for i in first):
             crossed=False
-            for seg in response['result']['segments']:
-                if seg['start']>=hit_time:break
-                i=next(i for i,b in enumerate(seg['balls']) if b['id']=='cue');b=seg['balls'][i];a=seg['motion'][i]['acceleration']['x']
-                dt=min(seg['end'],hit_time)-seg['start'];times=[0,dt]
-                if a and 0<-b['velocity']['x']/a<dt:times.append(-b['velocity']['x']/a)
-                crossed|=any(b['position']['x']+b['velocity']['x']*t+.5*a*t*t>=HEAD for t in times)
+            for start, end, pos, vel, acc in _ball_path(response['result'], 'cue'):
+                if start >= hit_time:break
+                dt=min(end,hit_time)-start
+                times=[0,dt]
+                if acc.x and 0 < -vel.x/acc.x < dt:times.append(-vel.x/acc.x)
+                crossed |= any(pos.x+vel.x*t+.5*acc.x*t*t >= HEAD for t in times)
             if not crossed:foul('未越过开球线即击打线后目标球','5.3')
     shooter=state['turn'];other=1-shooter
     out.update(is_break=False,ball_in_hand=None,needs_placement=False,choices=[],chooser=None)

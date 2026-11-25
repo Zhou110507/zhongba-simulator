@@ -139,24 +139,43 @@ def test_last_own_ball_and_eight_same_shot_loses_but_scratch_without_eight_does_
     assert out['winner'] is None and out['ball_in_hand']=='all'
 
 
+def adjudicate_both(state, shot, service):
+    detailed = adjudicate(state, shot, service)
+    packed = deepcopy(shot)
+    result = packed['result']
+    result['detail'] = 'playback-v2'
+    result['segments'] = [
+        [seg['start'], seg['end'],
+         [[b['position']['x'], b['position']['y'], b['velocity']['x'], b['velocity']['y'],
+           b['omega']['x'], b['omega']['y'], b['omega']['z'], b['pocket']] for b in seg['balls']],
+         [['rolling', m['acceleration']['x'], m['acceleration']['y'], 0, 0, 0] for m in seg['motion']]]
+        for seg in shot['result']['segments']]
+    assert adjudicate(state, packed, service) == detailed
+    return detailed
+
+
 def test_frozen_cushion_must_leave_and_return(service,state):
     ball=next(b for b in state['scene']['balls'] if b['id']=='1')
     ball['position']={'x':service.table.length-service.ball_spec.radius,'y':.4}
     shot=response(state,events=[hit(),rail('1')])
-    assert adjudicate(state,shot,service)['ball_in_hand']=='all'
+    assert adjudicate_both(state,shot,service)['ball_in_hand']=='all'
     moved=deepcopy(shot['snapshot']['balls']);moved[1]['position']['x']-=.1
     shot['result']['segments']=[{'start':.2,'end':.3,'balls':moved,
                                 'motion':[{'acceleration':{'x':0,'y':0}} for _ in moved]}]
-    assert adjudicate(state,shot,service)['ball_in_hand'] is None
+    assert adjudicate_both(state,shot,service)['ball_in_hand'] is None
 
 
 def test_frozen_legal_target_must_move(service,state):
     cue=state['scene']['balls'][0];target=state['scene']['balls'][1]
     target['position']={'x':cue['position']['x']+2*service.ball_spec.radius,'y':cue['position']['y']}
     shot=response(state,events=[hit('2'),rail()])
-    assert '13.1' in adjudicate(state,shot,service)['last_decision']['clauses']
+    assert '13.1' in adjudicate_both(state,shot,service)['last_decision']['clauses']
+    resting = deepcopy(shot['result']['initial'])
+    shot['result']['segments'] = [{'start':0,'end':.1,'balls':resting,
+                                   'motion':[{'acceleration':{'x':0,'y':0}} for _ in resting]}]
+    assert '13.1' in adjudicate_both(state,shot,service)['last_decision']['clauses']
     shot['result']['final'][1]['position']['x']+=.01
-    assert not adjudicate(state,shot,service)['last_decision']['fouls']
+    assert not adjudicate_both(state,shot,service)['last_decision']['fouls']
 
 
 def test_incomplete_physics_has_no_decision_and_respot_does_not_overlap(service,state):
@@ -176,7 +195,7 @@ def test_head_ball_in_hand_cannot_hit_behind_string_before_crossing(service,stat
     initial=deepcopy(shot['result']['initial']);initial[0]['velocity']['x']=2 if crossed else .1
     shot['result']['segments']=[{'start':0,'end':.3,'balls':initial,
         'motion':[{'acceleration':{'x':0,'y':0}} for _ in initial]}]
-    out=adjudicate(state,shot,service)
+    out=adjudicate_both(state,shot,service)
     assert any('未越过' in f for f in out['last_decision']['fouls']) is not crossed
 
 

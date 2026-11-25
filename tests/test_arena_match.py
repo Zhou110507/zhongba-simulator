@@ -20,8 +20,10 @@ def test_full_strokes_score_once_and_respect_match_length(tmp_path, race):
     service = PlayService(table_profile='cbsa_2017')
     games = GameStore(service, tmp_path, compact=True)
     balls = [Ball(key, Vec2(x, y), spec=service.ball_spec) for key, x, y in (
-        ('cue', 1.27, .45), ('1', 1.27, .22), ('8', 1.9, .64), ('9', .45, .8))]
-    scene = service.snapshot(balls, ShotInput(270, .95, 0, 0))
+        ('cue', 1.19, .44), ('1', 1.27, .22), ('8', 1.9, .64), ('9', .45, .8))]
+    ghost_y = .22 + 2*service.ball_spec.radius
+    angle = degrees(atan2(ghost_y - .44, 1.27 - 1.19)) % 360
+    scene = service.snapshot(balls, ShotInput(angle, 1.1, 0, 0))
     game = games.new(dict(scenario='ai_custom', scene=scene, race_to=race, ai_player=0))
     game = act(games, game, 'finish_setup', scene=scene, ai_player=0, ai_group='solid')
     game = act(games, game, 'set_ai', ai_player=None)
@@ -33,10 +35,10 @@ def test_full_strokes_score_once_and_respect_match_length(tmp_path, race):
 
     initial = deepcopy(game)
     preview = games.preview(dict(id=game['id'], revision=game['revision'], shot=scene['shot']))
-    assert preview['complete'] and '1' in preview['summary']['potted']
+    assert preview['complete'] and preview['summary']['potted'] == ['1'], preview['summary']
     assert games.get(dict(id=game['id']))['revision'] == game['revision']
-    game = shoot(270, .95)
-    assert game['turn'] == 0 and game['phase'] == 'playing'
+    game = shoot(angle, 1.1)
+    assert game['turn'] == 0 and game['phase'] == 'playing', game['last_decision']
     with pytest.raises(ValueError, match='对局已更新'):
         act(games, initial, 'shoot', shot=scene['shot'])
     game = shoot(2, .25)
@@ -47,9 +49,12 @@ def test_full_strokes_score_once_and_respect_match_length(tmp_path, race):
     black = next(b['position'] for b in game['scene']['balls'] if b['id'] == '8')
     dx, dy = service.table.length-black['x'], service.table.width-black['y']
     length = (dx*dx+dy*dy)**.5
-    game = act(games, game, 'place', x=black['x']-.32*dx/length, y=black['y']-.32*dy/length)
-    game = shoot(degrees(atan2(dy, dx)), 1.25)
-    assert game['phase'] == 'finished' and game['scores'] == [1, 0]
+    ux, uy = dx/length, dy/length
+    gx, gy = black['x']-2*service.ball_spec.radius*ux, black['y']-2*service.ball_spec.radius*uy
+    x, y = gx-.26*ux-.06*uy, gy-.26*uy+.06*ux
+    game = act(games, game, 'place', x=x, y=y)
+    game = shoot(degrees(atan2(gy-y, gx-x)) % 360, 1.3)
+    assert game['phase'] == 'finished' and game['scores'] == [1, 0], game['last_decision']
     assert len(game['history']) == 4
     reloaded = GameStore(service, tmp_path).get(dict(id=game['id']))
     assert reloaded['scores'] == game['scores'] and reloaded['race_to'] == race

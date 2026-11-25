@@ -45,5 +45,7 @@ jobs:
           node-version: '22'
       - run: python -m pytest -q tests/test_arena_match.py
       - run: node --test tests/arena.test.cjs
-      - run: node tools/check_arena_browser.cjs
-      - run: node tools/check_arena_browser.cjs --software
+      - if: ${{ !cancelled() }}
+        run: node tools/check_arena_browser.cjs
+      - if: ${{ !cancelled() }}
+        run: node tools/check_arena_browser.cjs --software
