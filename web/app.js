@@ -16,7 +16,10 @@ const ballSprites=new Map();
 let guideRecord = null, guideKey = '', guideController = null;
 let cueStroke=null;
 
-function announce(text, error = false) { $('message').textContent = text; $('message').classList.toggle('error', error); }
+function announce(text, error = false) {
+  $('message').textContent = text; $('message').classList.toggle('error', error);
+  window.ArenaRoom?.notice(text,error);
+}
 function ballName(id) { return id === 'cue' ? '白球' : `${id} 号球`; }
 function color(id) { return id === 'cue' ? colors[0] : colors[(Number(id) - 1) % 8 + 1]; }
 function active(ball) { return ball.pocket === null || ball.pocket === undefined; }
@@ -134,6 +137,7 @@ function refreshUI() {
   canvas.style.cursor = fired ? 'default' : mode === 'edit' ? 'grab' : 'crosshair';
   window.TableModes?.refresh();
   window.ShotPlanner?.refresh();
+  window.ArenaRoom?.refresh();
 }
 
 function populateEvents() {
@@ -178,8 +182,8 @@ function statusText(status) {
 }
 
 function startReplay(options={}) {
-  const animate=options.cueAnimation??Boolean(record?.ai_execution||record?.ai_analysis);
-  cueStroke=animate?CueVisual.begin(scene.shot.cue_speed):null;
+  const animate=options.cueAnimation??Boolean(window.ArenaRoom||record?.ai_execution||record?.ai_analysis);
+  cueStroke=animate?CueVisual.begin(record?.snapshot?.shot?.cue_speed??scene.shot.cue_speed):null;
   fired = true; playing = true; requestFrame(); time = 0; lastFrame = 0; finishedAnnounced = false;
   announce(record.complete ? animate?'正在运杆，杆头触球后开始走球。':'这一杆正在回放。可暂停、慢放或拖动时间轴。' : statusText(record.result.status), !record.complete);
   refreshUI(); draw();
@@ -331,6 +335,7 @@ function drawTable(map){
 }
 function draw(){
   if(!config||!scene)return;
+  if(window.ArenaRoom){window.ArenaRoom.render();drawTip();return;}
   const started=performance.now(),map=transform(),table=config.model.table,{X,Y,scale}=map;
   const key=config.model_signature+'|'+canvas.width+'|'+canvas.height;
   if(key!==backgroundKey){
@@ -468,8 +473,9 @@ $('save').onclick=()=>{if(window.TableModes?.exportRules())return;const blob=new
 $('import').onclick=()=>$('file').click();
 $('file').onchange=async event=>{if(window.TableModes?.isRules()&&!window.TableModes.isSetup()){event.target.value='';return;}const file=event.target.files[0];if(!file)return;try{if(file.size>65536)throw new Error('场景文件不能超过 64 KB');let data=JSON.parse(await file.text());if(window.TableModes?.isSetup()&&data.kind==='zhongba-ai-analysis'){if(!data.source_scene)throw new Error('这份旧版 AI 分析没有原始球位，请导入已保存的场景文件');data=data.source_scene;}const currentRevision=revision,value=await api(window.TableModes?.isSetup()?'/api/ai/layout':'/api/validate',data);if(window.TableModes?.isSetup()&&value.scene.model_signature!==config.model_signature)throw new Error('请导入当前中八台型的残局场景或新版 AI 分析记录');if(revision!==currentRevision)return;setScene(value.scene);announce('场景已导入，球桌与物理版本校验通过。');}catch(error){announce(error.message,true);}finally{event.target.value='';}};
 document.addEventListener('keydown',event=>{
+  if(event.defaultPrevented || (window.ArenaRoom && ($('room-dialog').open || event.target.closest?.('button, a, summary'))))return;
   if(!scene||['INPUT','SELECT','TEXTAREA'].includes(event.target.tagName))return;
-  if(event.code==='Space'){event.preventDefault();if(fired)$('play').click();else calculate(true);}
+  if(event.code==='Space'){event.preventDefault();if(fired)$('play').click();else $('shoot').click();}
   else if(event.key==='Escape'){pending=null;drag=null;mode='aim';refreshUI();draw();}
   else if((event.ctrlKey||event.metaKey)&&event.key==='z'){event.preventDefault();$('undo').click();}
   else if(mode==='edit'&&!locked()&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)){

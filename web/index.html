@@ -8,7 +8,9 @@
   <meta name="page-type" content="software">
   <meta name="site-kind" content="gaming">
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
-  <title>中八球台 · 规则对局与自由练习</title>
+  <title>中八球房 · 3D 中式八球</title>
+  <meta name="arena-version" content="zhongba-3d-v16">
+  <script>if(location.protocol !== 'file:' && !/^\/play\/?$/.test(location.pathname))document.documentElement.dataset.arena='on';</script>
   <script data-local-launch>
     if(location.protocol==='file:'){
       document.documentElement.style.cssText='background:#102219;color:#e9f0e6;font:17px/1.8 system-ui,sans-serif';
@@ -30,13 +32,18 @@
   <link rel="stylesheet" href="/assets/table-modes.css">
   <link rel="stylesheet" href="/assets/visual.css">
   <link rel="stylesheet" href="/assets/motion.css">
+  <link rel="stylesheet" href="/assets/arena.css">
+  <script src="/assets/arena-camera.js" defer></script>
+  <script src="/assets/arena-renderer.js" defer></script>
+  <script src="/assets/arena-software.js" defer></script>
+  <script src="/assets/arena.js" defer></script>
 </head>
 <body>
 <main id="main">
   <header class="header">
     <a class="skip-link" href="#workspace">跳到球桌</a>
     <div class="brand"><span class="brand-ball" aria-hidden="true">8</span><div><div class="eyebrow">Zhongba billiards</div><h1>中八练习台<span>自由击球</span></h1></div></div>
-    <div class="header-actions"><a class="lab-link" href="/lab">旋转实验台 ↗</a><button id="save" disabled class="btn btn--secondary">保存场景</button><button id="import" disabled class="btn btn--secondary">导入场景</button><input id="file" type="file" accept="application/json,.json" hidden></div>
+    <div class="header-actions"><a class="lab-link" href="/">进入 3D 球房</a><a class="lab-link" href="/lab">旋转实验台 ↗</a><button id="save" disabled class="btn btn--secondary">保存场景</button><button id="import" disabled class="btn btn--secondary">导入场景</button><input id="file" type="file" accept="application/json,.json" hidden></div>
   </header>
   <div id="message" class="message" role="status" aria-live="polite">正在连接本地物理服务…</div>
   <nav class="table-modes" aria-label="球台模式"><button id="free-mode" aria-pressed="true" class="btn btn--secondary">练习台</button><button id="planner-mode" aria-pressed="false" class="btn btn--secondary">反算台</button><button id="rules-mode" aria-pressed="false" class="btn btn--secondary">中八规则对局</button><span id="mode-caption">自由摆球与杆法练习</span></nav>
@@ -45,11 +52,11 @@
     <details class="free-advanced"><summary>白球位置与具体球号</summary><div class="free-controls"><label for="free-cue-x">白球 X / mm<input id="free-cue-x" type="number" step="1" value="500"></label><label for="free-cue-y">白球 Y / mm<input id="free-cue-y" type="number" step="1" value="550"></label></div><div id="ball-picker" class="ball-picker" aria-label="选择目标球号，最多十五颗"></div><p class="hint">目标球不含白球，最多 15 颗目标球＋1 颗白球。可直接输入数量，或勾选具体球号后点击“生成自由球台”。生成后可继续拖动摆球；自由球台不判犯规。</p></details>
   </section>
   <section id="rule-panel" class="card mode-panel" hidden>
-    <div class="rule-top"><div><div class="eyebrow">CHINESE BILLIARDS / CBSA 2017</div><h2 id="rule-turn">本地双人对局</h2></div><div class="rule-actions"><label for="breaker">开球方<select id="breaker"><option value="0">玩家 1</option><option value="1">玩家 2</option></select></label><label for="rack-gap">摆球微隙<select id="rack-gap"><option value=".2">实摆微隙 · ≤0.2 mm</option><option value="0">规范紧密摆球</option><option value=".5">较松 · ≤0.5 mm</option></select></label><button id="new-match" class="btn btn--secondary">新对局</button><button id="next-rack" hidden class="btn btn--secondary">下一局</button></div></div>
+    <div class="rule-top"><div><div class="eyebrow">CHINESE BILLIARDS / CBSA 2017</div><h2 id="rule-turn">本地双人对局</h2></div><div class="rule-actions"><label for="breaker">开球方<select id="breaker"><option value="0">玩家 1</option><option value="1">玩家 2</option></select></label><label for="race-to">赛制<select id="race-to"><option value="0">连续计局</option><option value="1">单局</option><option value="3">抢三</option><option value="5">抢五</option><option value="7">抢七</option></select></label><label for="rack-gap">摆球微隙<select id="rack-gap"><option value=".2">实摆微隙 · ≤0.2 mm</option><option value="0">规范紧密摆球</option><option value=".5">较松 · ≤0.5 mm</option></select></label><button id="new-match" class="btn btn--secondary">新对局</button><button id="next-rack" hidden class="btn btn--secondary">下一局</button></div></div>
     <div class="player-grid"><div id="player-one" class="player-card"></div><div id="player-two" class="player-card"></div></div><p id="rule-status" class="rule-status" aria-live="polite"></p><div id="rule-choices" class="rule-choices"></div><div id="head-respot" class="rule-choices"></div>
     <div class="rule-choices ai-setup"><label>对局方式 <select id="opponent"><option value="">本地双人</option><option value="1">我先手 · AI 为玩家 2</option><option value="0">AI 为玩家 1</option></select></label><label>AI 档位 <select id="ai-level"><option value="novice">入门</option><option value="intermediate">进阶</option><option value="advanced">高手</option><option value="expert" selected>最强（训练原版）</option></select></label><button id="ai-demo" class="btn btn--secondary">体验三球清台（新练习局）</button><span class="hint">四档共用最强规划，只改变出杆稳定性。</span></div>
     <div class="rule-choices ai-setup"><button id="ai-custom" class="btn btn--secondary">自定义／编辑 AI 残局</button><label id="ai-group-control" hidden>AI 球组 <select id="ai-group"><option value="solid">全色球 1–7</option><option value="stripe">花色球 9–15</option></select></label><button id="ai-finish-setup" class="primary btn btn--primary" hidden>完成摆球，开始分析</button></div><p id="ai-setup-hint" class="hint" hidden>正在编辑独立练习局：可拖动任意球、输入坐标、添加／移除球及保存／导入场景。保留白球和 8 号后点击“完成摆球”。原对局保留。</p>
-    <details><summary>本对局采用的规则与适用范围</summary><p class="hint">按 CBSA 2017 年 1 月公开规则：15 球三角形摆放，8 号位于第三排中间，底边两角一全色一花色。开球入球或至少四颗目标球碰库；开球不分组。先打完本组，再合法打进 8 号获胜，包括 8 号在内无需指球定袋。犯规后按相应条款给对手自由球；打 8 号时仅白球落袋、8 号未进，不直接判负。</p><p class="hint">规则要求尽量紧密摆球；默认微隙模拟普通实摆误差，幅度为工程设置，可切换规范紧密摆球后新开一局。本地双人、非限时、轮流开下一局。对局由本机服务自动保存；只能移动有自由球权的白球。跳球、人身动作及赛事纪律不在本二维界面模拟范围内，球袋曲率仍为工程近似。</p><a class="rule-source" href="https://cbsa.cssf.net.cn/annoucement/2017/0120/142126.html" target="_blank" rel="noreferrer">查看协会公开规则 ↗</a></details>
+    <details><summary>本对局采用的规则与适用范围</summary><p class="hint">按 CBSA 2017 年 1 月公开规则：15 球三角形摆放，8 号位于第三排中间，底边两角一全色一花色。开球入球或至少四颗目标球碰库；开球不分组。先打完本组，再合法打进 8 号获胜，包括 8 号在内无需指球定袋。犯规后按相应条款给对手自由球；打 8 号时仅白球落袋、8 号未进，不直接判负。</p><p class="hint">规则要求尽量紧密摆球；默认微隙模拟普通实摆误差，幅度为工程设置，可切换规范紧密摆球后新开一局。本地双人、非限时、轮流开下一局。对局由本机服务自动保存；只能移动有自由球权的白球。跳球、人身动作及赛事纪律超出当前水平出杆模型范围，球袋曲率仍为工程近似。</p><a class="rule-source" href="https://www.cbsa.org.cn/MobileAdaptations/NewListDetails.aspx?id=4538347D7A897698&amp;key=8088BC038344C4523B5F8ECBC7425072" target="_blank" rel="noreferrer">查看协会公开规则 ↗</a></details>
   </section>
   <div id="workspace" class="workspace">
     <section class="table-column">
@@ -96,5 +103,42 @@
   </div>
   <footer><span>第五阶段 · 扩展走位与独立练习台</span><span>预览、出杆和回放使用同一杆物理结果 · 数据保存在本机</span><span id="build">—</span></footer>
 </main>
+<div id="arena">
+  <header class="room-header">
+    <div class="room-brand"><span class="room-emblem" aria-hidden="true">8</span><div><strong>中八球房</strong><small>ZHONGBA BILLIARDS</small></div></div>
+    <nav class="room-nav" aria-label="球房模式"><button id="room-match" aria-pressed="true">比赛球台</button><button id="room-practice" aria-pressed="false">自由练习</button><a href="/play">训练工作台</a></nav>
+    <div class="room-utils"><button id="room-sound" class="icon-btn" aria-label="击球音效" title="击球音效"><i data-icon="sound" aria-hidden="true"></i></button><button id="room-help" class="icon-btn" aria-label="操作与规则" title="操作与规则"><i data-icon="help" aria-hidden="true"></i></button></div>
+  </header>
+  <main class="room-main">
+    <div class="room-title"><div><p id="room-eyebrow">MATCH ROOM</p><h2 id="room-title">中式八球</h2></div><button id="room-settings"><i data-icon="settings" aria-hidden="true"></i><span id="room-settings-label">对局设置</span></button></div>
+    <div class="room-layout">
+      <section class="room-board" aria-label="三维比赛球台">
+        <div class="game-strip"><div class="seat " id="room-seat-0"><span class="seat-symbol">1</span><div><b id="room-name-0">玩家 1</b><div id="room-group-0" class="seat-group">未分组</div></div></div><div class="scoreboard"><span id="room-rack">第 1 局</span><strong id="room-score">0 : 0</strong></div><div class="seat away" id="room-seat-1"><span class="seat-symbol">2</span><div><b id="room-name-1">玩家 2</b><div id="room-group-1" class="seat-group">未分组</div></div></div></div>
+        <div id="room-stage" class="room-stage">
+          <canvas id="room-gl" tabindex="0" aria-label="三维中八桌，点击瞄准，拖动环绕，滚轮缩放"></canvas>
+          <canvas id="room-soft" tabindex="0" hidden aria-label="三维中八桌，点击瞄准，拖动环绕，滚轮缩放"></canvas>
+          <div class="room-stage-top"><span id="room-badge" class="room-badge"><i></i><span>准备球台</span></span><div class="camera-switch" role="group" aria-label="摄影机视角"><button data-camera="orbit" aria-pressed="true"><i data-icon="orbit" aria-hidden="true"></i>环绕</button><button data-camera="cue" aria-pressed="false"><i data-icon="cue" aria-hidden="true"></i>杆后</button><button data-camera="top" aria-pressed="false"><i data-icon="top" aria-hidden="true"></i>俯视</button></div></div>
+          <div id="room-state-card" hidden><strong id="room-decision"></strong><div data-slot="rule-choices"></div><div data-slot="head-respot"></div><div data-slot="next-rack"></div><button id="room-rematch" hidden>再赛一场</button></div>
+          <div class="room-stage-bottom"><span id="room-gesture">点击瞄准 · 拖动环绕</span><div><button id="room-reset" class="icon-btn" aria-label="重置镜头" title="重置镜头"><i data-icon="reset" aria-hidden="true"></i></button><button id="room-full" class="icon-btn" aria-label="球台全屏" title="球台全屏"><i data-icon="full" aria-hidden="true"></i></button></div></div>
+        </div>
+        <div class="room-status"><span class="room-status-icon"><i data-icon="flag" aria-hidden="true"></i></span><div><b id="room-turn" aria-live="polite">球台准备中</b><p id="room-note" role="status">正在连接本机物理服务…</p></div><button id="room-place" hidden><i data-icon="place" aria-hidden="true"></i>摆球</button></div>
+        <div class="room-replay"><b><i data-icon="replay" aria-hidden="true"></i>回放</b><span data-slot="play"></span><span data-slot="seek"></span><span data-slot="clock"></span><span data-slot="speed"></span><span data-slot="last-shot"></span><span data-slot="before"></span><span data-slot="next"></span></div>
+      </section>
+      <aside class="room-controls"><div class="room-panel-title"><i data-icon="cue" aria-hidden="true"></i><h2>击球控制</h2></div>
+        <div class="room-control-block"><div class="control-heading"><label for="power">出杆力度</label><strong id="room-power">—</strong></div><div data-slot="power"></div><div class="power-scale"><span>轻推</span><span>冲球</span></div><div class="speeds"><span>杆头 <b data-slot="cue-speed"></b></span><span>白球 <b data-slot="launch-speed"></b></span></div></div>
+        <div class="room-control-block"><div class="control-heading"><strong>白球击点</strong><button class="room-text" id="room-center">居中</button></div><div class="spin-layout"><div data-slot="tip"></div><div class="spin-values"><small>左右 / R</small><b id="room-side">0.00</b><small>高低 / R</small><b id="room-height">0.00</b></div></div></div>
+        <div class="room-control-block"><div class="control-heading"><label for="angle">瞄准角度</label><div class="fine-angle"><button id="room-left" aria-label="方向减少零点一度">−</button><span data-slot="angle"></span><small>°</small><button id="room-right" aria-label="方向增加零点一度">＋</button></div></div><label class="guide-option"><input id="room-guide" type="checkbox" checked> 瞄准辅助线</label></div>
+        <div class="room-fire"><div data-slot="shoot"></div><div data-slot="preview"></div></div>
+        <details id="room-ai" hidden><summary>AI 思考与自动出杆</summary><div data-slot="ai-panel"></div></details>
+      </aside>
+    </div>
+    <div class="room-bottom"><span id="room-spec">CBSA 2017 · 本地对局</span><button id="room-log"><i data-icon="list" aria-hidden="true"></i>击球记录</button><span id="room-version"></span></div>
+  </main>
+  <dialog id="room-dialog" aria-labelledby="room-dialog-title"><div class="dialog-title"><h2 id="room-dialog-title">对局设置</h2><button id="room-close" class="icon-btn" aria-label="关闭" title="关闭"><i data-icon="close" aria-hidden="true"></i></button></div>
+    <section id="dialog-settings"><div data-slot="rule-panel"></div><div data-slot="free-setup"></div><div id="room-presets"><label for="preset">练习场景</label><div data-slot="preset"></div><div data-slot="trails-control"></div><div data-slot-class="editor"></div></div><div class="save-actions"><span data-slot="save"></span><span data-slot="import"></span></div></section>
+    <section id="dialog-log" hidden><div data-slot-class="events"></div><p id="room-last-result"></p><ol id="room-history"></ol></section>
+    <section id="dialog-help" hidden><h3>控制球杆与镜头</h3><dl><dt>环绕视角</dt><dd>点击台呢定方向。拖动转动镜头，滚轮缩放，手机可双指缩放。</dd><dt>杆后视角</dt><dd>从白球后方观察，左右拖动调整方向。按住 Shift 拖动可精瞄。</dd><dt>键盘</dt><dd>1 / 2 / 3 切换环绕、杆后、俯视。左右键微调方向，Shift 可进一步细调，空格出杆或暂停。</dd><dt>自由球</dt><dd>点击「摆放白球」，再点击台呢确定位置。开球线后的范围由裁判检查。</dd></dl><h3>本房规则</h3><p>采用 CBSA 2017 中八规则。开球后球组开放，随后按合法进球分组。打完本组再合法打进黑八获胜。可选连续计局、单局和抢局制。</p><p>三维镜头用于观察和瞄准。击球模型支持台面内运动与三轴自旋，球杆保持水平。</p></section>
+  </dialog>
+</div>
 </body>
 </html>

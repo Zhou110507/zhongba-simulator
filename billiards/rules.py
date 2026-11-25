@@ -1,6 +1,6 @@
 """Versioned CBSA January 2017 table rules, adjudicated from actual events.
 
-Source: https://cbsa.cssf.net.cn/annoucement/2017/0120/142126.html
+Source: https://www.cbsa.org.cn/MobileAdaptations/NewListDetails.aspx?id=4538347D7A897698&key=8088BC038344C4523B5F8ECBC7425072
 Numbers below refer to section III. No called pocket is required, including 8.
 """
 
@@ -12,7 +12,7 @@ from .model import Ball, Vec2
 from .pockets import outline
 
 RULE_VERSION='cbsa-2017-01'
-RULE_URL='https://cbsa.cssf.net.cn/annoucement/2017/0120/142126.html'
+RULE_URL='https://www.cbsa.org.cn/MobileAdaptations/NewListDetails.aspx?id=4538347D7A897698&key=8088BC038344C4523B5F8ECBC7425072'
 HEAD=.635
 
 

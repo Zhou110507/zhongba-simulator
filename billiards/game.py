@@ -76,6 +76,10 @@ class GameStore:
 
     def public(self,state):
         data=deepcopy(state)
+        target=state.get('race_to',0)
+        data['race_to']=target
+        data['match_winner']=state['winner'] if (target and state['phase']=='finished'
+            and state['scores'][state['winner']]>=target) else None
         data.update(rule_label='中八 · CBSA 2017 公开规则',rule_source=RULE_URL,legal_targets=legal_ids(state),
                     head_string_m=HEAD,foot_spot={'x':self.service.table.length-HEAD,'y':self.service.table.width/2})
         if state['ball_in_hand']=='head':
@@ -94,6 +98,7 @@ class GameStore:
     def new(self,data):
         if not isinstance(data,dict):raise ValueError('对局参数无效')
         breaker=integer(data.get('breaker',0),'开球方',0,1)
+        race_to=integer(data.get('race_to',0),'抢局数',0,21)
         seed=integer(data.get('seed',secrets.randbits(32)),'摆球编号')
         from .play import _number
         gap=_number(data.get('gap_mm',.2),'摆球微隙')
@@ -109,7 +114,7 @@ class GameStore:
         if scenario=='ai_custom' and data.get('scene') is not None:
             custom_scene=self.service.validate(data['scene'])['scene']
         with self.lock:
-            state={'id':uuid4().hex,'revision':0,'rule_version':RULE_VERSION,'scores':[0,0],
+            state={'id':uuid4().hex,'revision':0,'rule_version':RULE_VERSION,'scores':[0,0],'race_to':race_to,
                    'rack_number':1,'history':[],'last_decision':None,'seed':seed,'gap_mm':gap,'rack_version':'bounded-micro-gaps-v1'}
             self._rack(state,breaker,seed)
             state['ai_player']=ai_player
@@ -214,6 +219,7 @@ class GameStore:
                 state=deepcopy(state);respot_ball(state['scene'],key,self.service)
             elif action=='next_rack':
                 if state['phase']!='finished':raise ValueError('本局尚未结束')
+                if self.public(state)['match_winner'] is not None:raise ValueError('本场抢局已结束，请新建对局')
                 state=deepcopy(state);state['rack_number']+=1;state['seed']=(state['seed']+1)%2**32
                 self._rack(state,1-state['breaker'],state['seed']);state['last_decision']=None
                 state['scenario']='rack'

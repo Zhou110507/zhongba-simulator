@@ -29,5 +29,21 @@ jobs:
       - run: node --check web/table-modes.js
       - run: node --check web/replay-core.js
       - run: node --check web/planner.js
-      - run: node --test tests/shot-guide.test.cjs tests/replay-core.test.cjs tests/table-modes.test.cjs tests/planner.test.cjs
+      - run: node --test tests/*.test.cjs
       - run: node tools/audit_aim.cjs
+
+  arena:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -e ".[test]"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python -m pytest -q tests/test_arena_match.py
+      - run: node --test tests/arena.test.cjs
+      - run: node tools/check_arena_browser.cjs
+      - run: node tools/check_arena_browser.cjs --software

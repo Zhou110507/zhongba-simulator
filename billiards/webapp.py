@@ -85,7 +85,7 @@ def make_handler(service):
             if path=='/api/health':
                 self.send_json(200,{'status':'ok','app_version':APP_VERSION})
                 return
-            if path in ('/','/play','/play/'):
+            if path in ('/','/arena','/arena/','/play','/play/'):
                 target = service.root/'web'/'index.html'
             elif path=='/lab':
                 target = service.root/'web'/'lab.html'
