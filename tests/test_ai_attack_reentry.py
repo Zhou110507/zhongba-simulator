@@ -178,10 +178,12 @@ def test_previous_defense_never_selects_a_permanent_tactical_mode(service,monkey
     state['history'].append({'tactic':previous,'potted':[],'fouls':[]})
     calls=[]
     def plan(search,source,**kwargs):
-        calls.append((deepcopy(source),search.cap,search.deadline-search.started))
+        calls.append((deepcopy(source),search.cap,search.started,search.deadline))
         return {'status':'found','routes':[{'steps':[{'shot':source['scene']['shot']}]}]}
     monkeypatch.setattr(Search,'plan',plan)
     monkeypatch.setattr('billiards.tactics.choose_contact',lambda *a,**k:pytest.fail('Skipped ordinary offensive search'))
     result=decide(service,state)
-    assert result['routes'] and calls[0][1:]==(1800,30)
-    assert matches(calls[0][0],state)
+    assert result['routes'] and len(calls) == 1
+    source, cap, started, deadline = calls[0]
+    assert cap == 1800 and deadline == started + 30
+    assert matches(source,state)

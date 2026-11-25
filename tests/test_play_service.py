@@ -233,8 +233,21 @@ def test_launcher_reuses_its_existing_server_without_starting_a_second_one(serve
     assert opened == [f'http://127.0.0.1:{port}/']
 
 
-def test_inverse_http_job_can_be_polled_and_cancelled_without_blocking_shots(server,service):
+def test_inverse_http_job_can_be_polled_and_cancelled_without_blocking_shots(server,service,monkeypatch):
     from time import monotonic, sleep
+    from billiards import planner_jobs
+    checkpoint, resume = threading.Event(), threading.Event()
+    real_solve = planner_jobs.solve
+
+    def solve_at_checkpoint(service, request, *, cancelled, progress):
+        def checked_cancel():
+            checkpoint.set()
+            if not resume.wait(20):
+                raise TimeoutError('Test did not release the live planner')
+            return cancelled()
+        return real_solve(service, request, cancelled=checked_cancel, progress=progress)
+
+    monkeypatch.setattr(planner_jobs, 'solve', solve_at_checkpoint)
     data = dict(scene=next(p['scene'] for p in service.presets() if p['id']=='draw'),
                 target='1',goal=dict(x=.7,y=.6,radius=.06),seconds=30,evaluations=1000)
     body=json.dumps(data).encode()
@@ -243,8 +256,14 @@ def test_inverse_http_job_can_be_polled_and_cancelled_without_blocking_shots(ser
     status,_,raw=request(server,'POST','/api/plan/start',body)
     value=json.loads(raw);assert status==200 and value['status']=='running'
     job=json.dumps({'id':value['id']}).encode()
-    assert request(server,'POST','/api/plan/status',job)[0]==200
-    assert request(server,'POST','/api/plan/cancel',job)[0]==200
+    try:
+        assert checkpoint.wait(10)
+        code, _, pending = request(server,'POST','/api/plan/status',job)
+        assert code == 200 and json.loads(pending)['status'] == 'running'
+        assert request(server,'POST','/api/shot',json.dumps(data['scene']).encode())[0]==200
+        assert request(server,'POST','/api/plan/cancel',job)[0]==200
+    finally:
+        resume.set()
     deadline=monotonic()+3
     while monotonic()<deadline:
         status,_,raw=request(server,'POST','/api/plan/status',job)
@@ -253,7 +272,6 @@ def test_inverse_http_job_can_be_polled_and_cancelled_without_blocking_shots(ser
         sleep(.01)
     assert value['status']=='cancelled' and value['result']['solutions']==[]
     assert request(server,'POST','/api/plan/status',b'{"id":"missing"}')[0]==400
-    assert request(server,'POST','/api/shot',json.dumps(data['scene']).encode())[0]==200
     for asset in ('planner.js','planner.css'):
         assert request(server,'GET','/assets/'+asset)[0]==200
     for kind in ('one_bank','two_bank'):
