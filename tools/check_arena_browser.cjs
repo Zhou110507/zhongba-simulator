@@ -46,6 +46,11 @@ async function run(){
    assert.equal(await text('room-version'),health.app_version);assert.equal(await js("document.getElementById('room-stage').dataset.renderer"),software?'software-3d':'webgl');
    for(const cam of ['cue','top','orbit']){await js("document.querySelector('[data-camera="+cam+"]').click()");assert.equal(await js("document.querySelector('[data-camera="+cam+"]').getAttribute('aria-pressed')"),'true');}
    const canvas=software?'room-soft':'room-gl';
+   // Check the actual composited frame, including drivers that silently produce a blank canvas.
+   const clip=await js("(()=>{const r=document.getElementById('"+canvas+"').getBoundingClientRect();return {x:r.x+r.width*.1,y:r.y+r.height*.22,width:r.width*.8,height:r.height*.54,scale:.45};})()");
+   const shot=await call('Page.captureScreenshot',{format:'png',clip});
+   const felt=await js("(async()=>{const i=new Image();i.src='data:image/png;base64,"+shot.data+"';await i.decode();const c=document.createElement('canvas');c.width=96;c.height=64;const g=c.getContext('2d');g.drawImage(i,0,0,96,64);const a=g.getImageData(0,0,96,64).data;let n=0;for(let p=0;p<a.length;p+=4)if(a[p+1]>a[p]*1.4&&a[p+1]>a[p+2]*1.1&&a[p+1]>45)n++;return n/(96*64);})()");
+   assert.ok(felt>.08,'The rendered table should have a visible playing surface: '+felt);
    const center=await js("(()=>{const r=document.getElementById('"+canvas+"').getBoundingClientRect();return {x:r.x+r.width*.63,y:r.y+r.height*.5};})()");
    await call('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',buttons:1,clickCount:1,...center});
    await call('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',buttons:0,clickCount:1,...center});
@@ -72,12 +77,34 @@ async function run(){
    await js("(()=>{const s=document.getElementById('seek');s.value=1000;s.dispatchEvent(new Event('input'));})()");
    assert.ok(await js("document.getElementById('potted').textContent.includes('1')"));await click('next');
    await click('room-match');await wait("document.getElementById('room-rack').textContent.includes('抢 3')",'match resumes from practice');
+   let aiResult=null;
+   if(!software){
+     const request=async(path,body)=>{
+       const response=await fetch(url+path,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{});
+       const data=await response.json();assert.equal(response.status,200,JSON.stringify(data));return data;
+     };
+     const config=await request('api/rules/config'),scene=config.presets.find(p=>p.id==='corner').scene;
+     for(const b of scene.balls){
+       if(b.id==='cue')b.position={x:1.19,y:.44};
+       else{b.id='8';b.position={x:1.27,y:.22};}
+     }
+     const setup=await request('api/game/new',{scenario:'ai_custom',ai_player:0,ai_group:'solid',race_to:1,scene});
+     await request('api/game/action',{id:setup.id,revision:setup.revision,action:'finish_setup',ai_group:'solid',ai_player:0,scene});
+     await js("localStorage.setItem('zhongba.rule-match.v1',"+JSON.stringify(setup.id)+")");
+     await call('Page.reload');await wait("document.getElementById('room-turn')?.textContent.includes('电脑')&&!document.getElementById('ai-think').disabled",'AI owns the final eight');
+     await js("document.querySelector('#room-ai summary').click()");await click('ai-think');
+     await deadline(()=>js("!document.getElementById('ai-execute').disabled"),'validated AI shot',150000);
+     await click('ai-execute');
+     await wait("document.getElementById('room-turn')?.textContent.includes('赢得本场')",'AI wins the game');
+     const finished=await request('api/game/get',{id:setup.id});
+     assert.equal(finished.match_winner,0);assert.ok(finished.last_decision.potted.includes('8'));aiResult=finished.last_decision.outcome;
+   }
    await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
    await wait("window.innerWidth===390",'mobile viewport');assert.ok(await js("document.documentElement.scrollWidth<=innerWidth+1"));
    await click('room-help');assert.ok(await visible('dialog-help'));await click('room-close');
    await call('Page.navigate',{url:url+'play'});await wait("document.getElementById('build')?.textContent.includes('"+health.app_version+"')",'workbench');
    assert.ok(await visible('table'));assert.equal(await visible('room-stage'),false);assert.deepEqual(errors,[]);
-   console.log(JSON.stringify({renderer:software?'software-3d':'webgl',version:health.app_version,breakResult:turn,score,mobileWidth:390,scriptErrors:errors}));
+   console.log(JSON.stringify({renderer:software?'software-3d':'webgl',version:health.app_version,breakResult:turn,score,aiResult,felt,mobileWidth:390,scriptErrors:errors}));
  }finally{
    if(socket?.readyState===1)socket.close();
    browser.kill();server.kill();try{await fs.rm(tmp,{force:true,recursive:true,maxRetries:4,retryDelay:250});}catch{}
