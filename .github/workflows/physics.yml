@@ -49,3 +49,22 @@ jobs:
         run: node tools/check_arena_browser.cjs
       - if: ${{ !cancelled() }}
         run: node tools/check_arena_browser.cjs --software
+
+  windows-portable:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          architecture: 'x64'
+      - run: python -m pip install --only-binary=:all: numpy==2.2.6
+      - run: python -m tools.build_acceptance
+      - run: python -m tools.build_windows_portable dist/Zhongba3D
+      - run: python -X utf8 -m tools.check_windows_portable dist/Zhongba3D
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Zhongba3D-Windows-x64
+          path: dist/Zhongba3D/
+          retention-days: 90
+          if-no-files-found: error

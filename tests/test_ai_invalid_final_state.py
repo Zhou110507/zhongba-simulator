@@ -26,6 +26,7 @@ def service():return PlayService(table_profile='cbsa_2017')
 def test_real_candidate_is_incomplete_with_both_recording_modes(service,case):
     state=case['candidate'];balls,_=service.decode(state['scene']);shot=ShotInput(**case['shot'])
     launched=tuple(strike(b,shot,service.cue) if b.id=='cue' else b for b in balls)
+    overlaps = []
     for recording in (False,True):
         result=simulate(launched,service.table,service.physics,record_segments=recording)
         assert result.status=='invalid_final_state'
@@ -33,7 +34,13 @@ def test_real_candidate_is_incomplete_with_both_recording_modes(service,case):
             validate_scene(result.final,service.table,service.physics)
         # Reject the physical output rather than moving balls to certify it.
         a,b=(next(x for x in result.final if x.id==key) for key in ('12','13'))
-        assert a.spec.radius+b.spec.radius-(a.position-b.position).norm()==pytest.approx(.0003890486777,abs=1e-10)
+        overlap = a.spec.radius + b.spec.radius - (a.position-b.position).norm()
+        # Independent Windows and Linux replays differ by a few nanometres.
+        # Compare the recorded penetration in mm at their shared precision.
+        # The unmodified input validator above must still reject each endpoint.
+        assert round(overlap*1000, 5) == .38905
+        overlaps.append(overlap)
+    assert overlaps[0] == pytest.approx(overlaps[1], rel=0, abs=1e-10)
 
 
 def test_search_discards_bad_candidate_and_can_continue(service,case):
